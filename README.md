@@ -4,13 +4,16 @@ A professional, feature-rich QR code generator web application that allows users
 
 ## 🚀 Features
 
-- **Multiple QR Code Types:**
+- **Multiple QR Code Types (10 Types):**
   - URL/Website links
   - Plain text
   - Email (with subject and body)
   - Phone numbers
   - SMS messages
+  - WhatsApp messages
   - WiFi credentials
+  - GPS Location/Maps
+  - Calendar events
   - vCard (contact information)
 
 - **Customization Options:**
@@ -111,12 +114,25 @@ Create QR codes that dial a phone number when scanned.
 ### SMS
 Generate QR codes that open SMS app with pre-filled number and message.
 
+### WhatsApp
+Create QR codes that open WhatsApp chat with a specific number and optional pre-filled message.
+
 ### WiFi
 Create QR codes for easy WiFi network connection. Supports:
 - WPA/WPA2 encryption
 - WEP encryption
 - Open networks
 - Hidden networks
+
+### Location
+Generate QR codes for GPS coordinates that open in mapping applications with optional location name.
+
+### Calendar Event
+Create QR codes for calendar events with:
+- Event title
+- Location
+- Start and end date/time
+- Description
 
 ### vCard
 Generate QR codes containing contact information including:

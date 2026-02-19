@@ -96,9 +96,24 @@
                                         <i class="bi bi-chat-dots me-2"></i>SMS
                                     </label>
 
+                                    <input type="radio" class="btn-check" name="qrType" id="typeWhatsapp" value="whatsapp">
+                                    <label class="btn btn-outline-primary text-start" for="typeWhatsapp">
+                                        <i class="bi bi-whatsapp me-2"></i>WhatsApp
+                                    </label>
+
                                     <input type="radio" class="btn-check" name="qrType" id="typeWifi" value="wifi">
                                     <label class="btn btn-outline-primary text-start" for="typeWifi">
                                         <i class="bi bi-wifi me-2"></i>WiFi
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="qrType" id="typeLocation" value="location">
+                                    <label class="btn btn-outline-primary text-start" for="typeLocation">
+                                        <i class="bi bi-geo-alt me-2"></i>Location
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="qrType" id="typeEvent" value="event">
+                                    <label class="btn btn-outline-primary text-start" for="typeEvent">
+                                        <i class="bi bi-calendar-event me-2"></i>Calendar Event
                                     </label>
 
                                     <input type="radio" class="btn-check" name="qrType" id="typeVcard" value="vcard">
@@ -162,6 +177,19 @@
                                     </div>
                                 </div>
 
+                                <!-- WhatsApp Form -->
+                                <div id="whatsappForm" class="input-form d-none">
+                                    <div class="mb-3">
+                                        <label for="whatsappPhone" class="form-label">Phone Number (with country code)</label>
+                                        <input type="tel" class="form-control" id="whatsappPhone" placeholder="1234567890">
+                                        <small class="text-muted">Don't include + or - symbols, just numbers</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="whatsappMessage" class="form-label">Pre-filled Message (optional)</label>
+                                        <textarea class="form-control" id="whatsappMessage" rows="3" placeholder="Hello!"></textarea>
+                                    </div>
+                                </div>
+
                                 <!-- WiFi Form -->
                                 <div id="wifiForm" class="input-form d-none">
                                     <div class="mb-3">
@@ -185,6 +213,50 @@
                                         <label class="form-check-label" for="wifiHidden">
                                             Hidden Network
                                         </label>
+                                    </div>
+                                </div>
+
+                                <!-- Location Form -->
+                                <div id="locationForm" class="input-form d-none">
+                                    <div class="mb-3">
+                                        <label for="locationLat" class="form-label">Latitude</label>
+                                        <input type="text" class="form-control" id="locationLat" placeholder="37.7749">
+                                        <small class="text-muted">Example: 37.7749 (San Francisco)</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="locationLng" class="form-label">Longitude</label>
+                                        <input type="text" class="form-control" id="locationLng" placeholder="-122.4194">
+                                        <small class="text-muted">Example: -122.4194 (San Francisco)</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="locationName" class="form-label">Location Name (optional)</label>
+                                        <input type="text" class="form-control" id="locationName" placeholder="San Francisco">
+                                    </div>
+                                </div>
+
+                                <!-- Calendar Event Form -->
+                                <div id="eventForm" class="input-form d-none">
+                                    <div class="mb-3">
+                                        <label for="eventTitle" class="form-label">Event Title</label>
+                                        <input type="text" class="form-control" id="eventTitle" placeholder="Team Meeting">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="eventLocation" class="form-label">Location (optional)</label>
+                                        <input type="text" class="form-control" id="eventLocation" placeholder="Conference Room A">
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="eventStart" class="form-label">Start Date & Time</label>
+                                            <input type="datetime-local" class="form-control" id="eventStart">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="eventEnd" class="form-label">End Date & Time</label>
+                                            <input type="datetime-local" class="form-control" id="eventEnd">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="eventDescription" class="form-label">Description (optional)</label>
+                                        <textarea class="form-control" id="eventDescription" rows="3" placeholder="Event details"></textarea>
                                     </div>
                                 </div>
 

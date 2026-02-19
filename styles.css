@@ -176,6 +176,10 @@ footer {
         font-size: 2rem;
     }
     
+    .hero-section .lead {
+        font-size: 1rem;
+    }
+    
     .sticky-top {
         position: relative !important;
         top: 0 !important;
@@ -183,6 +187,86 @@ footer {
     
     .btn-group-vertical .btn {
         text-align: left;
+    }
+    
+    /* Better spacing on mobile */
+    .card-body {
+        padding: 1rem;
+    }
+    
+    /* Larger touch targets for mobile */
+    .btn {
+        min-height: 44px;
+    }
+    
+    .form-control, .form-select {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Stack columns on mobile */
+    .row {
+        margin-left: 0;
+        margin-right: 0;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 576px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .hero-section {
+        padding: 2rem 0 !important;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+        padding: 6px 12px;
+    }
+    
+    /* Optimize QR code display for small screens */
+    .qr-code-container {
+        padding: 15px;
+        max-width: 100%;
+    }
+    
+    #qrcode canvas, #qrcode img {
+        max-width: 100%;
+        height: auto !important;
+        width: auto !important;
+    }
+}
+
+/* Tablet optimizations */
+@media (min-width: 768px) and (max-width: 991px) {
+    .col-lg-7, .col-lg-5 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    /* Increase touch target sizes */
+    .btn {
+        min-height: 48px;
+        padding: 12px 20px;
+    }
+    
+    .form-check-input {
+        width: 1.5em;
+        height: 1.5em;
+    }
+    
+    /* Remove hover effects on touch devices */
+    .card:hover {
+        transform: none;
+    }
+    
+    .btn:hover {
+        transform: none;
     }
 }
 

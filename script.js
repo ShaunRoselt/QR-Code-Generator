@@ -8,6 +8,15 @@ let currentType = 'url';
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
     updateSizeDisplay();
+    
+    // Observe feature cards for animation
+    const cards = document.querySelectorAll('#features .card');
+    cards.forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'all 0.5s ease';
+        observer.observe(card);
+    });
 });
 
 // Initialize all event listeners
@@ -117,8 +126,14 @@ function getQRContent() {
             return getPhoneContent();
         case 'sms':
             return getSmsContent();
+        case 'whatsapp':
+            return getWhatsappContent();
         case 'wifi':
             return getWifiContent();
+        case 'location':
+            return getLocationContent();
+        case 'event':
+            return getEventContent();
         case 'vcard':
             return getVcardContent();
         default:
@@ -189,6 +204,22 @@ function getSmsContent() {
     return smsUrl;
 }
 
+// Get WhatsApp content
+function getWhatsappContent() {
+    const phone = document.getElementById('whatsappPhone').value.trim();
+    if (!phone) return null;
+    
+    const message = document.getElementById('whatsappMessage').value.trim();
+    
+    // WhatsApp URL format
+    let whatsappUrl = 'https://wa.me/' + phone;
+    if (message) {
+        whatsappUrl += '?text=' + encodeURIComponent(message);
+    }
+    
+    return whatsappUrl;
+}
+
 // Get WiFi content
 function getWifiContent() {
     const ssid = document.getElementById('wifiSsid').value.trim();
@@ -200,6 +231,53 @@ function getWifiContent() {
     
     // WiFi QR code format: WIFI:T:WPA;S:mynetwork;P:mypass;H:false;;
     return `WIFI:T:${encryption};S:${ssid};P:${password};H:${hidden};;`;
+}
+
+// Get Location content
+function getLocationContent() {
+    const lat = document.getElementById('locationLat').value.trim();
+    const lng = document.getElementById('locationLng').value.trim();
+    
+    if (!lat || !lng) return null;
+    
+    const name = document.getElementById('locationName').value.trim();
+    
+    // Google Maps format: geo:latitude,longitude?q=latitude,longitude(label)
+    if (name) {
+        return `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(name)})`;
+    }
+    return `geo:${lat},${lng}`;
+}
+
+// Get Calendar Event content
+function getEventContent() {
+    const title = document.getElementById('eventTitle').value.trim();
+    if (!title) return null;
+    
+    const location = document.getElementById('eventLocation').value.trim();
+    const start = document.getElementById('eventStart').value;
+    const end = document.getElementById('eventEnd').value;
+    const description = document.getElementById('eventDescription').value.trim();
+    
+    // Convert datetime-local to iCal format (YYYYMMDDTHHMMSS)
+    const formatDateTime = (dateStr) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    };
+    
+    // vCalendar format
+    let vcal = 'BEGIN:VEVENT\n';
+    vcal += `SUMMARY:${title}\n`;
+    
+    if (location) vcal += `LOCATION:${location}\n`;
+    if (start) vcal += `DTSTART:${formatDateTime(start)}\n`;
+    if (end) vcal += `DTEND:${formatDateTime(end)}\n`;
+    if (description) vcal += `DESCRIPTION:${description}\n`;
+    
+    vcal += 'END:VEVENT';
+    
+    return vcal;
 }
 
 // Get vCard content
@@ -406,14 +484,3 @@ const observer = new IntersectionObserver(function(entries) {
         }
     });
 }, observerOptions);
-
-// Observe feature cards
-document.addEventListener('DOMContentLoaded', function() {
-    const cards = document.querySelectorAll('#features .card');
-    cards.forEach(card => {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(20px)';
-        card.style.transition = 'all 0.5s ease';
-        observer.observe(card);
-    });
-});
