@@ -204,12 +204,8 @@ function getQRContent() {
             return null;
     }
 }
-            return getEventContent();
-        case 'vcard':
-            return getVcardContent();
-        default:
-            return null;
-    }
+
+// Get URL content
 }
 
 // Get URL content
