@@ -108,6 +108,7 @@ function handleAppStorePlatformChange(e) {
                 break;
         }
     }
+}
 
 // Handle QR type change
 function handleTypeChange(e) {
@@ -203,9 +204,6 @@ function getQRContent() {
         default:
             return null;
     }
-}
-
-// Get URL content
 }
 
 // Get URL content
