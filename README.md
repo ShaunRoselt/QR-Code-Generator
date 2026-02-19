@@ -25,9 +25,10 @@ A professional, feature-rich QR code generator web application that allows users
   - Real-time QR code generation
 
 - **Export Options:**
-  - Download as PNG
-  - Download as SVG
-  - High-quality output
+  - Download as PNG (up to 4K resolution - 3840x3840)
+  - Download as SVG (scalable to any size)
+  - Multiple export sizes: Standard (512px), High Quality (1024px), Very High Quality (2048px), 4K Ultra HD (3840px)
+  - High-quality output perfect for printing
 
 - **Privacy-First:**
   - All processing happens in your browser
@@ -127,9 +128,14 @@ Generate QR codes containing contact information including:
 
 ## 🎨 Customization
 
-You can customize the QR code appearance:
+You can customize the QR code appearance and export options:
 
-- **Size:** Choose from 128px to 512px
+- **Display Size:** Choose from 128px to 1024px for on-screen preview
+- **Export Size:** Select export resolution:
+  - Standard (512x512) - Good for web use
+  - High Quality (1024x1024) - Better for most purposes
+  - Very High Quality (2048x2048) - Excellent for printing
+  - 4K Ultra HD (3840x3840) - Maximum quality for large prints
 - **Colors:** Set custom foreground and background colors
 - **Error Correction:**
   - Low (7%): Smaller QR codes, less error recovery

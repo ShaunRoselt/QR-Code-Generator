@@ -231,9 +231,10 @@
                                         <div class="accordion-body">
                                             <div class="row">
                                                 <div class="col-md-6 mb-3">
-                                                    <label for="qrSize" class="form-label">Size (pixels)</label>
-                                                    <input type="range" class="form-range" id="qrSize" min="128" max="512" value="256" step="64">
+                                                    <label for="qrSize" class="form-label">Display Size (pixels)</label>
+                                                    <input type="range" class="form-range" id="qrSize" min="128" max="1024" value="256" step="64">
                                                     <div class="text-center"><span id="qrSizeValue">256</span>px</div>
+                                                    <small class="text-muted">Size displayed on screen (downloads can be larger)</small>
                                                 </div>
                                                 <div class="col-md-6 mb-3">
                                                     <label for="errorCorrection" class="form-label">Error Correction</label>
@@ -283,6 +284,15 @@
                                 <p class="text-muted mt-3">Your QR code will appear here</p>
                             </div>
                             <div id="downloadSection" class="d-none">
+                                <div class="mb-3">
+                                    <label for="exportSize" class="form-label fw-bold">Export Size</label>
+                                    <select class="form-select mb-2" id="exportSize">
+                                        <option value="512">Standard (512x512)</option>
+                                        <option value="1024">High Quality (1024x1024)</option>
+                                        <option value="2048">Very High Quality (2048x2048)</option>
+                                        <option value="3840" selected>4K Ultra HD (3840x3840)</option>
+                                    </select>
+                                </div>
                                 <button class="btn btn-success w-100 mb-2" id="downloadPng">
                                     <i class="bi bi-download me-2"></i>Download PNG
                                 </button>

@@ -237,8 +237,28 @@ function downloadPNG() {
         return;
     }
     
-    const url = canvas.toDataURL('image/png');
-    downloadFile(url, 'qrcode.png');
+    const exportSize = parseInt(document.getElementById('exportSize').value);
+    
+    // Create a new canvas at the export size
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = exportSize;
+    exportCanvas.height = exportSize;
+    const ctx = exportCanvas.getContext('2d');
+    
+    // Disable image smoothing for crisp pixels
+    ctx.imageSmoothingEnabled = false;
+    ctx.mozImageSmoothingEnabled = false;
+    ctx.webkitImageSmoothingEnabled = false;
+    ctx.msImageSmoothingEnabled = false;
+    
+    // Draw the original canvas scaled to the export size
+    ctx.drawImage(canvas, 0, 0, exportSize, exportSize);
+    
+    // Convert to data URL and download
+    const url = exportCanvas.toDataURL('image/png');
+    downloadFile(url, `qrcode-${exportSize}x${exportSize}.png`);
+    
+    showSuccess(`QR code downloaded as ${exportSize}x${exportSize} PNG`);
 }
 
 // Download as SVG
@@ -249,39 +269,49 @@ function downloadSVG() {
         return;
     }
     
-    // Convert canvas to SVG
-    const svg = convertCanvasToSVG(canvas);
+    const exportSize = parseInt(document.getElementById('exportSize').value);
+    
+    // Convert canvas to SVG at export size
+    const svg = convertCanvasToSVG(canvas, exportSize);
     const blob = new Blob([svg], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
-    downloadFile(url, 'qrcode.svg');
+    downloadFile(url, `qrcode-${exportSize}x${exportSize}.svg`);
     URL.revokeObjectURL(url);
+    
+    showSuccess(`QR code downloaded as ${exportSize}x${exportSize} SVG`);
 }
 
 // Convert canvas to SVG
-function convertCanvasToSVG(canvas) {
-    const size = canvas.width;
+function convertCanvasToSVG(canvas, exportSize) {
+    const canvasSize = canvas.width;
     const ctx = canvas.getContext('2d');
-    const imageData = ctx.getImageData(0, 0, size, size);
+    const imageData = ctx.getImageData(0, 0, canvasSize, canvasSize);
     const data = imageData.data;
     
-    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+    // Calculate scaling factor for export size
+    const scale = exportSize / canvasSize;
+    
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${exportSize}" height="${exportSize}" viewBox="0 0 ${exportSize} ${exportSize}">`;
     
     // Get background color (from first pixel)
     const bgColor = `rgb(${data[0]}, ${data[1]}, ${data[2]})`;
-    svg += `<rect width="${size}" height="${size}" fill="${bgColor}"/>`;
+    svg += `<rect width="${exportSize}" height="${exportSize}" fill="${bgColor}"/>`;
     
-    // Create paths for dark pixels
+    // Create paths for dark pixels - scaled to export size
     let path = '';
-    for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-            const i = (y * size + x) * 4;
+    for (let y = 0; y < canvasSize; y++) {
+        for (let x = 0; x < canvasSize; x++) {
+            const i = (y * canvasSize + x) * 4;
             const r = data[i];
             const g = data[i + 1];
             const b = data[i + 2];
             
             // If pixel is dark (not background)
             if (r < 128 || g < 128 || b < 128) {
-                path += `M${x},${y}h1v1h-1z `;
+                const scaledX = Math.floor(x * scale);
+                const scaledY = Math.floor(y * scale);
+                const scaledSize = Math.ceil(scale);
+                path += `M${scaledX},${scaledY}h${scaledSize}v${scaledSize}h-${scaledSize}z `;
             }
         }
     }
