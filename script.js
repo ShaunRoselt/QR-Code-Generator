@@ -179,10 +179,10 @@ function getSmsContent() {
     
     const message = document.getElementById('smsMessage').value.trim();
     
-    // iOS format
+    // SMS URL format with body parameter
     let smsUrl = 'sms:' + phone;
     if (message) {
-        // Use & for Android, ? for iOS - using & as it's more universal
+        // Using ? which works on both iOS and most Android devices
         smsUrl += '?body=' + encodeURIComponent(message);
     }
     

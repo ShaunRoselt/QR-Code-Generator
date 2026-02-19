@@ -14,7 +14,7 @@ A professional, feature-rich QR code generator web application that allows users
   - vCard (contact information)
 
 - **Customization Options:**
-  - Adjustable size (128px - 512px)
+  - Adjustable display size (128px - 1024px)
   - Custom foreground and background colors
   - Error correction levels (Low, Medium, Quartile, High)
 
