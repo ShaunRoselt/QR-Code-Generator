@@ -4,7 +4,7 @@ A professional, feature-rich QR code generator web application that allows users
 
 ## 🚀 Features
 
-- **Multiple QR Code Types (10 Types):**
+- **Multiple QR Code Types (12 Types):**
   - URL/Website links
   - Plain text
   - Email (with subject and body)
@@ -14,6 +14,8 @@ A professional, feature-rich QR code generator web application that allows users
   - WiFi credentials
   - GPS Location/Maps
   - Calendar events
+  - App Store links (Google Play, Apple App Store, Microsoft Store, Steam, Amazon Appstore)
+  - Social Media profiles (Facebook, Instagram, Twitter/X, LinkedIn, TikTok, YouTube, Snapchat, Pinterest, Reddit, Discord, Telegram, Threads, GitHub, Twitch)
   - vCard (contact information)
 
 - **Customization Options:**
@@ -133,6 +135,22 @@ Create QR codes for calendar events with:
 - Location
 - Start and end date/time
 - Description
+
+### App Store Link
+Generate QR codes that link directly to apps on various platforms:
+- Google Play Store (Android)
+- Apple App Store (iOS)
+- Microsoft Store (Windows)
+- Steam (PC Gaming)
+- Amazon Appstore
+
+### Social Media
+Create QR codes for social media profiles on 15+ platforms:
+- Facebook, Instagram, Twitter/X
+- LinkedIn, TikTok, YouTube
+- Snapchat, Pinterest, Reddit
+- Discord, Telegram, Threads
+- GitHub, Twitch, and more
 
 ### vCard
 Generate QR codes containing contact information including:

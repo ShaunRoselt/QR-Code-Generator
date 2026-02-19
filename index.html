@@ -116,6 +116,16 @@
                                         <i class="bi bi-calendar-event me-2"></i>Calendar Event
                                     </label>
 
+                                    <input type="radio" class="btn-check" name="qrType" id="typeAppstore" value="appstore">
+                                    <label class="btn btn-outline-primary text-start" for="typeAppstore">
+                                        <i class="bi bi-shop me-2"></i>App Store Link
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="qrType" id="typeSocial" value="socialmedia">
+                                    <label class="btn btn-outline-primary text-start" for="typeSocial">
+                                        <i class="bi bi-share me-2"></i>Social Media
+                                    </label>
+
                                     <input type="radio" class="btn-check" name="qrType" id="typeVcard" value="vcard">
                                     <label class="btn btn-outline-primary text-start" for="typeVcard">
                                         <i class="bi bi-person-vcard me-2"></i>vCard (Contact)
@@ -257,6 +267,62 @@
                                     <div class="mb-3">
                                         <label for="eventDescription" class="form-label">Description (optional)</label>
                                         <textarea class="form-control" id="eventDescription" rows="3" placeholder="Event details"></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- App Store Form -->
+                                <div id="appstoreForm" class="input-form d-none">
+                                    <div class="mb-3">
+                                        <label for="appstorePlatform" class="form-label">Select Platform</label>
+                                        <select class="form-select" id="appstorePlatform">
+                                            <option value="googleplay">Google Play Store (Android)</option>
+                                            <option value="appstore">Apple App Store (iOS)</option>
+                                            <option value="microsoft">Microsoft Store (Windows)</option>
+                                            <option value="steam">Steam</option>
+                                            <option value="amazonappstore">Amazon Appstore</option>
+                                            <option value="custom">Custom App Store URL</option>
+                                        </select>
+                                    </div>
+                                    <div id="appIdFields">
+                                        <div class="mb-3" id="googlePlayFields">
+                                            <label for="appPackageName" class="form-label">Package Name / App ID</label>
+                                            <input type="text" class="form-control" id="appPackageName" placeholder="com.example.app">
+                                            <small class="text-muted">Example: com.whatsapp, com.spotify.music</small>
+                                        </div>
+                                        <div class="mb-3 d-none" id="customUrlField">
+                                            <label for="appCustomUrl" class="form-label">Custom App Store URL</label>
+                                            <input type="url" class="form-control" id="appCustomUrl" placeholder="https://...">
+                                            <small class="text-muted">Enter the full URL to your app</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Social Media Form -->
+                                <div id="socialmediaForm" class="input-form d-none">
+                                    <div class="mb-3">
+                                        <label for="socialPlatform" class="form-label">Select Platform</label>
+                                        <select class="form-select" id="socialPlatform">
+                                            <option value="facebook">Facebook</option>
+                                            <option value="instagram">Instagram</option>
+                                            <option value="twitter">Twitter</option>
+                                            <option value="x">X (formerly Twitter)</option>
+                                            <option value="linkedin">LinkedIn</option>
+                                            <option value="tiktok">TikTok</option>
+                                            <option value="youtube">YouTube</option>
+                                            <option value="snapchat">Snapchat</option>
+                                            <option value="pinterest">Pinterest</option>
+                                            <option value="reddit">Reddit</option>
+                                            <option value="discord">Discord (invite link)</option>
+                                            <option value="telegram">Telegram</option>
+                                            <option value="threads">Threads</option>
+                                            <option value="github">GitHub</option>
+                                            <option value="twitch">Twitch</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="socialUsername" class="form-label">Username / Handle / Invite Link</label>
+                                        <input type="text" class="form-control" id="socialUsername" placeholder="username">
+                                        <small class="text-muted" id="socialHint">Enter your username without @ symbol</small>
                                     </div>
                                 </div>
 

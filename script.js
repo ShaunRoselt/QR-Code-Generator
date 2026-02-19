@@ -4,6 +4,21 @@
 let currentQRCode = null;
 let currentType = 'url';
 
+// Add animation on scroll - IntersectionObserver setup
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -100px 0px'
+};
+
+const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+        }
+    });
+}, observerOptions);
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
@@ -37,6 +52,12 @@ function initializeEventListeners() {
     // Size slider
     document.getElementById('qrSize').addEventListener('input', updateSizeDisplay);
 
+    // App store platform change handler
+    const appstorePlatform = document.getElementById('appstorePlatform');
+    if (appstorePlatform) {
+        appstorePlatform.addEventListener('change', handleAppStorePlatformChange);
+    }
+
     // Enter key support for text inputs
     const textInputs = document.querySelectorAll('input[type="text"], input[type="url"], input[type="email"], input[type="tel"], textarea');
     textInputs.forEach(input => {
@@ -48,6 +69,45 @@ function initializeEventListeners() {
         });
     });
 }
+
+// Handle app store platform change
+function handleAppStorePlatformChange(e) {
+    const platform = e.target.value;
+    const googlePlayFields = document.getElementById('googlePlayFields');
+    const customUrlField = document.getElementById('customUrlField');
+    const appPackageName = document.getElementById('appPackageName');
+    
+    if (platform === 'custom') {
+        googlePlayFields.classList.add('d-none');
+        customUrlField.classList.remove('d-none');
+    } else {
+        googlePlayFields.classList.remove('d-none');
+        customUrlField.classList.add('d-none');
+        
+        // Update placeholder based on platform
+        switch(platform) {
+            case 'googleplay':
+                appPackageName.placeholder = 'com.example.app';
+                appPackageName.previousElementSibling.textContent = 'Package Name / App ID';
+                break;
+            case 'appstore':
+                appPackageName.placeholder = '123456789';
+                appPackageName.previousElementSibling.textContent = 'App ID (numeric)';
+                break;
+            case 'microsoft':
+                appPackageName.placeholder = '9wzdncrfj3tj';
+                appPackageName.previousElementSibling.textContent = 'App ID';
+                break;
+            case 'steam':
+                appPackageName.placeholder = '730';
+                appPackageName.previousElementSibling.textContent = 'Steam App ID (numeric)';
+                break;
+            case 'amazonappstore':
+                appPackageName.placeholder = 'com.example.app';
+                appPackageName.previousElementSibling.textContent = 'Package Name';
+                break;
+        }
+    }
 
 // Handle QR type change
 function handleTypeChange(e) {
@@ -133,6 +193,17 @@ function getQRContent() {
         case 'location':
             return getLocationContent();
         case 'event':
+            return getEventContent();
+        case 'appstore':
+            return getAppStoreContent();
+        case 'socialmedia':
+            return getSocialMediaContent();
+        case 'vcard':
+            return getVcardContent();
+        default:
+            return null;
+    }
+}
             return getEventContent();
         case 'vcard':
             return getVcardContent();
@@ -280,6 +351,79 @@ function getEventContent() {
     return vcal;
 }
 
+// Get App Store content
+function getAppStoreContent() {
+    const platform = document.getElementById('appstorePlatform').value;
+    
+    if (platform === 'custom') {
+        const customUrl = document.getElementById('appCustomUrl').value.trim();
+        return customUrl || null;
+    }
+    
+    const appId = document.getElementById('appPackageName').value.trim();
+    if (!appId) return null;
+    
+    // Build URL based on platform
+    switch(platform) {
+        case 'googleplay':
+            return `https://play.google.com/store/apps/details?id=${appId}`;
+        case 'appstore':
+            return `https://apps.apple.com/app/id${appId}`;
+        case 'microsoft':
+            return `https://www.microsoft.com/store/apps/${appId}`;
+        case 'steam':
+            return `https://store.steampowered.com/app/${appId}`;
+        case 'amazonappstore':
+            return `https://www.amazon.com/dp/${appId}`;
+        default:
+            return null;
+    }
+}
+
+// Get Social Media content
+function getSocialMediaContent() {
+    const platform = document.getElementById('socialPlatform').value;
+    const username = document.getElementById('socialUsername').value.trim();
+    
+    if (!username) return null;
+    
+    // Build URL based on platform
+    switch(platform) {
+        case 'facebook':
+            return `https://facebook.com/${username}`;
+        case 'instagram':
+            return `https://instagram.com/${username}`;
+        case 'twitter':
+            return `https://twitter.com/${username}`;
+        case 'x':
+            return `https://x.com/${username}`;
+        case 'linkedin':
+            return `https://linkedin.com/in/${username}`;
+        case 'tiktok':
+            return `https://tiktok.com/@${username}`;
+        case 'youtube':
+            return `https://youtube.com/@${username}`;
+        case 'snapchat':
+            return `https://snapchat.com/add/${username}`;
+        case 'pinterest':
+            return `https://pinterest.com/${username}`;
+        case 'reddit':
+            return `https://reddit.com/user/${username}`;
+        case 'discord':
+            return username; // Discord uses invite links
+        case 'telegram':
+            return `https://t.me/${username}`;
+        case 'threads':
+            return `https://threads.net/@${username}`;
+        case 'github':
+            return `https://github.com/${username}`;
+        case 'twitch':
+            return `https://twitch.tv/${username}`;
+        default:
+            return null;
+    }
+}
+
 // Get vCard content
 function getVcardContent() {
     const firstName = document.getElementById('vcardFirstName').value.trim();
@@ -295,7 +439,10 @@ function getVcardContent() {
     let vcard = 'BEGIN:VCARD\n';
     vcard += 'VERSION:3.0\n';
     vcard += `N:${lastName};${firstName};;;\n`;
-    vcard += `FN:${firstName} ${lastName}\n`;
+    
+    // Create full name, trimming spaces
+    const fullName = `${firstName} ${lastName}`.trim();
+    vcard += `FN:${fullName}\n`;
     
     if (org) vcard += `ORG:${org}\n`;
     if (phone) vcard += `TEL:${phone}\n`;
@@ -469,18 +616,3 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         }
     });
 });
-
-// Add animation on scroll
-const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -100px 0px'
-};
-
-const observer = new IntersectionObserver(function(entries) {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0)';
-        }
-    });
-}, observerOptions);
