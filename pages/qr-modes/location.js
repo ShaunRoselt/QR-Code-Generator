@@ -41,6 +41,21 @@ const LocationMode = {
                                 <option value="H">High (30%)</option>
                             </select>
                         </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-border-all"></i>
+                                Frame Style
+                            </label>
+                            <select class="form-select" id="frameSelect">
+                                <option value="none">None</option>
+                                <option value="square">Square Border</option>
+                                <option value="rounded">Rounded Corners</option>
+                                <option value="circle">Circle</option>
+                                <option value="badge">Badge</option>
+                                <option value="scanme">Scan Me Banner</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <div class="qr-preview-section">
@@ -88,6 +103,9 @@ const LocationMode = {
         const longitudeInput = document.getElementById('longitudeInput');
         const labelInput = document.getElementById('labelInput');
         const errorCorrection = document.getElementById('errorCorrection');
+        const frameSelect = document.getElementById('frameSelect');
+        
+        let currentQRCanvas = null;
         
         // Auto-generate function
         const autoGenerate = () => {
@@ -111,8 +129,33 @@ const LocationMode = {
             }
             
             const errorCorrectionLevel = errorCorrection.value;
+            const frameType = frameSelect.value;
             
-            generateQRCode(geoUrl, 'qrcode', { size: DISPLAY_SIZE, errorCorrection: errorCorrectionLevel });
+            // Generate QR code
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            
+            const qrCode = new QRCode(qrContainer, {
+                text: geoUrl,
+                width: DISPLAY_SIZE,
+                height: DISPLAY_SIZE,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel[errorCorrectionLevel]
+            });
+            
+            // Wait for QR code to be generated, then apply frame
+            setTimeout(() => {
+                const canvas = qrContainer.querySelector('canvas');
+                if (canvas && frameType !== 'none') {
+                    const framedCanvas = window.QRFrames.applyFrame(canvas, frameType, DISPLAY_SIZE);
+                    qrContainer.innerHTML = '';
+                    qrContainer.appendChild(framedCanvas);
+                    currentQRCanvas = framedCanvas;
+                } else if (canvas) {
+                    currentQRCanvas = canvas;
+                }
+            }, 100);
             
             // Show download options
             document.getElementById('qrPlaceholder').style.display = 'none';
@@ -124,16 +167,95 @@ const LocationMode = {
         longitudeInput.addEventListener('input', autoGenerate);
         labelInput.addEventListener('input', autoGenerate);
         errorCorrection.addEventListener('change', autoGenerate);
+        frameSelect.addEventListener('change', autoGenerate);
         
         // Download handlers
         document.getElementById('downloadPng').addEventListener('click', () => {
             const exportSize = parseInt(document.getElementById('exportSize').value);
-            downloadQRAsPNG(exportSize);
+            const frameType = frameSelect.value;
+            const latitude = latitudeInput.value.trim();
+            const longitude = longitudeInput.value.trim();
+            const label = labelInput.value.trim();
+            
+            // Build geo URL
+            let geoUrl = `geo:${latitude},${longitude}`;
+            if (label) {
+                geoUrl += `?q=${latitude},${longitude}(${encodeURIComponent(label)})`;
+            }
+            
+            // Generate high-res QR code for export
+            const tempContainer = document.createElement('div');
+            const qrCode = new QRCode(tempContainer, {
+                text: geoUrl,
+                width: exportSize,
+                height: exportSize,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel[errorCorrection.value]
+            });
+            
+            setTimeout(() => {
+                const canvas = tempContainer.querySelector('canvas');
+                if (canvas) {
+                    if (frameType !== 'none') {
+                        window.QRFrames.exportWithFrame(canvas, frameType, exportSize, 'qrcode.png');
+                    } else {
+                        const link = document.createElement('a');
+                        link.download = 'qrcode.png';
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    }
+                }
+            }, 100);
         });
         
         document.getElementById('downloadSvg').addEventListener('click', () => {
             const exportSize = parseInt(document.getElementById('exportSize').value);
-            downloadQRAsSVG(exportSize);
+            const frameType = frameSelect.value;
+            const latitude = latitudeInput.value.trim();
+            const longitude = longitudeInput.value.trim();
+            const label = labelInput.value.trim();
+            
+            // Build geo URL
+            let geoUrl = `geo:${latitude},${longitude}`;
+            if (label) {
+                geoUrl += `?q=${latitude},${longitude}(${encodeURIComponent(label)})`;
+            }
+            
+            // Generate SVG QR code for export
+            const tempContainer = document.createElement('div');
+            const qrCode = new QRCode(tempContainer, {
+                text: geoUrl,
+                width: exportSize,
+                height: exportSize,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel[errorCorrection.value]
+            });
+            
+            setTimeout(() => {
+                const img = tempContainer.querySelector('img');
+                if (img) {
+                    // Convert canvas to SVG
+                    const canvas = tempContainer.querySelector('canvas');
+                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+                        <rect width="100" height="100" fill="#ffffff"/>
+                        <image href="${canvas.toDataURL()}" width="100" height="100"/>
+                    </svg>`;
+                    
+                    if (frameType !== 'none') {
+                        window.QRFrames.exportSVGWithFrame(svg, frameType, exportSize, 'qrcode.svg');
+                    } else {
+                        const blob = new Blob([svg], { type: 'image/svg+xml' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.download = 'qrcode.svg';
+                        link.href = url;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                    }
+                }
+            }, 100);
         });
     }
 };
