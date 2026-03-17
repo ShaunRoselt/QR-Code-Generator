@@ -82,12 +82,12 @@ const QRFrames = {
         } else if (frameType === 'scanme-border') {
             return `
                 <svg viewBox="0 0 50 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="2" y="2" width="46" height="56" rx="2" stroke="#000000" stroke-width="1.5" fill="transparent"></rect>
+                    <rect x="2" y="2" width="46" height="56" rx="2" stroke="#000000" stroke-width="2" fill="transparent"></rect>
                     <rect x="5" y="5" width="40" height="40" rx="2" fill="#E6E7ED"></rect>
                     <svg width="30" height="30" viewBox="0 0 40 40" x="10" y="10">
                         ${qrSample}
                     </svg>
-                    <path d="M2 47h46" stroke="#000000" stroke-width="1.5"></path>
+                    <path d="M2 47h46" stroke="#000000" stroke-width="2"></path>
                     <text x="25" y="53" text-anchor="middle" font-size="6" font-weight="700" fill="#000000">Scan me!</text>
                 </svg>
             `;
@@ -153,7 +153,7 @@ const QRFrames = {
      */
     drawScanMeBorderFrame(ctx, width, totalHeight, textHeight) {
         const qrSize = totalHeight - textHeight;
-        const borderWidth = 2;
+        const borderWidth = 4;
         const borderRadius = 3;
 
         // Draw outer border with rounded corners
@@ -275,14 +275,14 @@ const QRFrames = {
         } else if (frameType === 'scanme-border') {
             // Frame with border - matching provided SVG structure
             svg = `<svg viewBox="0 0 ${size} ${totalHeight}" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect id="frame" x="1" y="1" width="${size - 2}" height="${totalHeight - 2}" rx="3" stroke="#000000" stroke-width="2" fill="transparent"></rect>
+                <rect id="frame" x="1" y="1" width="${size - 2}" height="${totalHeight - 2}" rx="3" stroke="#000000" stroke-width="4" fill="transparent"></rect>
                 <g id="frame">
                     <path id="qr-background" d="M6 10a4 4 0 0 1 4-4h${size - 20}a4 4 0 0 1 4 4v${qrSize - 20}a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4z" fill="#E6E7ED"></path>
                     <svg width="${qrSize - 20}" height="${qrSize - 20}" viewBox="0 0 ${qrSize} ${qrSize}" fill="none" xmlns="http://www.w3.org/2000/svg" x="12" y="12">
                         ${qrPaths}
                     </svg>
                 </g>
-                <path d="M1 ${qrSize}h${size - 2}" fill="#000000"></path>
+                <path d="M1 ${qrSize}h${size - 2}" stroke="#000000" stroke-width="2"></path>
                 <g id="text-container">
                     <text x="${size / 2}" y="${qrSize + (textHeight / 2) + 5}" text-anchor="middle" dominant-baseline="middle" font-size="${Math.floor(textHeight * 0.5)}" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="#000000">Scan me!</text>
                 </g>
