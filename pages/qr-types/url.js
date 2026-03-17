@@ -216,7 +216,7 @@ const URLMode = {
                     </svg>`;
                     
                     if (frameType !== 'none') {
-                        window.QRFrames.exportSVGWithFrame(svg, frameType, exportSize, 'qrcode.svg');
+                        QRFrames.exportSVGWithFrame(svg, frameType, exportSize, 'qrcode.svg');
                     } else {
                         const blob = new Blob([svg], { type: 'image/svg+xml' });
                         const url = URL.createObjectURL(blob);
