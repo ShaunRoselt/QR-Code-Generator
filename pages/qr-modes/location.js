@@ -33,12 +33,6 @@ const LocationMode = {
                         </div>
                         
                         <div class="form-group">
-                            <label class="form-label">Size (pixels)</label>
-                            <input type="range" class="form-input" id="qrSize" min="128" max="1024" value="256" step="64">
-                            <div class="form-hint" id="sizeValue">256px</div>
-                        </div>
-                        
-                        <div class="form-group">
                             <label class="form-label">Error Correction</label>
                             <select class="form-select" id="errorCorrection">
                                 <option value="L">Low (7%)</option>
@@ -89,8 +83,7 @@ const LocationMode = {
     },
     
     init() {
-        const sizeSlider = document.getElementById('qrSize');
-        const sizeValue = document.getElementById('sizeValue');
+        const DISPLAY_SIZE = 300;
         const latitudeInput = document.getElementById('latitudeInput');
         const longitudeInput = document.getElementById('longitudeInput');
         const labelInput = document.getElementById('labelInput');
@@ -117,21 +110,14 @@ const LocationMode = {
                 geoUrl += `?q=${latitude},${longitude}(${encodeURIComponent(label)})`;
             }
             
-            const size = parseInt(sizeSlider.value);
             const errorCorrectionLevel = errorCorrection.value;
             
-            generateQRCode(geoUrl, 'qrcode', { size, errorCorrection: errorCorrectionLevel });
+            generateQRCode(geoUrl, 'qrcode', { size: DISPLAY_SIZE, errorCorrection: errorCorrectionLevel });
             
             // Show download options
             document.getElementById('qrPlaceholder').style.display = 'none';
             document.getElementById('downloadOptions').classList.remove('d-none');
         };
-        
-        // Update size display
-        sizeSlider.addEventListener('input', () => {
-            sizeValue.textContent = sizeSlider.value + 'px';
-            autoGenerate();
-        });
         
         // Auto-generate on input
         latitudeInput.addEventListener('input', autoGenerate);

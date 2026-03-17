@@ -27,12 +27,6 @@ const SmsMode = {
                         </div>
                         
                         <div class="form-group">
-                            <label class="form-label">Size (pixels)</label>
-                            <input type="range" class="form-input" id="qrSize" min="128" max="1024" value="256" step="64">
-                            <div class="form-hint" id="sizeValue">256px</div>
-                        </div>
-                        
-                        <div class="form-group">
                             <label class="form-label">Error Correction</label>
                             <select class="form-select" id="errorCorrection">
                                 <option value="L">Low (7%)</option>
@@ -83,8 +77,7 @@ const SmsMode = {
     },
     
     init() {
-        const sizeSlider = document.getElementById('qrSize');
-        const sizeValue = document.getElementById('sizeValue');
+        const DISPLAY_SIZE = 300;
         const phoneInput = document.getElementById('phoneInput');
         const messageInput = document.getElementById('messageInput');
         const errorCorrection = document.getElementById('errorCorrection');
@@ -108,21 +101,14 @@ const SmsMode = {
                 smsUrl += `?body=${encodeURIComponent(message)}`;
             }
             
-            const size = parseInt(sizeSlider.value);
             const errorCorrectionLevel = errorCorrection.value;
             
-            generateQRCode(smsUrl, 'qrcode', { size, errorCorrection: errorCorrectionLevel });
+            generateQRCode(smsUrl, 'qrcode', { size: DISPLAY_SIZE, errorCorrection: errorCorrectionLevel });
             
             // Show download options
             document.getElementById('qrPlaceholder').style.display = 'none';
             document.getElementById('downloadOptions').classList.remove('d-none');
         };
-        
-        // Update size display
-        sizeSlider.addEventListener('input', () => {
-            sizeValue.textContent = sizeSlider.value + 'px';
-            autoGenerate();
-        });
         
         // Auto-generate on input
         phoneInput.addEventListener('input', autoGenerate);

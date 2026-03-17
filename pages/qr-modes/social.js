@@ -43,12 +43,6 @@ const SocialMode = {
                         </div>
                         
                         <div class="form-group">
-                            <label class="form-label">Size (pixels)</label>
-                            <input type="range" class="form-input" id="qrSize" min="128" max="1024" value="256" step="64">
-                            <div class="form-hint" id="sizeValue">256px</div>
-                        </div>
-                        
-                        <div class="form-group">
                             <label class="form-label">Error Correction</label>
                             <select class="form-select" id="errorCorrection">
                                 <option value="L">Low (7%)</option>
@@ -99,8 +93,7 @@ const SocialMode = {
     },
     
     init() {
-        const sizeSlider = document.getElementById('qrSize');
-        const sizeValue = document.getElementById('sizeValue');
+        const DISPLAY_SIZE = 300;
         const platformSelect = document.getElementById('platformSelect');
         const usernameInput = document.getElementById('usernameInput');
         const usernameHint = document.getElementById('usernameHint');
@@ -150,20 +143,13 @@ const SocialMode = {
             
             const url = platformUrls[platform].url + username;
             
-            const size = parseInt(sizeSlider.value);
             const errorCorrectionLevel = errorCorrection.value;
             
-            generateQRCode(url, 'qrcode', { size, errorCorrection: errorCorrectionLevel });
+            generateQRCode(url, 'qrcode', { size: DISPLAY_SIZE, errorCorrection: errorCorrectionLevel });
             
             document.getElementById('qrPlaceholder').style.display = 'none';
             document.getElementById('downloadOptions').classList.remove('d-none');
         };
-        
-        // Update size display
-        sizeSlider.addEventListener('input', () => {
-            sizeValue.textContent = sizeSlider.value + 'px';
-            autoGenerate();
-        });
         
         // Auto-generate on input
         usernameInput.addEventListener('input', autoGenerate);

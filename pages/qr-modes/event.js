@@ -42,12 +42,6 @@ const EventMode = {
                         </div>
                         
                         <div class="form-group">
-                            <label class="form-label">Size (pixels)</label>
-                            <input type="range" class="form-input" id="qrSize" min="128" max="1024" value="256" step="64">
-                            <div class="form-hint" id="sizeValue">256px</div>
-                        </div>
-                        
-                        <div class="form-group">
                             <label class="form-label">Error Correction</label>
                             <select class="form-select" id="errorCorrection">
                                 <option value="L">Low (7%)</option>
@@ -98,8 +92,7 @@ const EventMode = {
     },
     
     init() {
-        const sizeSlider = document.getElementById('qrSize');
-        const sizeValue = document.getElementById('sizeValue');
+        const DISPLAY_SIZE = 300;
         const titleInput = document.getElementById('titleInput');
         const locationInput = document.getElementById('locationInput');
         const descriptionInput = document.getElementById('descriptionInput');
@@ -150,21 +143,14 @@ const EventMode = {
             vEvent += 'END:VEVENT\n';
             vEvent += 'END:VCALENDAR';
             
-            const size = parseInt(sizeSlider.value);
             const errorCorrectionLevel = errorCorrection.value;
             
-            generateQRCode(vEvent, 'qrcode', { size, errorCorrection: errorCorrectionLevel });
+            generateQRCode(vEvent, 'qrcode', { size: DISPLAY_SIZE, errorCorrection: errorCorrectionLevel });
             
             // Show download options
             document.getElementById('qrPlaceholder').style.display = 'none';
             document.getElementById('downloadOptions').classList.remove('d-none');
         };
-        
-        // Update size display
-        sizeSlider.addEventListener('input', () => {
-            sizeValue.textContent = sizeSlider.value + 'px';
-            autoGenerate();
-        });
         
         // Auto-generate on input
         titleInput.addEventListener('input', autoGenerate);
