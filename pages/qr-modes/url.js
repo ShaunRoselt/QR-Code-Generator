@@ -36,11 +36,6 @@ const URLMode = {
                                 <option value="H">High (30%)</option>
                             </select>
                         </div>
-                        
-                        <button class="btn btn-primary btn-block" id="generateBtn">
-                            <i class="bi bi-qr-code"></i>
-                            Generate QR Code
-                        </button>
                     </div>
                     
                     <div class="qr-preview-section">
@@ -52,7 +47,7 @@ const URLMode = {
                         <div class="qr-display">
                             <div class="qr-placeholder" id="qrPlaceholder">
                                 <i class="bi bi-qr-code"></i>
-                                <p>Your QR code will appear here</p>
+                                <p>Enter a URL to generate QR code</p>
                             </div>
                             <div id="qrcode"></div>
                         </div>
@@ -85,19 +80,17 @@ const URLMode = {
     init() {
         const sizeSlider = document.getElementById('qrSize');
         const sizeValue = document.getElementById('sizeValue');
-        const generateBtn = document.getElementById('generateBtn');
         const urlInput = document.getElementById('urlInput');
+        const errorCorrection = document.getElementById('errorCorrection');
         
-        // Update size display
-        sizeSlider.addEventListener('input', () => {
-            sizeValue.textContent = sizeSlider.value + 'px';
-        });
-        
-        // Generate QR code
-        generateBtn.addEventListener('click', () => {
+        // Auto-generate function
+        const autoGenerate = () => {
             let url = urlInput.value.trim();
             if (!url) {
-                alert('Please enter a URL');
+                // Hide QR code and download options if URL is empty
+                document.getElementById('qrcode').innerHTML = '';
+                document.getElementById('qrPlaceholder').style.display = 'block';
+                document.getElementById('downloadOptions').classList.add('d-none');
                 return;
             }
             
@@ -107,14 +100,24 @@ const URLMode = {
             }
             
             const size = parseInt(sizeSlider.value);
-            const errorCorrection = document.getElementById('errorCorrection').value;
+            const errorCorrectionLevel = errorCorrection.value;
             
-            generateQRCode(url, 'qrcode', { size, errorCorrection });
+            generateQRCode(url, 'qrcode', { size, errorCorrection: errorCorrectionLevel });
             
             // Show download options
             document.getElementById('qrPlaceholder').style.display = 'none';
             document.getElementById('downloadOptions').classList.remove('d-none');
+        };
+        
+        // Update size display
+        sizeSlider.addEventListener('input', () => {
+            sizeValue.textContent = sizeSlider.value + 'px';
+            autoGenerate();
         });
+        
+        // Auto-generate on input
+        urlInput.addEventListener('input', autoGenerate);
+        errorCorrection.addEventListener('change', autoGenerate);
         
         // Download handlers
         document.getElementById('downloadPng').addEventListener('click', () => {

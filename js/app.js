@@ -102,21 +102,12 @@ router.register('/vcard', () => {
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
-    // Mobile menu toggle
+    // Hamburger menu toggle - collapse/expand sidebar
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');
     
     menuToggle.addEventListener('click', () => {
-        sidebar.classList.toggle('open');
-    });
-    
-    // Close sidebar when clicking outside on mobile
-    document.addEventListener('click', (e) => {
-        if (window.innerWidth <= 768) {
-            if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
-                sidebar.classList.remove('open');
-            }
-        }
+        sidebar.classList.toggle('collapsed');
     });
     
     // Handle navigation clicks
@@ -125,11 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const route = item.getAttribute('data-route');
             router.navigate(route);
-            
-            // Close sidebar when navigating on mobile
-            if (window.innerWidth <= 768) {
-                sidebar.classList.remove('open');
-            }
         });
     });
     
