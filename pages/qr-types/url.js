@@ -133,7 +133,7 @@ const URLMode = {
             setTimeout(() => {
                 const canvas = qrContainer.querySelector('canvas');
                 if (canvas && frameType !== 'none') {
-                    const framedCanvas = window.QRFrames.applyFrame(canvas, frameType, DISPLAY_SIZE);
+                    const framedCanvas = QRFrames.applyFrame(canvas, frameType, DISPLAY_SIZE);
                     qrContainer.innerHTML = '';
                     qrContainer.appendChild(framedCanvas);
                     currentQRCanvas = framedCanvas;
@@ -175,7 +175,7 @@ const URLMode = {
                 const canvas = tempContainer.querySelector('canvas');
                 if (canvas) {
                     if (frameType !== 'none') {
-                        window.QRFrames.exportWithFrame(canvas, frameType, exportSize, 'qrcode.png');
+                        QRFrames.exportWithFrame(canvas, frameType, exportSize, 'qrcode.png');
                     } else {
                         const link = document.createElement('a');
                         link.download = 'qrcode.png';
