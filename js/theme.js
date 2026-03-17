@@ -6,7 +6,7 @@ class ThemeManager {
     }
     
     applyTheme() {
-        document.body.setAttribute('data-theme', this.currentTheme);
+        document.documentElement.setAttribute('data-theme', this.currentTheme);
         localStorage.setItem('qr-theme', this.currentTheme);
     }
     
