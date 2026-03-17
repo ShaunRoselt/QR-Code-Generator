@@ -119,9 +119,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Close sidebar when navigating on mobile
+    // Handle navigation clicks
     document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const route = item.getAttribute('data-route');
+            router.navigate(route);
+            
+            // Close sidebar when navigating on mobile
             if (window.innerWidth <= 768) {
                 sidebar.classList.remove('open');
             }

@@ -3,7 +3,7 @@ const HomePage = {
     render() {
         return `
             <div class="content-header">
-                <h1 class="content-title">All Tools</h1>
+                <h1 class="content-title">Home</h1>
                 <p class="content-subtitle">Select a QR code type to get started</p>
             </div>
             
@@ -34,7 +34,7 @@ const HomePage = {
         ];
         
         return tools.map(tool => `
-            <a href="#/${tool.id}" class="tool-card" data-tool="${tool.id}">
+            <a href="?page=${tool.id}" class="tool-card" data-tool="${tool.id}" data-route="/${tool.id}">
                 <div class="tool-icon">
                     <i class="bi ${tool.icon}"></i>
                 </div>
@@ -64,5 +64,14 @@ const HomePage = {
                 });
             });
         }
+        
+        // Handle tool card clicks
+        document.querySelectorAll('.tool-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                e.preventDefault();
+                const route = card.getAttribute('data-route');
+                router.navigate(route);
+            });
+        });
     }
 };

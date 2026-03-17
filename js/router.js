@@ -1,10 +1,10 @@
-// Simple SPA Router
+// Simple SPA Router with Query Parameters
 class Router {
     constructor() {
         this.routes = {};
         this.currentRoute = null;
         
-        window.addEventListener('hashchange', () => this.handleRoute());
+        window.addEventListener('popstate', () => this.handleRoute());
         window.addEventListener('load', () => this.handleRoute());
     }
     
@@ -13,16 +13,21 @@ class Router {
     }
     
     navigate(path) {
-        window.location.hash = path;
+        const url = path === '/' ? window.location.pathname : `${window.location.pathname}?page=${path.slice(1)}`;
+        window.history.pushState({}, '', url);
+        this.handleRoute();
     }
     
     handleRoute() {
-        const hash = window.location.hash.slice(1) || '/';
-        const route = this.routes[hash] || this.routes['/'];
+        const params = new URLSearchParams(window.location.search);
+        const page = params.get('page');
+        const route = page ? `/${page}` : '/';
         
-        if (route) {
-            this.currentRoute = hash;
-            route();
+        const handler = this.routes[route] || this.routes['/'];
+        
+        if (handler) {
+            this.currentRoute = route;
+            handler();
         }
     }
     
