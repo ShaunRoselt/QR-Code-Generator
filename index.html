@@ -3,568 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Professional QR Code Generator - Create custom QR codes for URLs, text, email, phone, SMS, WiFi, and vCard">
-    <title>QR Code Generator - Create Custom QR Codes</title>
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="description" content="Professional QR Code Generator - Create custom QR codes">
+    <title>QR Code Generator</title>
     
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="#">
-                <i class="bi bi-qr-code-scan me-2 fs-3"></i>
-                <span class="fw-bold">QR Code Generator</span>
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#features">Features</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#howto">How to Use</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#about">About</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <section class="hero-section py-5 text-center">
-        <div class="container">
-            <h1 class="display-4 fw-bold mb-3">Create Professional QR Codes</h1>
-            <p class="lead text-muted mb-4">Generate custom QR codes for URLs, text, contacts, WiFi, and more - completely free!</p>
-            <div class="d-flex justify-content-center gap-3 flex-wrap">
-                <span class="badge bg-primary-subtle text-primary px-3 py-2"><i class="bi bi-check-circle-fill me-1"></i>Easy to Use</span>
-                <span class="badge bg-success-subtle text-success px-3 py-2"><i class="bi bi-check-circle-fill me-1"></i>Multiple Formats</span>
-                <span class="badge bg-info-subtle text-info px-3 py-2"><i class="bi bi-check-circle-fill me-1"></i>Customizable</span>
-                <span class="badge bg-warning-subtle text-warning px-3 py-2"><i class="bi bi-check-circle-fill me-1"></i>Free Forever</span>
-            </div>
-        </div>
-    </section>
-
-    <!-- Main Content -->
-    <section class="py-5">
-        <div class="container">
-            <div class="row g-4">
-                <!-- Input Section -->
-                <div class="col-lg-7">
-                    <div class="card shadow-sm">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i>QR Code Content</h5>
-                        </div>
-                        <div class="card-body">
-                            <!-- QR Code Type Selection -->
-                            <div class="mb-4">
-                                <label class="form-label fw-bold">Select QR Code Type</label>
-                                <div class="btn-group-vertical w-100" role="group">
-                                    <input type="radio" class="btn-check" name="qrType" id="typeUrl" value="url" checked>
-                                    <label class="btn btn-outline-primary text-start" for="typeUrl">
-                                        <i class="bi bi-link-45deg me-2"></i>URL / Website
-                                    </label>
-
-                                    <input type="radio" class="btn-check" name="qrType" id="typeText" value="text">
-                                    <label class="btn btn-outline-primary text-start" for="typeText">
-                                        <i class="bi bi-fonts me-2"></i>Plain Text
-                                    </label>
-
-                                    <input type="radio" class="btn-check" name="qrType" id="typeEmail" value="email">
-                                    <label class="btn btn-outline-primary text-start" for="typeEmail">
-                                        <i class="bi bi-envelope me-2"></i>Email
-                                    </label>
-
-                                    <input type="radio" class="btn-check" name="qrType" id="typePhone" value="phone">
-                                    <label class="btn btn-outline-primary text-start" for="typePhone">
-                                        <i class="bi bi-telephone me-2"></i>Phone Number
-                                    </label>
-
-                                    <input type="radio" class="btn-check" name="qrType" id="typeSms" value="sms">
-                                    <label class="btn btn-outline-primary text-start" for="typeSms">
-                                        <i class="bi bi-chat-dots me-2"></i>SMS
-                                    </label>
-
-                                    <input type="radio" class="btn-check" name="qrType" id="typeWhatsapp" value="whatsapp">
-                                    <label class="btn btn-outline-primary text-start" for="typeWhatsapp">
-                                        <i class="bi bi-whatsapp me-2"></i>WhatsApp
-                                    </label>
-
-                                    <input type="radio" class="btn-check" name="qrType" id="typeWifi" value="wifi">
-                                    <label class="btn btn-outline-primary text-start" for="typeWifi">
-                                        <i class="bi bi-wifi me-2"></i>WiFi
-                                    </label>
-
-                                    <input type="radio" class="btn-check" name="qrType" id="typeLocation" value="location">
-                                    <label class="btn btn-outline-primary text-start" for="typeLocation">
-                                        <i class="bi bi-geo-alt me-2"></i>Location
-                                    </label>
-
-                                    <input type="radio" class="btn-check" name="qrType" id="typeEvent" value="event">
-                                    <label class="btn btn-outline-primary text-start" for="typeEvent">
-                                        <i class="bi bi-calendar-event me-2"></i>Calendar Event
-                                    </label>
-
-                                    <input type="radio" class="btn-check" name="qrType" id="typeAppstore" value="appstore">
-                                    <label class="btn btn-outline-primary text-start" for="typeAppstore">
-                                        <i class="bi bi-shop me-2"></i>App Store Link
-                                    </label>
-
-                                    <input type="radio" class="btn-check" name="qrType" id="typeSocial" value="socialmedia">
-                                    <label class="btn btn-outline-primary text-start" for="typeSocial">
-                                        <i class="bi bi-share me-2"></i>Social Media
-                                    </label>
-
-                                    <input type="radio" class="btn-check" name="qrType" id="typeVcard" value="vcard">
-                                    <label class="btn btn-outline-primary text-start" for="typeVcard">
-                                        <i class="bi bi-person-vcard me-2"></i>vCard (Contact)
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Dynamic Input Forms -->
-                            <div id="inputForms">
-                                <!-- URL Form -->
-                                <div id="urlForm" class="input-form">
-                                    <div class="mb-3">
-                                        <label for="urlInput" class="form-label">Website URL</label>
-                                        <input type="url" class="form-control" id="urlInput" placeholder="https://example.com">
-                                    </div>
-                                </div>
-
-                                <!-- Text Form -->
-                                <div id="textForm" class="input-form d-none">
-                                    <div class="mb-3">
-                                        <label for="textInput" class="form-label">Text Content</label>
-                                        <textarea class="form-control" id="textInput" rows="4" placeholder="Enter your text here..."></textarea>
-                                    </div>
-                                </div>
-
-                                <!-- Email Form -->
-                                <div id="emailForm" class="input-form d-none">
-                                    <div class="mb-3">
-                                        <label for="emailInput" class="form-label">Email Address</label>
-                                        <input type="email" class="form-control" id="emailInput" placeholder="example@email.com">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="emailSubject" class="form-label">Subject (optional)</label>
-                                        <input type="text" class="form-control" id="emailSubject" placeholder="Email subject">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="emailBody" class="form-label">Message (optional)</label>
-                                        <textarea class="form-control" id="emailBody" rows="3" placeholder="Email message"></textarea>
-                                    </div>
-                                </div>
-
-                                <!-- Phone Form -->
-                                <div id="phoneForm" class="input-form d-none">
-                                    <div class="mb-3">
-                                        <label for="phoneInput" class="form-label">Phone Number</label>
-                                        <input type="tel" class="form-control" id="phoneInput" placeholder="+1234567890">
-                                    </div>
-                                </div>
-
-                                <!-- SMS Form -->
-                                <div id="smsForm" class="input-form d-none">
-                                    <div class="mb-3">
-                                        <label for="smsPhone" class="form-label">Phone Number</label>
-                                        <input type="tel" class="form-control" id="smsPhone" placeholder="+1234567890">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="smsMessage" class="form-label">Message</label>
-                                        <textarea class="form-control" id="smsMessage" rows="3" placeholder="Your SMS message"></textarea>
-                                    </div>
-                                </div>
-
-                                <!-- WhatsApp Form -->
-                                <div id="whatsappForm" class="input-form d-none">
-                                    <div class="mb-3">
-                                        <label for="whatsappPhone" class="form-label">Phone Number (with country code)</label>
-                                        <input type="tel" class="form-control" id="whatsappPhone" placeholder="1234567890">
-                                        <small class="text-muted">Don't include + or - symbols, just numbers</small>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="whatsappMessage" class="form-label">Pre-filled Message (optional)</label>
-                                        <textarea class="form-control" id="whatsappMessage" rows="3" placeholder="Hello!"></textarea>
-                                    </div>
-                                </div>
-
-                                <!-- WiFi Form -->
-                                <div id="wifiForm" class="input-form d-none">
-                                    <div class="mb-3">
-                                        <label for="wifiSsid" class="form-label">Network Name (SSID)</label>
-                                        <input type="text" class="form-control" id="wifiSsid" placeholder="MyWiFiNetwork">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="wifiPassword" class="form-label">Password</label>
-                                        <input type="text" class="form-control" id="wifiPassword" placeholder="WiFi password">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="wifiEncryption" class="form-label">Security Type</label>
-                                        <select class="form-select" id="wifiEncryption">
-                                            <option value="WPA">WPA/WPA2</option>
-                                            <option value="WEP">WEP</option>
-                                            <option value="nopass">None</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" id="wifiHidden">
-                                        <label class="form-check-label" for="wifiHidden">
-                                            Hidden Network
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <!-- Location Form -->
-                                <div id="locationForm" class="input-form d-none">
-                                    <div class="mb-3">
-                                        <label for="locationLat" class="form-label">Latitude</label>
-                                        <input type="text" class="form-control" id="locationLat" placeholder="37.7749">
-                                        <small class="text-muted">Example: 37.7749 (San Francisco)</small>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="locationLng" class="form-label">Longitude</label>
-                                        <input type="text" class="form-control" id="locationLng" placeholder="-122.4194">
-                                        <small class="text-muted">Example: -122.4194 (San Francisco)</small>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="locationName" class="form-label">Location Name (optional)</label>
-                                        <input type="text" class="form-control" id="locationName" placeholder="San Francisco">
-                                    </div>
-                                </div>
-
-                                <!-- Calendar Event Form -->
-                                <div id="eventForm" class="input-form d-none">
-                                    <div class="mb-3">
-                                        <label for="eventTitle" class="form-label">Event Title</label>
-                                        <input type="text" class="form-control" id="eventTitle" placeholder="Team Meeting">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="eventLocation" class="form-label">Location (optional)</label>
-                                        <input type="text" class="form-control" id="eventLocation" placeholder="Conference Room A">
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label for="eventStart" class="form-label">Start Date & Time</label>
-                                            <input type="datetime-local" class="form-control" id="eventStart">
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label for="eventEnd" class="form-label">End Date & Time</label>
-                                            <input type="datetime-local" class="form-control" id="eventEnd">
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="eventDescription" class="form-label">Description (optional)</label>
-                                        <textarea class="form-control" id="eventDescription" rows="3" placeholder="Event details"></textarea>
-                                    </div>
-                                </div>
-
-                                <!-- App Store Form -->
-                                <div id="appstoreForm" class="input-form d-none">
-                                    <div class="mb-3">
-                                        <label for="appstorePlatform" class="form-label">Select Platform</label>
-                                        <select class="form-select" id="appstorePlatform">
-                                            <option value="googleplay">Google Play Store (Android)</option>
-                                            <option value="appstore">Apple App Store (iOS)</option>
-                                            <option value="microsoft">Microsoft Store (Windows)</option>
-                                            <option value="steam">Steam</option>
-                                            <option value="amazonappstore">Amazon Appstore</option>
-                                            <option value="custom">Custom App Store URL</option>
-                                        </select>
-                                    </div>
-                                    <div id="appIdFields">
-                                        <div class="mb-3" id="googlePlayFields">
-                                            <label for="appPackageName" class="form-label">Package Name / App ID</label>
-                                            <input type="text" class="form-control" id="appPackageName" placeholder="com.example.app">
-                                            <small class="text-muted">Example: com.whatsapp, com.spotify.music</small>
-                                        </div>
-                                        <div class="mb-3 d-none" id="customUrlField">
-                                            <label for="appCustomUrl" class="form-label">Custom App Store URL</label>
-                                            <input type="url" class="form-control" id="appCustomUrl" placeholder="https://...">
-                                            <small class="text-muted">Enter the full URL to your app</small>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Social Media Form -->
-                                <div id="socialmediaForm" class="input-form d-none">
-                                    <div class="mb-3">
-                                        <label for="socialPlatform" class="form-label">Select Platform</label>
-                                        <select class="form-select" id="socialPlatform">
-                                            <option value="facebook">Facebook</option>
-                                            <option value="instagram">Instagram</option>
-                                            <option value="twitter">Twitter</option>
-                                            <option value="x">X (formerly Twitter)</option>
-                                            <option value="linkedin">LinkedIn</option>
-                                            <option value="tiktok">TikTok</option>
-                                            <option value="youtube">YouTube</option>
-                                            <option value="snapchat">Snapchat</option>
-                                            <option value="pinterest">Pinterest</option>
-                                            <option value="reddit">Reddit</option>
-                                            <option value="discord">Discord (invite link)</option>
-                                            <option value="telegram">Telegram</option>
-                                            <option value="threads">Threads</option>
-                                            <option value="github">GitHub</option>
-                                            <option value="twitch">Twitch</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="socialUsername" class="form-label">Username / Handle / Invite Link</label>
-                                        <input type="text" class="form-control" id="socialUsername" placeholder="username">
-                                        <small class="text-muted" id="socialHint">Enter your username without @ symbol</small>
-                                    </div>
-                                </div>
-
-                                <!-- vCard Form -->
-                                <div id="vcardForm" class="input-form d-none">
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label for="vcardFirstName" class="form-label">First Name</label>
-                                            <input type="text" class="form-control" id="vcardFirstName" placeholder="John">
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label for="vcardLastName" class="form-label">Last Name</label>
-                                            <input type="text" class="form-control" id="vcardLastName" placeholder="Doe">
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="vcardOrg" class="form-label">Organization (optional)</label>
-                                        <input type="text" class="form-control" id="vcardOrg" placeholder="Company Name">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="vcardPhone" class="form-label">Phone (optional)</label>
-                                        <input type="tel" class="form-control" id="vcardPhone" placeholder="+1234567890">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="vcardEmail" class="form-label">Email (optional)</label>
-                                        <input type="email" class="form-control" id="vcardEmail" placeholder="john@example.com">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="vcardUrl" class="form-label">Website (optional)</label>
-                                        <input type="url" class="form-control" id="vcardUrl" placeholder="https://example.com">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Customization Options -->
-                            <div class="accordion mt-4" id="customizationAccordion">
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#customizationOptions">
-                                            <i class="bi bi-palette me-2"></i>Customization Options
-                                        </button>
-                                    </h2>
-                                    <div id="customizationOptions" class="accordion-collapse collapse" data-bs-parent="#customizationAccordion">
-                                        <div class="accordion-body">
-                                            <div class="row">
-                                                <div class="col-md-6 mb-3">
-                                                    <label for="qrSize" class="form-label">Display Size (pixels)</label>
-                                                    <input type="range" class="form-range" id="qrSize" min="128" max="1024" value="256" step="64">
-                                                    <div class="text-center"><span id="qrSizeValue">256</span>px</div>
-                                                    <small class="text-muted">Size displayed on screen (downloads can be larger)</small>
-                                                </div>
-                                                <div class="col-md-6 mb-3">
-                                                    <label for="errorCorrection" class="form-label">Error Correction</label>
-                                                    <select class="form-select" id="errorCorrection">
-                                                        <option value="L">Low (7%)</option>
-                                                        <option value="M" selected>Medium (15%)</option>
-                                                        <option value="Q">Quartile (25%)</option>
-                                                        <option value="H">High (30%)</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <div class="col-md-6 mb-3">
-                                                    <label for="foregroundColor" class="form-label">Foreground Color</label>
-                                                    <input type="color" class="form-control form-control-color w-100" id="foregroundColor" value="#000000">
-                                                </div>
-                                                <div class="col-md-6 mb-3">
-                                                    <label for="backgroundColor" class="form-label">Background Color</label>
-                                                    <input type="color" class="form-control form-control-color w-100" id="backgroundColor" value="#ffffff">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Generate Button -->
-                            <div class="d-grid mt-4">
-                                <button class="btn btn-primary btn-lg" id="generateBtn">
-                                    <i class="bi bi-qr-code me-2"></i>Generate QR Code
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Output Section -->
-                <div class="col-lg-5">
-                    <div class="card shadow-sm sticky-top" style="top: 20px;">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="mb-0"><i class="bi bi-check-circle me-2"></i>Your QR Code</h5>
-                        </div>
-                        <div class="card-body text-center">
-                            <div id="qrcode" class="qr-code-container mb-3"></div>
-                            <div id="qrPlaceholder" class="qr-placeholder">
-                                <i class="bi bi-qr-code display-1 text-muted"></i>
-                                <p class="text-muted mt-3">Your QR code will appear here</p>
-                            </div>
-                            <div id="downloadSection" class="d-none">
-                                <div class="mb-3">
-                                    <label for="exportSize" class="form-label fw-bold">Export Size</label>
-                                    <select class="form-select mb-2" id="exportSize">
-                                        <option value="1920">1080p Full HD (1920x1920)</option>
-                                        <option value="2560">1440p Quad HD (2560x2560)</option>
-                                        <option value="3840" selected>4K Ultra HD (3840x3840)</option>
-                                        <option value="7680">8K Ultra HD (7680x7680)</option>
-                                    </select>
-                                </div>
-                                <button class="btn btn-success w-100 mb-2" id="downloadPng">
-                                    <i class="bi bi-download me-2"></i>Download PNG
-                                </button>
-                                <button class="btn btn-outline-success w-100" id="downloadSvg">
-                                    <i class="bi bi-filetype-svg me-2"></i>Download SVG
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Features Section -->
-    <section id="features" class="py-5 bg-light">
-        <div class="container">
-            <h2 class="text-center mb-5">Features</h2>
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center">
-                            <i class="bi bi-lightning-charge-fill text-primary display-4"></i>
-                            <h5 class="card-title mt-3">Fast Generation</h5>
-                            <p class="card-text">Generate QR codes instantly with our optimized algorithm</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center">
-                            <i class="bi bi-palette-fill text-success display-4"></i>
-                            <h5 class="card-title mt-3">Customizable</h5>
-                            <p class="card-text">Choose colors, size, and error correction level</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center">
-                            <i class="bi bi-phone-fill text-info display-4"></i>
-                            <h5 class="card-title mt-3">Mobile Friendly</h5>
-                            <p class="card-text">Works perfectly on all devices and screen sizes</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center">
-                            <i class="bi bi-shield-check text-warning display-4"></i>
-                            <h5 class="card-title mt-3">Privacy First</h5>
-                            <p class="card-text">All processing happens in your browser - no data sent to servers</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center">
-                            <i class="bi bi-infinity text-danger display-4"></i>
-                            <h5 class="card-title mt-3">Unlimited Use</h5>
-                            <p class="card-text">Create as many QR codes as you need, completely free</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body text-center">
-                            <i class="bi bi-download text-primary display-4"></i>
-                            <h5 class="card-title mt-3">Multiple Formats</h5>
-                            <p class="card-text">Download your QR codes as PNG or SVG files</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- How to Use Section -->
-    <section id="howto" class="py-5">
-        <div class="container">
-            <h2 class="text-center mb-5">How to Use</h2>
-            <div class="row g-4">
-                <div class="col-md-3 text-center">
-                    <div class="step-number">1</div>
-                    <h5 class="mt-3">Choose Type</h5>
-                    <p class="text-muted">Select the type of QR code you want to create</p>
-                </div>
-                <div class="col-md-3 text-center">
-                    <div class="step-number">2</div>
-                    <h5 class="mt-3">Enter Content</h5>
-                    <p class="text-muted">Fill in the required information</p>
-                </div>
-                <div class="col-md-3 text-center">
-                    <div class="step-number">3</div>
-                    <h5 class="mt-3">Customize</h5>
-                    <p class="text-muted">Adjust colors, size, and settings (optional)</p>
-                </div>
-                <div class="col-md-3 text-center">
-                    <div class="step-number">4</div>
-                    <h5 class="mt-3">Download</h5>
-                    <p class="text-muted">Generate and download your QR code</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- About Section -->
-    <section id="about" class="py-5 bg-light">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-8 text-center">
-                    <h2 class="mb-4">About This QR Code Generator</h2>
-                    <p class="lead">This is a free, open-source QR code generator that runs entirely in your browser. No data is sent to any server, ensuring your privacy and security.</p>
-                    <p class="text-muted">QR codes (Quick Response codes) are two-dimensional barcodes that can store various types of information. They can be scanned by smartphones and other devices to quickly access websites, contact information, WiFi networks, and more.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="bg-dark text-white py-4">
-        <div class="container text-center">
-            <p class="mb-2">&copy; 2024 QR Code Generator. Open Source & Free to Use.</p>
-            <p class="mb-0 text-muted">Built with <i class="bi bi-heart-fill text-danger"></i> using Bootstrap</p>
-        </div>
-    </footer>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
     <!-- QR Code Library -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     
-    <!-- Custom JS -->
-    <script src="script.js"></script>
+    <!-- App Styles -->
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body data-theme="dark">
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <button class="menu-toggle" id="menuToggle">
+            <i class="bi bi-list"></i>
+        </button>
+        <div class="app-title">
+            <i class="bi bi-qr-code-scan"></i>
+            <span>QR Code Generator</span>
+        </div>
+        <div class="top-bar-actions">
+            <button class="theme-indicator" id="themeIndicator"></button>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <nav class="sidebar-nav">
+                <a href="#/" class="nav-item active" data-route="/">
+                    <i class="bi bi-house-door"></i>
+                    <span>All Tools</span>
+                </a>
+                
+                <div class="nav-category">
+                    <div class="category-header">
+                        <i class="bi bi-grid"></i>
+                        <span>QR Code Modes</span>
+                    </div>
+                    <div class="category-items">
+                        <a href="#/url" class="nav-item" data-route="/url">
+                            <i class="bi bi-link-45deg"></i>
+                            <span>URL / Website</span>
+                        </a>
+                        <a href="#/text" class="nav-item" data-route="/text">
+                            <i class="bi bi-fonts"></i>
+                            <span>Plain Text</span>
+                        </a>
+                        <a href="#/email" class="nav-item" data-route="/email">
+                            <i class="bi bi-envelope"></i>
+                            <span>Email</span>
+                        </a>
+                        <a href="#/phone" class="nav-item" data-route="/phone">
+                            <i class="bi bi-telephone"></i>
+                            <span>Phone</span>
+                        </a>
+                        <a href="#/sms" class="nav-item" data-route="/sms">
+                            <i class="bi bi-chat-dots"></i>
+                            <span>SMS</span>
+                        </a>
+                        <a href="#/whatsapp" class="nav-item" data-route="/whatsapp">
+                            <i class="bi bi-whatsapp"></i>
+                            <span>WhatsApp</span>
+                        </a>
+                        <a href="#/wifi" class="nav-item" data-route="/wifi">
+                            <i class="bi bi-wifi"></i>
+                            <span>WiFi</span>
+                        </a>
+                        <a href="#/location" class="nav-item" data-route="/location">
+                            <i class="bi bi-geo-alt"></i>
+                            <span>Location</span>
+                        </a>
+                        <a href="#/event" class="nav-item" data-route="/event">
+                            <i class="bi bi-calendar-event"></i>
+                            <span>Calendar Event</span>
+                        </a>
+                        <a href="#/appstore" class="nav-item" data-route="/appstore">
+                            <i class="bi bi-shop"></i>
+                            <span>App Store</span>
+                        </a>
+                        <a href="#/social" class="nav-item" data-route="/social">
+                            <i class="bi bi-share"></i>
+                            <span>Social Media</span>
+                        </a>
+                        <a href="#/vcard" class="nav-item" data-route="/vcard">
+                            <i class="bi bi-person-vcard"></i>
+                            <span>vCard</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <a href="#/settings" class="nav-item" data-route="/settings">
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <!-- Content will be loaded here dynamically -->
+        </main>
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="js/theme.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/qr-utils.js"></script>
+    
+    <!-- QR Mode Modules -->
+    <script src="modules/home.js"></script>
+    <script src="modules/settings.js"></script>
+    <script src="modules/qr-modes/url.js"></script>
+    <script src="modules/qr-modes/text.js"></script>
+    <script src="modules/qr-modes/email.js"></script>
+    <script src="modules/qr-modes/phone.js"></script>
+    <script src="modules/qr-modes/sms.js"></script>
+    <script src="modules/qr-modes/whatsapp.js"></script>
+    <script src="modules/qr-modes/wifi.js"></script>
+    <script src="modules/qr-modes/location.js"></script>
+    <script src="modules/qr-modes/event.js"></script>
+    <script src="modules/qr-modes/appstore.js"></script>
+    <script src="modules/qr-modes/social.js"></script>
+    <script src="modules/qr-modes/vcard.js"></script>
+    
+    <!-- App Initialization -->
+    <script src="js/app.js"></script>
 </body>
 </html>

@@ -50,3 +50,9 @@ out/
 .env
 .env.local
 .env.*.local
+
+# Old files
+*.html.backup
+*.css.backup
+*.js.backup
+create-modules.sh
