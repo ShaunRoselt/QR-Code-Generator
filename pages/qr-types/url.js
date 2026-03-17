@@ -31,20 +31,7 @@ const URLMode = {
                             </select>
                         </div>
                         
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="bi bi-border-all"></i>
-                                Frame Style
-                            </label>
-                            <select class="form-select" id="frameSelect">
-                                <option value="none">None</option>
-                                <option value="square">Square Border</option>
-                                <option value="rounded">Rounded Corners</option>
-                                <option value="circle">Circle</option>
-                                <option value="badge">Badge</option>
-                                <option value="scanme">Scan Me Banner</option>
-                            </select>
-                        </div>
+                        ${QRFrames.getFrameSelector()}
                     </div>
                     
                     <div class="qr-preview-section">
@@ -89,10 +76,26 @@ const URLMode = {
     init() {
         const urlInput = document.getElementById('urlInput');
         const errorCorrection = document.getElementById('errorCorrection');
-        const frameSelect = document.getElementById('frameSelect');
         const DISPLAY_SIZE = 300; // Fixed size for QR display
         
         let currentQRCanvas = null;
+        let selectedFrame = 'none';
+        
+        // Frame card selector handler
+        const frameCards = document.querySelectorAll('.frame-card');
+        frameCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // Update active state
+                frameCards.forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                
+                // Get selected frame
+                selectedFrame = card.dataset.frame;
+                
+                // Auto-generate with new frame
+                autoGenerate();
+            });
+        });
         
         // Auto-generate function
         const autoGenerate = () => {
@@ -111,7 +114,7 @@ const URLMode = {
             }
             
             const errorCorrectionLevel = errorCorrection.value;
-            const frameType = frameSelect.value;
+            const frameType = selectedFrame;
             
             // Generate QR code
             const qrContainer = document.getElementById('qrcode');
@@ -147,12 +150,11 @@ const URLMode = {
         // Auto-generate on input
         urlInput.addEventListener('input', autoGenerate);
         errorCorrection.addEventListener('change', autoGenerate);
-        frameSelect.addEventListener('change', autoGenerate);
         
         // Download handlers
         document.getElementById('downloadPng').addEventListener('click', () => {
             const exportSize = parseInt(document.getElementById('exportSize').value);
-            const frameType = frameSelect.value;
+            const frameType = selectedFrame;
             let url = urlInput.value.trim();
             if (!url.match(/^https?:\/\//i)) {
                 url = 'https://' + url;
@@ -186,7 +188,7 @@ const URLMode = {
         
         document.getElementById('downloadSvg').addEventListener('click', () => {
             const exportSize = parseInt(document.getElementById('exportSize').value);
-            const frameType = frameSelect.value;
+            const frameType = selectedFrame;
             let url = urlInput.value.trim();
             if (!url.match(/^https?:\/\//i)) {
                 url = 'https://' + url;
