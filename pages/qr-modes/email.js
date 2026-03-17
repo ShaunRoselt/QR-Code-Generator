@@ -5,7 +5,7 @@ const EmailMode = {
             <div class="qr-mode-page">
                 <div class="content-header">
                     <h1 class="content-title">Email</h1>
-                    <p class="content-subtitle">Create Email QR codes</p>
+                    <p class="content-subtitle">Create QR codes for email addresses</p>
                 </div>
                 
                 <div class="qr-content-wrapper">
@@ -16,8 +16,19 @@ const EmailMode = {
                         </h2>
                         
                         <div class="form-group">
-                            <label class="form-label">Content</label>
-                            <input type="text" class="form-input" id="contentInput" placeholder="Enter content">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-input" id="emailInput" placeholder="example@email.com">
+                            <div class="form-hint">Enter the recipient email address</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Subject (Optional)</label>
+                            <input type="text" class="form-input" id="subjectInput" placeholder="Email subject">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Message Body (Optional)</label>
+                            <textarea class="form-input" id="bodyInput" rows="4" placeholder="Enter your message"></textarea>
                         </div>
                         
                         <div class="form-group">
@@ -26,10 +37,15 @@ const EmailMode = {
                             <div class="form-hint" id="sizeValue">256px</div>
                         </div>
                         
-                        <button class="btn btn-primary btn-block" id="generateBtn">
-                            <i class="bi bi-qr-code"></i>
-                            Generate QR Code
-                        </button>
+                        <div class="form-group">
+                            <label class="form-label">Error Correction</label>
+                            <select class="form-select" id="errorCorrection">
+                                <option value="L">Low (7%)</option>
+                                <option value="M" selected>Medium (15%)</option>
+                                <option value="Q">Quartile (25%)</option>
+                                <option value="H">High (30%)</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <div class="qr-preview-section">
@@ -41,7 +57,7 @@ const EmailMode = {
                         <div class="qr-display">
                             <div class="qr-placeholder" id="qrPlaceholder">
                                 <i class="bi bi-qr-code"></i>
-                                <p>Your QR code will appear here</p>
+                                <p>Enter an email address to generate QR code</p>
                             </div>
                             <div id="qrcode"></div>
                         </div>
@@ -74,31 +90,66 @@ const EmailMode = {
     init() {
         const sizeSlider = document.getElementById('qrSize');
         const sizeValue = document.getElementById('sizeValue');
+        const emailInput = document.getElementById('emailInput');
+        const subjectInput = document.getElementById('subjectInput');
+        const bodyInput = document.getElementById('bodyInput');
+        const errorCorrection = document.getElementById('errorCorrection');
         
-        sizeSlider.addEventListener('input', () => {
-            sizeValue.textContent = sizeSlider.value + 'px';
-        });
-        
-        document.getElementById('generateBtn').addEventListener('click', () => {
-            const content = document.getElementById('contentInput').value.trim();
-            if (!content) {
-                alert('Please enter content');
+        // Auto-generate function
+        const autoGenerate = () => {
+            const email = emailInput.value.trim();
+            if (!email) {
+                // Hide QR code and download options if email is empty
+                document.getElementById('qrcode').innerHTML = '';
+                document.getElementById('qrPlaceholder').style.display = 'block';
+                document.getElementById('downloadOptions').classList.add('d-none');
                 return;
             }
             
-            const size = parseInt(sizeSlider.value);
-            generateQRCode(content, 'qrcode', { size });
+            // Build mailto URL
+            let mailtoUrl = `mailto:${email}`;
+            const subject = subjectInput.value.trim();
+            const body = bodyInput.value.trim();
             
+            const params = [];
+            if (subject) params.push(`subject=${encodeURIComponent(subject)}`);
+            if (body) params.push(`body=${encodeURIComponent(body)}`);
+            
+            if (params.length > 0) {
+                mailtoUrl += '?' + params.join('&');
+            }
+            
+            const size = parseInt(sizeSlider.value);
+            const errorCorrectionLevel = errorCorrection.value;
+            
+            generateQRCode(mailtoUrl, 'qrcode', { size, errorCorrection: errorCorrectionLevel });
+            
+            // Show download options
             document.getElementById('qrPlaceholder').style.display = 'none';
             document.getElementById('downloadOptions').classList.remove('d-none');
+        };
+        
+        // Update size display
+        sizeSlider.addEventListener('input', () => {
+            sizeValue.textContent = sizeSlider.value + 'px';
+            autoGenerate();
         });
         
+        // Auto-generate on input
+        emailInput.addEventListener('input', autoGenerate);
+        subjectInput.addEventListener('input', autoGenerate);
+        bodyInput.addEventListener('input', autoGenerate);
+        errorCorrection.addEventListener('change', autoGenerate);
+        
+        // Download handlers
         document.getElementById('downloadPng').addEventListener('click', () => {
-            downloadQRAsPNG(parseInt(document.getElementById('exportSize').value));
+            const exportSize = parseInt(document.getElementById('exportSize').value);
+            downloadQRAsPNG(exportSize);
         });
         
         document.getElementById('downloadSvg').addEventListener('click', () => {
-            downloadQRAsSVG(parseInt(document.getElementById('exportSize').value));
+            const exportSize = parseInt(document.getElementById('exportSize').value);
+            downloadQRAsSVG(exportSize);
         });
     }
 };

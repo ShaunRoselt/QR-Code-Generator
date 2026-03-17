@@ -1,11 +1,11 @@
-// Whatsapp QR Code Module  
+// WhatsApp QR Code Module  
 const WhatsappMode = {
     render() {
         return `
             <div class="qr-mode-page">
                 <div class="content-header">
-                    <h1 class="content-title">Whatsapp</h1>
-                    <p class="content-subtitle">Create Whatsapp QR codes</p>
+                    <h1 class="content-title">WhatsApp</h1>
+                    <p class="content-subtitle">Create QR codes for WhatsApp messages</p>
                 </div>
                 
                 <div class="qr-content-wrapper">
@@ -16,8 +16,14 @@ const WhatsappMode = {
                         </h2>
                         
                         <div class="form-group">
-                            <label class="form-label">Content</label>
-                            <input type="text" class="form-input" id="contentInput" placeholder="Enter content">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-input" id="phoneInput" placeholder="1234567890">
+                            <div class="form-hint">Enter with country code, no + or spaces (e.g., 1234567890 for US)</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Pre-filled Message (Optional)</label>
+                            <textarea class="form-input" id="messageInput" rows="4" placeholder="Enter your message"></textarea>
                         </div>
                         
                         <div class="form-group">
@@ -26,10 +32,15 @@ const WhatsappMode = {
                             <div class="form-hint" id="sizeValue">256px</div>
                         </div>
                         
-                        <button class="btn btn-primary btn-block" id="generateBtn">
-                            <i class="bi bi-qr-code"></i>
-                            Generate QR Code
-                        </button>
+                        <div class="form-group">
+                            <label class="form-label">Error Correction</label>
+                            <select class="form-select" id="errorCorrection">
+                                <option value="L">Low (7%)</option>
+                                <option value="M" selected>Medium (15%)</option>
+                                <option value="Q">Quartile (25%)</option>
+                                <option value="H">High (30%)</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <div class="qr-preview-section">
@@ -41,7 +52,7 @@ const WhatsappMode = {
                         <div class="qr-display">
                             <div class="qr-placeholder" id="qrPlaceholder">
                                 <i class="bi bi-qr-code"></i>
-                                <p>Your QR code will appear here</p>
+                                <p>Enter a phone number to generate QR code</p>
                             </div>
                             <div id="qrcode"></div>
                         </div>
@@ -74,31 +85,62 @@ const WhatsappMode = {
     init() {
         const sizeSlider = document.getElementById('qrSize');
         const sizeValue = document.getElementById('sizeValue');
+        const phoneInput = document.getElementById('phoneInput');
+        const messageInput = document.getElementById('messageInput');
+        const errorCorrection = document.getElementById('errorCorrection');
         
-        sizeSlider.addEventListener('input', () => {
-            sizeValue.textContent = sizeSlider.value + 'px';
-        });
-        
-        document.getElementById('generateBtn').addEventListener('click', () => {
-            const content = document.getElementById('contentInput').value.trim();
-            if (!content) {
-                alert('Please enter content');
+        // Auto-generate function
+        const autoGenerate = () => {
+            let phone = phoneInput.value.trim();
+            if (!phone) {
+                // Hide QR code and download options if phone is empty
+                document.getElementById('qrcode').innerHTML = '';
+                document.getElementById('qrPlaceholder').style.display = 'block';
+                document.getElementById('downloadOptions').classList.add('d-none');
                 return;
             }
             
-            const size = parseInt(sizeSlider.value);
-            generateQRCode(content, 'qrcode', { size });
+            // Remove any + or spaces from phone number
+            phone = phone.replace(/[\+\s]/g, '');
             
+            // Build WhatsApp URL
+            const message = messageInput.value.trim();
+            let whatsappUrl = `https://wa.me/${phone}`;
+            
+            if (message) {
+                whatsappUrl += `?text=${encodeURIComponent(message)}`;
+            }
+            
+            const size = parseInt(sizeSlider.value);
+            const errorCorrectionLevel = errorCorrection.value;
+            
+            generateQRCode(whatsappUrl, 'qrcode', { size, errorCorrection: errorCorrectionLevel });
+            
+            // Show download options
             document.getElementById('qrPlaceholder').style.display = 'none';
             document.getElementById('downloadOptions').classList.remove('d-none');
+        };
+        
+        // Update size display
+        sizeSlider.addEventListener('input', () => {
+            sizeValue.textContent = sizeSlider.value + 'px';
+            autoGenerate();
         });
         
+        // Auto-generate on input
+        phoneInput.addEventListener('input', autoGenerate);
+        messageInput.addEventListener('input', autoGenerate);
+        errorCorrection.addEventListener('change', autoGenerate);
+        
+        // Download handlers
         document.getElementById('downloadPng').addEventListener('click', () => {
-            downloadQRAsPNG(parseInt(document.getElementById('exportSize').value));
+            const exportSize = parseInt(document.getElementById('exportSize').value);
+            downloadQRAsPNG(exportSize);
         });
         
         document.getElementById('downloadSvg').addEventListener('click', () => {
-            downloadQRAsSVG(parseInt(document.getElementById('exportSize').value));
+            const exportSize = parseInt(document.getElementById('exportSize').value);
+            downloadQRAsSVG(exportSize);
         });
     }
 };

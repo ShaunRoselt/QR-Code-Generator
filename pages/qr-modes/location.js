@@ -5,7 +5,7 @@ const LocationMode = {
             <div class="qr-mode-page">
                 <div class="content-header">
                     <h1 class="content-title">Location</h1>
-                    <p class="content-subtitle">Create Location QR codes</p>
+                    <p class="content-subtitle">Create QR codes for geographic locations</p>
                 </div>
                 
                 <div class="qr-content-wrapper">
@@ -16,8 +16,20 @@ const LocationMode = {
                         </h2>
                         
                         <div class="form-group">
-                            <label class="form-label">Content</label>
-                            <input type="text" class="form-input" id="contentInput" placeholder="Enter content">
+                            <label class="form-label">Latitude</label>
+                            <input type="number" class="form-input" id="latitudeInput" placeholder="37.7749" step="0.000001">
+                            <div class="form-hint">Enter latitude (-90 to 90)</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Longitude</label>
+                            <input type="number" class="form-input" id="longitudeInput" placeholder="-122.4194" step="0.000001">
+                            <div class="form-hint">Enter longitude (-180 to 180)</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Location Name (Optional)</label>
+                            <input type="text" class="form-input" id="labelInput" placeholder="San Francisco">
                         </div>
                         
                         <div class="form-group">
@@ -26,10 +38,15 @@ const LocationMode = {
                             <div class="form-hint" id="sizeValue">256px</div>
                         </div>
                         
-                        <button class="btn btn-primary btn-block" id="generateBtn">
-                            <i class="bi bi-qr-code"></i>
-                            Generate QR Code
-                        </button>
+                        <div class="form-group">
+                            <label class="form-label">Error Correction</label>
+                            <select class="form-select" id="errorCorrection">
+                                <option value="L">Low (7%)</option>
+                                <option value="M" selected>Medium (15%)</option>
+                                <option value="Q">Quartile (25%)</option>
+                                <option value="H">High (30%)</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <div class="qr-preview-section">
@@ -41,7 +58,7 @@ const LocationMode = {
                         <div class="qr-display">
                             <div class="qr-placeholder" id="qrPlaceholder">
                                 <i class="bi bi-qr-code"></i>
-                                <p>Your QR code will appear here</p>
+                                <p>Enter coordinates to generate QR code</p>
                             </div>
                             <div id="qrcode"></div>
                         </div>
@@ -74,31 +91,63 @@ const LocationMode = {
     init() {
         const sizeSlider = document.getElementById('qrSize');
         const sizeValue = document.getElementById('sizeValue');
+        const latitudeInput = document.getElementById('latitudeInput');
+        const longitudeInput = document.getElementById('longitudeInput');
+        const labelInput = document.getElementById('labelInput');
+        const errorCorrection = document.getElementById('errorCorrection');
         
-        sizeSlider.addEventListener('input', () => {
-            sizeValue.textContent = sizeSlider.value + 'px';
-        });
-        
-        document.getElementById('generateBtn').addEventListener('click', () => {
-            const content = document.getElementById('contentInput').value.trim();
-            if (!content) {
-                alert('Please enter content');
+        // Auto-generate function
+        const autoGenerate = () => {
+            const latitude = latitudeInput.value.trim();
+            const longitude = longitudeInput.value.trim();
+            
+            if (!latitude || !longitude) {
+                // Hide QR code and download options if coordinates are empty
+                document.getElementById('qrcode').innerHTML = '';
+                document.getElementById('qrPlaceholder').style.display = 'block';
+                document.getElementById('downloadOptions').classList.add('d-none');
                 return;
             }
             
-            const size = parseInt(sizeSlider.value);
-            generateQRCode(content, 'qrcode', { size });
+            // Build geo URL
+            const label = labelInput.value.trim();
+            let geoUrl = `geo:${latitude},${longitude}`;
             
+            if (label) {
+                geoUrl += `?q=${latitude},${longitude}(${encodeURIComponent(label)})`;
+            }
+            
+            const size = parseInt(sizeSlider.value);
+            const errorCorrectionLevel = errorCorrection.value;
+            
+            generateQRCode(geoUrl, 'qrcode', { size, errorCorrection: errorCorrectionLevel });
+            
+            // Show download options
             document.getElementById('qrPlaceholder').style.display = 'none';
             document.getElementById('downloadOptions').classList.remove('d-none');
+        };
+        
+        // Update size display
+        sizeSlider.addEventListener('input', () => {
+            sizeValue.textContent = sizeSlider.value + 'px';
+            autoGenerate();
         });
         
+        // Auto-generate on input
+        latitudeInput.addEventListener('input', autoGenerate);
+        longitudeInput.addEventListener('input', autoGenerate);
+        labelInput.addEventListener('input', autoGenerate);
+        errorCorrection.addEventListener('change', autoGenerate);
+        
+        // Download handlers
         document.getElementById('downloadPng').addEventListener('click', () => {
-            downloadQRAsPNG(parseInt(document.getElementById('exportSize').value));
+            const exportSize = parseInt(document.getElementById('exportSize').value);
+            downloadQRAsPNG(exportSize);
         });
         
         document.getElementById('downloadSvg').addEventListener('click', () => {
-            downloadQRAsSVG(parseInt(document.getElementById('exportSize').value));
+            const exportSize = parseInt(document.getElementById('exportSize').value);
+            downloadQRAsSVG(exportSize);
         });
     }
 };

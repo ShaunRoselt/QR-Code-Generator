@@ -5,7 +5,7 @@ const EventMode = {
             <div class="qr-mode-page">
                 <div class="content-header">
                     <h1 class="content-title">Event</h1>
-                    <p class="content-subtitle">Create Event QR codes</p>
+                    <p class="content-subtitle">Create QR codes for calendar events</p>
                 </div>
                 
                 <div class="qr-content-wrapper">
@@ -16,8 +16,29 @@ const EventMode = {
                         </h2>
                         
                         <div class="form-group">
-                            <label class="form-label">Content</label>
-                            <input type="text" class="form-input" id="contentInput" placeholder="Enter content">
+                            <label class="form-label">Event Title</label>
+                            <input type="text" class="form-input" id="titleInput" placeholder="Meeting with Team">
+                            <div class="form-hint">Enter the event name</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Location (Optional)</label>
+                            <input type="text" class="form-input" id="locationInput" placeholder="Conference Room A">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Description (Optional)</label>
+                            <textarea class="form-input" id="descriptionInput" rows="3" placeholder="Event description"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Start Date & Time</label>
+                            <input type="datetime-local" class="form-input" id="startInput">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">End Date & Time</label>
+                            <input type="datetime-local" class="form-input" id="endInput">
                         </div>
                         
                         <div class="form-group">
@@ -26,10 +47,15 @@ const EventMode = {
                             <div class="form-hint" id="sizeValue">256px</div>
                         </div>
                         
-                        <button class="btn btn-primary btn-block" id="generateBtn">
-                            <i class="bi bi-qr-code"></i>
-                            Generate QR Code
-                        </button>
+                        <div class="form-group">
+                            <label class="form-label">Error Correction</label>
+                            <select class="form-select" id="errorCorrection">
+                                <option value="L">Low (7%)</option>
+                                <option value="M" selected>Medium (15%)</option>
+                                <option value="Q">Quartile (25%)</option>
+                                <option value="H">High (30%)</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <div class="qr-preview-section">
@@ -41,7 +67,7 @@ const EventMode = {
                         <div class="qr-display">
                             <div class="qr-placeholder" id="qrPlaceholder">
                                 <i class="bi bi-qr-code"></i>
-                                <p>Your QR code will appear here</p>
+                                <p>Enter event details to generate QR code</p>
                             </div>
                             <div id="qrcode"></div>
                         </div>
@@ -74,31 +100,89 @@ const EventMode = {
     init() {
         const sizeSlider = document.getElementById('qrSize');
         const sizeValue = document.getElementById('sizeValue');
+        const titleInput = document.getElementById('titleInput');
+        const locationInput = document.getElementById('locationInput');
+        const descriptionInput = document.getElementById('descriptionInput');
+        const startInput = document.getElementById('startInput');
+        const endInput = document.getElementById('endInput');
+        const errorCorrection = document.getElementById('errorCorrection');
         
-        sizeSlider.addEventListener('input', () => {
-            sizeValue.textContent = sizeSlider.value + 'px';
-        });
+        // Helper function to format date to iCal format
+        const formatICalDate = (dateString) => {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        };
         
-        document.getElementById('generateBtn').addEventListener('click', () => {
-            const content = document.getElementById('contentInput').value.trim();
-            if (!content) {
-                alert('Please enter content');
+        // Auto-generate function
+        const autoGenerate = () => {
+            const title = titleInput.value.trim();
+            const start = startInput.value;
+            
+            if (!title || !start) {
+                // Hide QR code and download options if required fields are empty
+                document.getElementById('qrcode').innerHTML = '';
+                document.getElementById('qrPlaceholder').style.display = 'block';
+                document.getElementById('downloadOptions').classList.add('d-none');
                 return;
             }
             
-            const size = parseInt(sizeSlider.value);
-            generateQRCode(content, 'qrcode', { size });
+            const location = locationInput.value.trim();
+            const description = descriptionInput.value.trim();
+            const end = endInput.value || start;
             
+            // Build vEvent/iCal format
+            let vEvent = 'BEGIN:VCALENDAR\n';
+            vEvent += 'VERSION:2.0\n';
+            vEvent += 'BEGIN:VEVENT\n';
+            vEvent += `SUMMARY:${title}\n`;
+            vEvent += `DTSTART:${formatICalDate(start)}\n`;
+            vEvent += `DTEND:${formatICalDate(end)}\n`;
+            
+            if (location) {
+                vEvent += `LOCATION:${location}\n`;
+            }
+            
+            if (description) {
+                vEvent += `DESCRIPTION:${description}\n`;
+            }
+            
+            vEvent += 'END:VEVENT\n';
+            vEvent += 'END:VCALENDAR';
+            
+            const size = parseInt(sizeSlider.value);
+            const errorCorrectionLevel = errorCorrection.value;
+            
+            generateQRCode(vEvent, 'qrcode', { size, errorCorrection: errorCorrectionLevel });
+            
+            // Show download options
             document.getElementById('qrPlaceholder').style.display = 'none';
             document.getElementById('downloadOptions').classList.remove('d-none');
+        };
+        
+        // Update size display
+        sizeSlider.addEventListener('input', () => {
+            sizeValue.textContent = sizeSlider.value + 'px';
+            autoGenerate();
         });
         
+        // Auto-generate on input
+        titleInput.addEventListener('input', autoGenerate);
+        locationInput.addEventListener('input', autoGenerate);
+        descriptionInput.addEventListener('input', autoGenerate);
+        startInput.addEventListener('change', autoGenerate);
+        endInput.addEventListener('change', autoGenerate);
+        errorCorrection.addEventListener('change', autoGenerate);
+        
+        // Download handlers
         document.getElementById('downloadPng').addEventListener('click', () => {
-            downloadQRAsPNG(parseInt(document.getElementById('exportSize').value));
+            const exportSize = parseInt(document.getElementById('exportSize').value);
+            downloadQRAsPNG(exportSize);
         });
         
         document.getElementById('downloadSvg').addEventListener('click', () => {
-            downloadQRAsSVG(parseInt(document.getElementById('exportSize').value));
+            const exportSize = parseInt(document.getElementById('exportSize').value);
+            downloadQRAsSVG(exportSize);
         });
     }
 };
