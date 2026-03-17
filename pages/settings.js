@@ -1,7 +1,16 @@
 // Settings Page Module
 const SettingsPage = {
-    render() {
+    appInfo: null,
+    
+    async render() {
         const currentTheme = themeManager.getTheme();
+        
+        // Fetch app info from package.json
+        await this.loadAppInfo();
+        
+        const versionInfo = this.appInfo ? 
+            `Version ${this.appInfo.version} | RELEASE | ${this.appInfo.releaseDate}` :
+            'Loading...';
         
         return `
             <div class="content-header">
@@ -74,14 +83,14 @@ const SettingsPage = {
                         </div>
                         <div class="setting-info">
                             <div class="setting-label">QR Code Generator</div>
-                            <div class="setting-description">Version 2.0.0 | RELEASE | ${new Date().toLocaleDateString()}</div>
+                            <div class="setting-description" id="versionInfo">${versionInfo}</div>
                         </div>
                     </div>
                     <div class="setting-right">
-                        <button class="icon-btn" title="Copy">
+                        <button class="icon-btn" id="copyInfoBtn" title="Copy System Info">
                             <i class="bi bi-clipboard"></i>
                         </button>
-                        <button class="icon-btn" title="Open">
+                        <button class="icon-btn" id="releaseNotesBtn" title="Release Notes">
                             <i class="bi bi-box-arrow-up-right"></i>
                         </button>
                     </div>
@@ -116,7 +125,49 @@ const SettingsPage = {
         `;
     },
     
-    init() {
+    async loadAppInfo() {
+        if (!this.appInfo) {
+            try {
+                const response = await fetch('package.json');
+                this.appInfo = await response.json();
+            } catch (error) {
+                console.error('Failed to load app info:', error);
+                this.appInfo = {
+                    version: '1.0.0',
+                    releaseDate: new Date().toLocaleDateString()
+                };
+            }
+        }
+    },
+    
+    getSystemInfo() {
+        const info = {
+            app: 'QR Code Generator',
+            version: this.appInfo?.version || 'Unknown',
+            releaseDate: this.appInfo?.releaseDate || 'Unknown',
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            language: navigator.language,
+            screenResolution: `${window.screen.width}x${window.screen.height}`,
+            theme: themeManager.getTheme(),
+            timestamp: new Date().toISOString()
+        };
+        
+        return `QR Code Generator - System Information
+        
+App Version: ${info.version}
+Release Date: ${info.releaseDate}
+User Agent: ${info.userAgent}
+Platform: ${info.platform}
+Language: ${info.language}
+Screen Resolution: ${info.screenResolution}
+Current Theme: ${info.theme}
+Timestamp: ${info.timestamp}`;
+    },
+    
+    async init() {
+        await this.loadAppInfo();
+        
         // Theme selector
         const themeSelect = document.getElementById('themeSelect');
         themeSelect.addEventListener('change', (e) => {
@@ -147,6 +198,30 @@ const SettingsPage = {
                 fullscreenToggle.checked = false;
                 toggleLabel.textContent = 'Normal';
             }
+        });
+        
+        // Copy system info button
+        const copyInfoBtn = document.getElementById('copyInfoBtn');
+        copyInfoBtn.addEventListener('click', async () => {
+            const systemInfo = this.getSystemInfo();
+            try {
+                await navigator.clipboard.writeText(systemInfo);
+                // Visual feedback
+                const icon = copyInfoBtn.querySelector('i');
+                icon.className = 'bi bi-check2';
+                setTimeout(() => {
+                    icon.className = 'bi bi-clipboard';
+                }, 2000);
+            } catch (error) {
+                console.error('Failed to copy:', error);
+                alert('Failed to copy to clipboard');
+            }
+        });
+        
+        // Release notes button
+        const releaseNotesBtn = document.getElementById('releaseNotesBtn');
+        releaseNotesBtn.addEventListener('click', () => {
+            window.router.navigate('/release-notes');
         });
     }
 };

@@ -21,10 +21,16 @@ router.register('/', () => {
     HomePage.init();
 });
 
-router.register('/settings', () => {
+router.register('/settings', async () => {
     updateNavigation('/settings');
-    document.getElementById('mainContent').innerHTML = SettingsPage.render();
+    document.getElementById('mainContent').innerHTML = await SettingsPage.render();
     SettingsPage.init();
+});
+
+router.register('/release-notes', async () => {
+    updateNavigation('/release-notes');
+    document.getElementById('mainContent').innerHTML = ReleaseNotesPage.render();
+    ReleaseNotesPage.init();
 });
 
 // QR Mode routes
