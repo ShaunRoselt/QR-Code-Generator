@@ -1,11 +1,11 @@
-// Vcard QR Code Module  
+// vCard QR Code Module
 const VcardMode = {
     render() {
         return `
             <div class="qr-mode-page">
                 <div class="content-header">
-                    <h1 class="content-title">Vcard</h1>
-                    <p class="content-subtitle">Create Vcard QR codes</p>
+                    <h1 class="content-title">Contact Card (vCard)</h1>
+                    <p class="content-subtitle">Create QR codes for digital contact cards</p>
                 </div>
                 
                 <div class="qr-content-wrapper">
@@ -16,8 +16,60 @@ const VcardMode = {
                         </h2>
                         
                         <div class="form-group">
-                            <label class="form-label">Content</label>
-                            <input type="text" class="form-input" id="contentInput" placeholder="Enter content">
+                            <label class="form-label">First Name</label>
+                            <input type="text" class="form-input" id="firstNameInput" placeholder="John">
+                            <div class="form-hint">Required field</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" class="form-input" id="lastNameInput" placeholder="Doe">
+                            <div class="form-hint">Required field</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Organization / Company</label>
+                            <input type="text" class="form-input" id="organizationInput" placeholder="Company Name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-input" id="phoneInput" placeholder="+1234567890">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-input" id="emailInput" placeholder="email@example.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Website</label>
+                            <input type="url" class="form-input" id="websiteInput" placeholder="https://example.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Street Address</label>
+                            <input type="text" class="form-input" id="streetInput" placeholder="123 Main St">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">City</label>
+                            <input type="text" class="form-input" id="cityInput" placeholder="New York">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">State / Province</label>
+                            <input type="text" class="form-input" id="stateInput" placeholder="NY">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">ZIP / Postal Code</label>
+                            <input type="text" class="form-input" id="zipInput" placeholder="10001">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Country</label>
+                            <input type="text" class="form-input" id="countryInput" placeholder="USA">
                         </div>
                         
                         <div class="form-group">
@@ -26,10 +78,15 @@ const VcardMode = {
                             <div class="form-hint" id="sizeValue">256px</div>
                         </div>
                         
-                        <button class="btn btn-primary btn-block" id="generateBtn">
-                            <i class="bi bi-qr-code"></i>
-                            Generate QR Code
-                        </button>
+                        <div class="form-group">
+                            <label class="form-label">Error Correction</label>
+                            <select class="form-select" id="errorCorrection">
+                                <option value="L">Low (7%)</option>
+                                <option value="M" selected>Medium (15%)</option>
+                                <option value="Q">Quartile (25%)</option>
+                                <option value="H">High (30%)</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <div class="qr-preview-section">
@@ -41,7 +98,7 @@ const VcardMode = {
                         <div class="qr-display">
                             <div class="qr-placeholder" id="qrPlaceholder">
                                 <i class="bi bi-qr-code"></i>
-                                <p>Your QR code will appear here</p>
+                                <p>Enter contact information</p>
                             </div>
                             <div id="qrcode"></div>
                         </div>
@@ -74,31 +131,107 @@ const VcardMode = {
     init() {
         const sizeSlider = document.getElementById('qrSize');
         const sizeValue = document.getElementById('sizeValue');
+        const errorCorrection = document.getElementById('errorCorrection');
         
-        sizeSlider.addEventListener('input', () => {
-            sizeValue.textContent = sizeSlider.value + 'px';
-        });
+        const firstNameInput = document.getElementById('firstNameInput');
+        const lastNameInput = document.getElementById('lastNameInput');
+        const organizationInput = document.getElementById('organizationInput');
+        const phoneInput = document.getElementById('phoneInput');
+        const emailInput = document.getElementById('emailInput');
+        const websiteInput = document.getElementById('websiteInput');
+        const streetInput = document.getElementById('streetInput');
+        const cityInput = document.getElementById('cityInput');
+        const stateInput = document.getElementById('stateInput');
+        const zipInput = document.getElementById('zipInput');
+        const countryInput = document.getElementById('countryInput');
         
-        document.getElementById('generateBtn').addEventListener('click', () => {
-            const content = document.getElementById('contentInput').value.trim();
-            if (!content) {
-                alert('Please enter content');
+        // Auto-generate function
+        const autoGenerate = () => {
+            const firstName = firstNameInput.value.trim();
+            const lastName = lastNameInput.value.trim();
+            
+            if (!firstName || !lastName) {
+                document.getElementById('qrcode').innerHTML = '';
+                document.getElementById('qrPlaceholder').style.display = 'block';
+                document.getElementById('downloadOptions').classList.add('d-none');
                 return;
             }
             
+            const fullName = `${firstName} ${lastName}`;
+            const organization = organizationInput.value.trim();
+            const phone = phoneInput.value.trim();
+            const email = emailInput.value.trim();
+            const website = websiteInput.value.trim();
+            const street = streetInput.value.trim();
+            const city = cityInput.value.trim();
+            const state = stateInput.value.trim();
+            const zip = zipInput.value.trim();
+            const country = countryInput.value.trim();
+            
+            let vcard = 'BEGIN:VCARD\n';
+            vcard += 'VERSION:3.0\n';
+            vcard += `FN:${fullName}\n`;
+            vcard += `N:${lastName};${firstName};;;\n`;
+            
+            if (organization) {
+                vcard += `ORG:${organization}\n`;
+            }
+            
+            if (phone) {
+                vcard += `TEL:${phone}\n`;
+            }
+            
+            if (email) {
+                vcard += `EMAIL:${email}\n`;
+            }
+            
+            if (website) {
+                vcard += `URL:${website}\n`;
+            }
+            
+            if (street || city || state || zip || country) {
+                vcard += `ADR:;;${street};${city};${state};${zip};${country}\n`;
+            }
+            
+            vcard += 'END:VCARD';
+            
             const size = parseInt(sizeSlider.value);
-            generateQRCode(content, 'qrcode', { size });
+            const errorCorrectionLevel = errorCorrection.value;
+            
+            generateQRCode(vcard, 'qrcode', { size, errorCorrection: errorCorrectionLevel });
             
             document.getElementById('qrPlaceholder').style.display = 'none';
             document.getElementById('downloadOptions').classList.remove('d-none');
+        };
+        
+        // Update size display
+        sizeSlider.addEventListener('input', () => {
+            sizeValue.textContent = sizeSlider.value + 'px';
+            autoGenerate();
         });
         
+        // Auto-generate on input changes
+        const inputs = [
+            firstNameInput, lastNameInput, organizationInput, phoneInput,
+            emailInput, websiteInput, streetInput, cityInput,
+            stateInput, zipInput, countryInput
+        ];
+        
+        inputs.forEach(input => {
+            input.addEventListener('input', autoGenerate);
+        });
+        
+        errorCorrection.addEventListener('change', autoGenerate);
+        
+        // Download handlers
         document.getElementById('downloadPng').addEventListener('click', () => {
-            downloadQRAsPNG(parseInt(document.getElementById('exportSize').value));
+            const exportSize = parseInt(document.getElementById('exportSize').value);
+            downloadQRAsPNG(exportSize);
         });
         
         document.getElementById('downloadSvg').addEventListener('click', () => {
-            downloadQRAsSVG(parseInt(document.getElementById('exportSize').value));
+            const exportSize = parseInt(document.getElementById('exportSize').value);
+            downloadQRAsSVG(exportSize);
         });
     }
 };

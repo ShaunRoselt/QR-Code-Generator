@@ -1,11 +1,11 @@
-// Social QR Code Module  
+// Social Media QR Code Module
 const SocialMode = {
     render() {
         return `
             <div class="qr-mode-page">
                 <div class="content-header">
-                    <h1 class="content-title">Social</h1>
-                    <p class="content-subtitle">Create Social QR codes</p>
+                    <h1 class="content-title">Social Media</h1>
+                    <p class="content-subtitle">Create QR codes for social media profiles</p>
                 </div>
                 
                 <div class="qr-content-wrapper">
@@ -16,8 +16,30 @@ const SocialMode = {
                         </h2>
                         
                         <div class="form-group">
-                            <label class="form-label">Content</label>
-                            <input type="text" class="form-input" id="contentInput" placeholder="Enter content">
+                            <label class="form-label">Social Platform</label>
+                            <select class="form-select" id="platformSelect">
+                                <option value="">Select platform...</option>
+                                <option value="facebook">Facebook</option>
+                                <option value="instagram">Instagram</option>
+                                <option value="twitter">Twitter / X</option>
+                                <option value="linkedin">LinkedIn</option>
+                                <option value="tiktok">TikTok</option>
+                                <option value="youtube">YouTube</option>
+                                <option value="snapchat">Snapchat</option>
+                                <option value="pinterest">Pinterest</option>
+                                <option value="reddit">Reddit</option>
+                                <option value="discord">Discord</option>
+                                <option value="telegram">Telegram</option>
+                                <option value="threads">Threads</option>
+                                <option value="github">GitHub</option>
+                                <option value="twitch">Twitch</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Username / Handle</label>
+                            <input type="text" class="form-input" id="usernameInput" placeholder="username">
+                            <div class="form-hint" id="usernameHint">Enter your username without @ symbol</div>
                         </div>
                         
                         <div class="form-group">
@@ -26,10 +48,15 @@ const SocialMode = {
                             <div class="form-hint" id="sizeValue">256px</div>
                         </div>
                         
-                        <button class="btn btn-primary btn-block" id="generateBtn">
-                            <i class="bi bi-qr-code"></i>
-                            Generate QR Code
-                        </button>
+                        <div class="form-group">
+                            <label class="form-label">Error Correction</label>
+                            <select class="form-select" id="errorCorrection">
+                                <option value="L">Low (7%)</option>
+                                <option value="M" selected>Medium (15%)</option>
+                                <option value="Q">Quartile (25%)</option>
+                                <option value="H">High (30%)</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <div class="qr-preview-section">
@@ -41,7 +68,7 @@ const SocialMode = {
                         <div class="qr-display">
                             <div class="qr-placeholder" id="qrPlaceholder">
                                 <i class="bi bi-qr-code"></i>
-                                <p>Your QR code will appear here</p>
+                                <p>Select platform and enter username</p>
                             </div>
                             <div id="qrcode"></div>
                         </div>
@@ -74,31 +101,83 @@ const SocialMode = {
     init() {
         const sizeSlider = document.getElementById('qrSize');
         const sizeValue = document.getElementById('sizeValue');
+        const platformSelect = document.getElementById('platformSelect');
+        const usernameInput = document.getElementById('usernameInput');
+        const usernameHint = document.getElementById('usernameHint');
+        const errorCorrection = document.getElementById('errorCorrection');
         
-        sizeSlider.addEventListener('input', () => {
-            sizeValue.textContent = sizeSlider.value + 'px';
+        // Platform-specific URL templates
+        const platformUrls = {
+            facebook: { url: 'https://facebook.com/', hint: 'Enter your Facebook username' },
+            instagram: { url: 'https://instagram.com/', hint: 'Enter your Instagram username' },
+            twitter: { url: 'https://twitter.com/', hint: 'Enter your Twitter/X username' },
+            linkedin: { url: 'https://linkedin.com/in/', hint: 'Enter your LinkedIn username' },
+            tiktok: { url: 'https://tiktok.com/@', hint: 'Enter your TikTok username' },
+            youtube: { url: 'https://youtube.com/@', hint: 'Enter your YouTube channel name' },
+            snapchat: { url: 'https://snapchat.com/add/', hint: 'Enter your Snapchat username' },
+            pinterest: { url: 'https://pinterest.com/', hint: 'Enter your Pinterest username' },
+            reddit: { url: 'https://reddit.com/u/', hint: 'Enter your Reddit username' },
+            discord: { url: 'https://discord.com/users/', hint: 'Enter your Discord user ID' },
+            telegram: { url: 'https://t.me/', hint: 'Enter your Telegram username' },
+            threads: { url: 'https://threads.net/@', hint: 'Enter your Threads username' },
+            github: { url: 'https://github.com/', hint: 'Enter your GitHub username' },
+            twitch: { url: 'https://twitch.tv/', hint: 'Enter your Twitch username' }
+        };
+        
+        // Update hint when platform changes
+        platformSelect.addEventListener('change', () => {
+            const platform = platformSelect.value;
+            if (platform && platformUrls[platform]) {
+                usernameHint.textContent = platformUrls[platform].hint;
+            }
+            autoGenerate();
         });
         
-        document.getElementById('generateBtn').addEventListener('click', () => {
-            const content = document.getElementById('contentInput').value.trim();
-            if (!content) {
-                alert('Please enter content');
+        // Auto-generate function
+        const autoGenerate = () => {
+            const platform = platformSelect.value;
+            let username = usernameInput.value.trim();
+            
+            if (!platform || !username) {
+                document.getElementById('qrcode').innerHTML = '';
+                document.getElementById('qrPlaceholder').style.display = 'block';
+                document.getElementById('downloadOptions').classList.add('d-none');
                 return;
             }
             
+            // Remove @ if user included it
+            username = username.replace(/^@/, '');
+            
+            const url = platformUrls[platform].url + username;
+            
             const size = parseInt(sizeSlider.value);
-            generateQRCode(content, 'qrcode', { size });
+            const errorCorrectionLevel = errorCorrection.value;
+            
+            generateQRCode(url, 'qrcode', { size, errorCorrection: errorCorrectionLevel });
             
             document.getElementById('qrPlaceholder').style.display = 'none';
             document.getElementById('downloadOptions').classList.remove('d-none');
+        };
+        
+        // Update size display
+        sizeSlider.addEventListener('input', () => {
+            sizeValue.textContent = sizeSlider.value + 'px';
+            autoGenerate();
         });
         
+        // Auto-generate on input
+        usernameInput.addEventListener('input', autoGenerate);
+        errorCorrection.addEventListener('change', autoGenerate);
+        
+        // Download handlers
         document.getElementById('downloadPng').addEventListener('click', () => {
-            downloadQRAsPNG(parseInt(document.getElementById('exportSize').value));
+            const exportSize = parseInt(document.getElementById('exportSize').value);
+            downloadQRAsPNG(exportSize);
         });
         
         document.getElementById('downloadSvg').addEventListener('click', () => {
-            downloadQRAsSVG(parseInt(document.getElementById('exportSize').value));
+            const exportSize = parseInt(document.getElementById('exportSize').value);
+            downloadQRAsSVG(exportSize);
         });
     }
 };

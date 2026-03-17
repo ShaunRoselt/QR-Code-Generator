@@ -1,11 +1,11 @@
-// Wifi QR Code Module  
+// WiFi QR Code Module  
 const WifiMode = {
     render() {
         return `
             <div class="qr-mode-page">
                 <div class="content-header">
-                    <h1 class="content-title">Wifi</h1>
-                    <p class="content-subtitle">Create Wifi QR codes</p>
+                    <h1 class="content-title">WiFi Network</h1>
+                    <p class="content-subtitle">Create QR codes for WiFi network credentials</p>
                 </div>
                 
                 <div class="qr-content-wrapper">
@@ -16,8 +16,33 @@ const WifiMode = {
                         </h2>
                         
                         <div class="form-group">
-                            <label class="form-label">Content</label>
-                            <input type="text" class="form-input" id="contentInput" placeholder="Enter content">
+                            <label class="form-label">Network Name (SSID)</label>
+                            <input type="text" class="form-input" id="ssidInput" placeholder="MyWiFiNetwork">
+                            <div class="form-hint">The name of your WiFi network</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <input type="text" class="form-input" id="passwordInput" placeholder="Enter WiFi password">
+                            <div class="form-hint">Leave empty for open networks</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Security Type</label>
+                            <select class="form-select" id="encryptionInput">
+                                <option value="WPA">WPA/WPA2</option>
+                                <option value="WEP">WEP</option>
+                                <option value="nopass">None (Open Network)</option>
+                            </select>
+                            <div class="form-hint">Most networks use WPA/WPA2</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-check-label">
+                                <input type="checkbox" class="form-check" id="hiddenInput">
+                                Hidden Network
+                            </label>
+                            <div class="form-hint">Check if network SSID is hidden</div>
                         </div>
                         
                         <div class="form-group">
@@ -26,10 +51,15 @@ const WifiMode = {
                             <div class="form-hint" id="sizeValue">256px</div>
                         </div>
                         
-                        <button class="btn btn-primary btn-block" id="generateBtn">
-                            <i class="bi bi-qr-code"></i>
-                            Generate QR Code
-                        </button>
+                        <div class="form-group">
+                            <label class="form-label">Error Correction</label>
+                            <select class="form-select" id="errorCorrection">
+                                <option value="L">Low (7%)</option>
+                                <option value="M" selected>Medium (15%)</option>
+                                <option value="Q">Quartile (25%)</option>
+                                <option value="H">High (30%)</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <div class="qr-preview-section">
@@ -41,7 +71,7 @@ const WifiMode = {
                         <div class="qr-display">
                             <div class="qr-placeholder" id="qrPlaceholder">
                                 <i class="bi bi-qr-code"></i>
-                                <p>Your QR code will appear here</p>
+                                <p>Enter network details to generate QR code</p>
                             </div>
                             <div id="qrcode"></div>
                         </div>
@@ -74,31 +104,66 @@ const WifiMode = {
     init() {
         const sizeSlider = document.getElementById('qrSize');
         const sizeValue = document.getElementById('sizeValue');
+        const ssidInput = document.getElementById('ssidInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const encryptionInput = document.getElementById('encryptionInput');
+        const hiddenInput = document.getElementById('hiddenInput');
+        const errorCorrection = document.getElementById('errorCorrection');
         
-        sizeSlider.addEventListener('input', () => {
-            sizeValue.textContent = sizeSlider.value + 'px';
-        });
-        
-        document.getElementById('generateBtn').addEventListener('click', () => {
-            const content = document.getElementById('contentInput').value.trim();
-            if (!content) {
-                alert('Please enter content');
+        // Auto-generate function
+        const autoGenerate = () => {
+            const ssid = ssidInput.value.trim();
+            if (!ssid) {
+                // Hide QR code and download options if SSID is empty
+                document.getElementById('qrcode').innerHTML = '';
+                document.getElementById('qrPlaceholder').style.display = 'block';
+                document.getElementById('downloadOptions').classList.add('d-none');
                 return;
             }
             
-            const size = parseInt(sizeSlider.value);
-            generateQRCode(content, 'qrcode', { size });
+            const password = passwordInput.value;
+            const encryption = encryptionInput.value;
+            const hidden = hiddenInput.checked;
             
+            // Format: WIFI:T:WPA;S:mynetwork;P:mypass;H:false;;
+            let wifiString = `WIFI:T:${encryption};S:${ssid};`;
+            if (password && encryption !== 'nopass') {
+                wifiString += `P:${password};`;
+            }
+            wifiString += `H:${hidden};;`;
+            
+            const size = parseInt(sizeSlider.value);
+            const errorCorrectionLevel = errorCorrection.value;
+            
+            generateQRCode(wifiString, 'qrcode', { size, errorCorrection: errorCorrectionLevel });
+            
+            // Show download options
             document.getElementById('qrPlaceholder').style.display = 'none';
             document.getElementById('downloadOptions').classList.remove('d-none');
+        };
+        
+        // Update size display
+        sizeSlider.addEventListener('input', () => {
+            sizeValue.textContent = sizeSlider.value + 'px';
+            autoGenerate();
         });
         
+        // Auto-generate on input changes
+        ssidInput.addEventListener('input', autoGenerate);
+        passwordInput.addEventListener('input', autoGenerate);
+        encryptionInput.addEventListener('change', autoGenerate);
+        hiddenInput.addEventListener('change', autoGenerate);
+        errorCorrection.addEventListener('change', autoGenerate);
+        
+        // Download handlers
         document.getElementById('downloadPng').addEventListener('click', () => {
-            downloadQRAsPNG(parseInt(document.getElementById('exportSize').value));
+            const exportSize = parseInt(document.getElementById('exportSize').value);
+            downloadQRAsPNG(exportSize);
         });
         
         document.getElementById('downloadSvg').addEventListener('click', () => {
-            downloadQRAsSVG(parseInt(document.getElementById('exportSize').value));
+            const exportSize = parseInt(document.getElementById('exportSize').value);
+            downloadQRAsSVG(exportSize);
         });
     }
 };
