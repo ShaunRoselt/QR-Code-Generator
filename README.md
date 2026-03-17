@@ -1,10 +1,21 @@
 # QR Code Generator
 
-A professional, feature-rich QR code generator web application that allows users to create custom QR codes for various purposes. Built with HTML, CSS, JavaScript, Bootstrap 5, and Bootstrap Icons.
+A professional, app-style QR code generator with a modern interface inspired by developer tools. Features a modular single-page application architecture with dark/light themes and 12 different QR code types.
+
+## ✨ New UI - Version 2.0
+
+The QR Code Generator has been completely redesigned with a professional app-style interface featuring:
+
+- **Modern Dark Theme**: Professional color scheme optimized for extended use
+- **Light Theme Option**: Clean, bright alternative theme
+- **Sidebar Navigation**: Categorized QR modes for easy access
+- **Single Page App**: Smooth navigation without page reloads
+- **Responsive Design**: Works perfectly on desktop, tablet, and mobile
+- **Modular Architecture**: Each QR mode in its own file for maintainability
 
 ## 🚀 Features
 
-- **Multiple QR Code Types (12 Types):**
+- **12 QR Code Types:**
   - URL/Website links
   - Plain text
   - Email (with subject and body)
@@ -14,26 +25,24 @@ A professional, feature-rich QR code generator web application that allows users
   - WiFi credentials
   - GPS Location/Maps
   - Calendar events
-  - App Store links (Google Play, Apple App Store, Microsoft Store, Steam, Amazon Appstore)
-  - Social Media profiles (Facebook, Instagram, Twitter/X, LinkedIn, TikTok, YouTube, Snapchat, Pinterest, Reddit, Discord, Telegram, Threads, GitHub, Twitch)
+  - App Store links (Google Play, Apple App Store, Microsoft Store, Steam, Amazon)
+  - Social Media profiles (15+ platforms)
   - vCard (contact information)
 
-- **Customization Options:**
-  - Adjustable display size (128px - 1024px)
-  - Custom foreground and background colors
-  - Error correction levels (Low, Medium, Quartile, High)
+- **Professional Interface:**
+  - App-style layout with sidebar navigation
+  - Dark theme (default) and Light theme
+  - Theme persistence via localStorage
+  - Searchable home page with all QR modes
+  - Settings page for customization
+  - Mobile-responsive with hamburger menu
 
-- **User-Friendly Interface:**
-  - Modern, responsive design
-  - Mobile-friendly
-  - Intuitive form switching
-  - Real-time QR code generation
-
-- **Export Options:**
-  - Download as PNG (up to 8K resolution - 7680x7680)
-  - Download as SVG (scalable to any size)
-  - Multiple export sizes: 1080p Full HD (1920px), 1440p Quad HD (2560px), 4K Ultra HD (3840px), 8K Ultra HD (7680px)
-  - High-quality output perfect for printing and large displays
+- **High-Resolution Export:**
+  - 1080p Full HD (1920x1920)
+  - 1440p Quad HD (2560x2560)
+  - 4K Ultra HD (3840x3840)
+  - 8K Ultra HD (7680x7680)
+  - PNG and SVG formats
 
 - **Privacy-First:**
   - All processing happens in your browser
@@ -46,20 +55,52 @@ Visit the live demo: [QR Code Generator](https://shaunroselt.github.io/QR-Code-G
 
 ## 📋 How to Use
 
-1. **Select QR Code Type:** Choose from URL, Text, Email, Phone, SMS, WiFi, or vCard
-2. **Enter Information:** Fill in the required fields for your selected type
-3. **Customize (Optional):** Adjust size, colors, and error correction level
-4. **Generate:** Click the "Generate QR Code" button
-5. **Download:** Save your QR code as PNG or SVG
+1. **Navigate**: Use the sidebar to select a QR code type or view all tools on the home page
+2. **Configure**: Fill in the form with your content (URL, text, contact info, etc.)
+3. **Customize**: Adjust size, colors, and error correction level
+4. **Generate**: Click "Generate QR Code" to create your QR code
+5. **Export**: Choose your preferred resolution and download as PNG or SVG
+
+## 🎨 Themes
+
+Switch between Dark and Light themes in the Settings page:
+- **Dark Theme** (default): Professional dark color scheme optimized for extended use
+- **Light Theme**: Clean, bright interface for daytime use
+
+Theme preference is saved automatically in your browser.
+
+## 📁 Project Structure
+
+```
+/
+├── index.html           # Main app shell
+├── css/
+│   └── app.css          # Complete styling with dark/light themes
+├── js/
+│   ├── app.js          # Application initialization
+│   ├── router.js       # SPA routing system
+│   ├── theme.js        # Theme management
+│   └── qr-utils.js     # QR code generation utilities
+└── modules/
+    ├── home.js         # Home page with tool cards
+    ├── settings.js     # Settings page
+    └── qr-modes/       # Individual QR mode modules
+        ├── url.js      ├── text.js
+        ├── email.js    ├── phone.js
+        ├── sms.js      ├── whatsapp.js
+        ├── wifi.js     ├── location.js
+        ├── event.js    ├── appstore.js
+        ├── social.js   └── vcard.js
+```
 
 ## 🛠️ Technologies Used
 
 - **HTML5** - Structure and semantic markup
-- **CSS3** - Styling and animations
-- **JavaScript (ES6+)** - Interactive functionality
-- **Bootstrap 5.3.2** - Responsive framework
+- **CSS3** - Modern styling with custom properties (CSS variables)
+- **JavaScript (ES6+)** - Vanilla JS with modular architecture
 - **Bootstrap Icons 1.11.3** - Icon library
 - **QRCode.js** - QR code generation library
+- **SPA Router** - Custom hash-based routing
 
 ## 📦 Installation
 
