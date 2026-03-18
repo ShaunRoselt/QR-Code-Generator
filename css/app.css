@@ -1033,6 +1033,13 @@ body {
     display: block;
 }
 
+.frame-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+    border-radius: 4px;
+}
+
 .frame-name {
     font-size: 0.85rem;
     font-weight: 600;

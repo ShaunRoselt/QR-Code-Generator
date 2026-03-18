@@ -6,6 +6,9 @@
 const QRFrames = {
     BORDER_FRAME_WIDTH_RATIO: 8 / 300,
     BORDER_SEPARATOR_RATIO: 3 / 300,
+    FRAME_BACKGROUND_COLOR: '#ffffff',
+    FRAME_FOREGROUND_COLOR: '#000000',
+    FRAME_TEXT: 'Scan me!',
 
     // Available frame types
     FRAME_TYPES: {
@@ -20,19 +23,19 @@ const QRFrames = {
     getFrameSelector() {
         const frames = [
             {
-                id: 'none',
+                id: this.FRAME_TYPES.NONE,
                 name: 'None',
-                preview: this.getFramePreviewSVG('none')
+                preview: this.getFramePreviewMarkup(this.FRAME_TYPES.NONE)
             },
             {
-                id: 'scanme',
+                id: this.FRAME_TYPES.SCAN_ME,
                 name: 'Scan me!',
-                preview: this.getFramePreviewSVG('scanme')
+                preview: this.getFramePreviewMarkup(this.FRAME_TYPES.SCAN_ME)
             },
             {
-                id: 'scanme-border',
+                id: this.FRAME_TYPES.SCAN_ME_BORDER,
                 name: 'Scan me! + Border',
-                preview: this.getFramePreviewSVG('scanme-border')
+                preview: this.getFramePreviewMarkup(this.FRAME_TYPES.SCAN_ME_BORDER)
             }
         ];
 
@@ -57,23 +60,55 @@ const QRFrames = {
     },
 
     /**
-     * Get preview SVG for a frame type
+     * Get preview image markup for a frame type
      */
-    getFramePreviewSVG(frameType) {
-        const qrSample = `
-            <rect width="40" height="40" fill="#ffffff"></rect>
-            <path d="M13.271 0H0v13.285h13.27zm-3.126 10.155H3.126V3.11h7.019z" fill="#000000"></path>
-            <path d="M8.198 5.078H5.072v3.13h3.126zM39.959 0H26.687v13.285H39.96zm-3.085 10.155h-7.04V3.11h7.04z" fill="#000000"></path>
-            <path d="M34.886 5.078H31.76v3.13h3.126zM13.271 26.715H0V40h13.27zm-3.126 10.156H3.126v-7.026h7.019z" fill="#000000"></path>
-            <path d="M8.198 31.793H5.072v3.13h3.126zM18 4h4v4h-4zM18 12h4v4h-4zM22 20h4v4h-4zM16 24h4v4h-4zM22 30h4v4h-4zM30 18h4v4h-4zM30 26h4v4h-4z" fill="#000000"></path>
-        `;
+    getFramePreviewMarkup(frameType) {
+        const previewCanvas = this.applyFrame(this.createSampleQRCodeCanvas(100), frameType, 100);
+        const previewName = frameType === this.FRAME_TYPES.NONE
+            ? 'None'
+            : frameType === this.FRAME_TYPES.SCAN_ME_BORDER
+                ? 'Scan me with border'
+                : 'Scan me';
 
-        return this.buildFrameSVG(frameType, 100, qrSample, {
-            minX: 0,
-            minY: 0,
-            width: 40,
-            height: 40
+        return `<img src="${previewCanvas.toDataURL('image/png')}" alt="${previewName} frame preview">`;
+    },
+
+    /**
+     * Create a QR-like sample canvas used for frame selector thumbnails
+     */
+    createSampleQRCodeCanvas(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+
+        const ctx = canvas.getContext('2d');
+        const modules = [
+            '1111001000',
+            '1001000100',
+            '1011000010',
+            '1001001000',
+            '1111000010',
+            '0000010100',
+            '1010100010',
+            '0100001000',
+            '0010100010',
+            '0000000000'
+        ];
+        const moduleSize = size / modules.length;
+
+        ctx.fillStyle = this.FRAME_BACKGROUND_COLOR;
+        ctx.fillRect(0, 0, size, size);
+        ctx.fillStyle = this.FRAME_FOREGROUND_COLOR;
+
+        modules.forEach((row, y) => {
+            for (let x = 0; x < row.length; x += 1) {
+                if (row[x] === '1') {
+                    ctx.fillRect(x * moduleSize, y * moduleSize, moduleSize, moduleSize);
+                }
+            }
         });
+
+        return canvas;
     },
 
     /**
@@ -146,16 +181,16 @@ const QRFrames = {
 
         return `
             <svg viewBox="0 0 ${size} ${metrics.totalHeight}" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="${size}" height="${metrics.totalHeight}" fill="#ffffff"></rect>
+                <rect width="${size}" height="${metrics.totalHeight}" fill="${this.FRAME_BACKGROUND_COLOR}"></rect>
                 <g transform="translate(${this.formatMetric(translateX)} ${this.formatMetric(translateY)}) scale(${this.formatMetric(scaleX)} ${this.formatMetric(scaleY)})">
                     ${qrContent}
                 </g>
                 ${frameType === this.FRAME_TYPES.SCAN_ME_BORDER ? `
-                    <rect x="${this.formatMetric(borderInset)}" y="${this.formatMetric(borderInset)}" width="${this.formatMetric(size - metrics.borderWidth)}" height="${this.formatMetric(metrics.totalHeight - metrics.borderWidth)}" rx="${metrics.borderRadius}" stroke="#000000" stroke-width="${metrics.borderWidth}" fill="none"></rect>
-                    <line x1="${this.formatMetric(borderInset)}" y1="${size}" x2="${this.formatMetric(size - borderInset)}" y2="${size}" stroke="#000000" stroke-width="${metrics.separatorWidth}"></line>
+                    <rect x="${this.formatMetric(borderInset)}" y="${this.formatMetric(borderInset)}" width="${this.formatMetric(size - metrics.borderWidth)}" height="${this.formatMetric(metrics.totalHeight - metrics.borderWidth)}" rx="${metrics.borderRadius}" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="${metrics.borderWidth}" fill="none"></rect>
+                    <line x1="${this.formatMetric(borderInset)}" y1="${size}" x2="${this.formatMetric(size - borderInset)}" y2="${size}" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="${metrics.separatorWidth}"></line>
                 ` : ''}
                 ${metrics.hasText ? `
-                    <text x="${size / 2}" y="${this.formatMetric(metrics.textY)}" text-anchor="middle" dominant-baseline="middle" font-size="${metrics.fontSize}" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="#000000">Scan me!</text>
+                    <text x="${size / 2}" y="${this.formatMetric(metrics.textY)}" text-anchor="middle" dominant-baseline="middle" font-size="${metrics.fontSize}" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="${this.FRAME_FOREGROUND_COLOR}">${this.FRAME_TEXT}</text>
                 ` : ''}
             </svg>
         `;
@@ -182,7 +217,7 @@ const QRFrames = {
         const ctx = framedCanvas.getContext('2d');
 
         // Fill background (white)
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = this.FRAME_BACKGROUND_COLOR;
         ctx.fillRect(0, 0, targetSize, metrics.totalHeight);
 
         // Draw QR code at top
@@ -202,11 +237,11 @@ const QRFrames = {
      * Draw "Scan me!" text frame (no border)
      */
     drawScanMeFrame(ctx, metrics) {
-        ctx.fillStyle = '#000000';
+        ctx.fillStyle = this.FRAME_FOREGROUND_COLOR;
         ctx.font = `700 ${metrics.fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('Scan me!', metrics.size / 2, metrics.textY);
+        ctx.fillText(this.FRAME_TEXT, metrics.size / 2, metrics.textY);
     },
 
     /**
@@ -214,7 +249,7 @@ const QRFrames = {
      */
     drawScanMeBorderFrame(ctx, metrics) {
         // Draw outer border with rounded corners
-        ctx.strokeStyle = '#000000';
+        ctx.strokeStyle = this.FRAME_FOREGROUND_COLOR;
         ctx.lineWidth = metrics.borderWidth;
         this.roundRect(
             ctx,
@@ -234,11 +269,11 @@ const QRFrames = {
         ctx.stroke();
 
         // Draw "Scan me!" text
-        ctx.fillStyle = '#000000';
+        ctx.fillStyle = this.FRAME_FOREGROUND_COLOR;
         ctx.font = `700 ${metrics.fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('Scan me!', metrics.size / 2, metrics.textY);
+        ctx.fillText(this.FRAME_TEXT, metrics.size / 2, metrics.textY);
     },
 
     /**
