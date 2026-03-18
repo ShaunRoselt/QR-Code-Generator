@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hamburger menu toggle - collapse/expand sidebar
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');
-    const isOverlaySidebar = () => window.innerWidth <= 1024;
+    const isOverlaySidebar = () => window.innerWidth <= 768;
     const closeOverlaySidebar = () => sidebar.classList.remove('open');
     
     menuToggle.addEventListener('click', () => {
