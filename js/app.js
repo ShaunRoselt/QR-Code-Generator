@@ -1,4 +1,5 @@
 // Main App Initialization
+const MOBILE_SIDEBAR_BREAKPOINT = 768;
 
 // Navigation state management
 function updateNavigation(route) {
@@ -111,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hamburger menu toggle - collapse/expand sidebar
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');
-    const isOverlaySidebar = () => window.innerWidth <= 768;
+    const isOverlaySidebar = () => window.innerWidth <= MOBILE_SIDEBAR_BREAKPOINT;
     const closeOverlaySidebar = () => sidebar.classList.remove('open');
     
     menuToggle.addEventListener('click', () => {

@@ -4,6 +4,9 @@
  */
 
 const QRFrames = {
+    BORDER_FRAME_WIDTH_RATIO: 8 / 300,
+    BORDER_SEPARATOR_RATIO: 3 / 300,
+
     // Available frame types
     FRAME_TYPES: {
         NONE: 'none',
@@ -86,8 +89,8 @@ const QRFrames = {
             hasText,
             totalHeight: size + textHeight,
             textHeight,
-            borderWidth: isBorderFrame ? Math.max(4, Math.round(size * 0.0267)) : 0,
-            separatorWidth: isBorderFrame ? Math.max(2, Math.round(size * 0.01)) : 0,
+            borderWidth: isBorderFrame ? Math.max(4, Math.round(size * this.BORDER_FRAME_WIDTH_RATIO)) : 0,
+            separatorWidth: isBorderFrame ? Math.max(2, Math.round(size * this.BORDER_SEPARATOR_RATIO)) : 0,
             borderRadius: Math.max(3, Math.round(size * 0.01)),
             fontSize: hasText ? Math.max(6, Math.round(textHeight * 0.5)) : 0,
             textY: hasText ? size + (textHeight / 2) : size
