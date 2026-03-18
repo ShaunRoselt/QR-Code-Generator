@@ -111,8 +111,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hamburger menu toggle - collapse/expand sidebar
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');
+    const isOverlaySidebar = () => window.innerWidth <= 1024;
+    const closeOverlaySidebar = () => sidebar.classList.remove('open');
     
     menuToggle.addEventListener('click', () => {
+        if (isOverlaySidebar()) {
+            sidebar.classList.toggle('open');
+            sidebar.classList.remove('collapsed');
+            return;
+        }
+
         sidebar.classList.toggle('collapsed');
     });
     
@@ -121,8 +129,30 @@ document.addEventListener('DOMContentLoaded', () => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
             const route = item.getAttribute('data-route');
+            closeOverlaySidebar();
             router.navigate(route);
         });
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!isOverlaySidebar() || !sidebar.classList.contains('open')) {
+            return;
+        }
+
+        if (sidebar.contains(event.target) || menuToggle.contains(event.target)) {
+            return;
+        }
+
+        closeOverlaySidebar();
+    });
+
+    window.addEventListener('resize', () => {
+        if (isOverlaySidebar()) {
+            sidebar.classList.remove('collapsed');
+            return;
+        }
+
+        closeOverlaySidebar();
     });
     
     // Initialize router
