@@ -110,21 +110,7 @@ body {
     gap: 0.5rem;
 }
 
-.theme-indicator {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    border: none;
-    cursor: default;
-}
-
-:root[data-theme="dark"] .theme-indicator {
-    background-color: #f48771;
-}
-
-:root[data-theme="light"] .theme-indicator {
-    background-color: #007acc;
-}
+/* Theme indicator removed per user request */
 
 /* ===== App Container ===== */
 .app-container {
