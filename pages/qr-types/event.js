@@ -301,10 +301,8 @@ const EventMode = {
             });
             
             setTimeout(() => {
-                const img = tempContainer.querySelector('img');
-                if (img) {
-                    // Convert canvas to SVG
-                    const canvas = tempContainer.querySelector('canvas');
+                const canvas = tempContainer.querySelector('canvas');
+                if (canvas) {
                     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
                         <rect width="100" height="100" fill="#ffffff"/>
                         <image href="${canvas.toDataURL()}" width="100" height="100"/>
