@@ -183,6 +183,7 @@ const SocialMode = {
             // Wait for QR code to be generated, then apply frame
             setTimeout(() => {
                 const canvas = qrContainer.querySelector('canvas');
+                QRFrames.updateFramePreviews(canvas);
                 if (canvas && frameType !== 'none') {
                     const framedCanvas = QRFrames.applyFrame(canvas, frameType, DISPLAY_SIZE);
                     qrContainer.innerHTML = '';

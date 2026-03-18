@@ -74,6 +74,41 @@ const QRFrames = {
     },
 
     /**
+     * Update frame selector thumbnails using the current QR preview canvas
+     */
+    updateFramePreviews(qrCanvas, previewSize = 100) {
+        if (!qrCanvas) {
+            return;
+        }
+
+        const frameCards = document.querySelectorAll('.frame-card');
+        frameCards.forEach(card => {
+            const frameType = card.dataset.frame;
+            const preview = card.querySelector('.frame-preview');
+            if (!preview) {
+                return;
+            }
+
+            const sourceCanvas = document.createElement('canvas');
+            sourceCanvas.width = previewSize;
+            sourceCanvas.height = previewSize;
+            const sourceContext = sourceCanvas.getContext('2d');
+            sourceContext.fillStyle = this.FRAME_BACKGROUND_COLOR;
+            sourceContext.fillRect(0, 0, previewSize, previewSize);
+            sourceContext.drawImage(qrCanvas, 0, 0, previewSize, previewSize);
+
+            const framedPreview = this.applyFrame(sourceCanvas, frameType, previewSize);
+            const previewName = frameType === this.FRAME_TYPES.NONE
+                ? 'None'
+                : frameType === this.FRAME_TYPES.SCAN_ME_BORDER
+                    ? 'Scan me with border'
+                    : 'Scan me';
+
+            preview.innerHTML = `<img src="${framedPreview.toDataURL('image/png')}" alt="${previewName} frame preview">`;
+        });
+    },
+
+    /**
      * Create a QR-like sample canvas used for frame selector thumbnails
      */
     createSampleQRCodeCanvas(size) {
