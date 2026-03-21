@@ -6,8 +6,8 @@
 const QRFrames = {
     FRAME_ARTBOARD_WIDTH: 64,
     DECORATIVE_FRAME_ARTBOARD_HEIGHT: 84,
-    BORDER_FRAME_WIDTH_RATIO: 8 / 300,
-    BORDER_SEPARATOR_RATIO: 3 / 300,
+    BORDER_FRAME_WIDTH_RATIO: 2 / 300,
+    BORDER_SEPARATOR_RATIO: 1 / 300,
     FRAME_BACKGROUND_COLOR: '#ffffff',
     QR_BACKGROUND_COLOR: '#E6E7ED',
     FRAME_FOREGROUND_COLOR: '#000000',
@@ -240,8 +240,8 @@ const QRFrames = {
             hasText,
             totalHeight: size + textHeight,
             textHeight,
-            borderWidth: isBorderFrame ? Math.max(4, Math.round(size * this.BORDER_FRAME_WIDTH_RATIO)) : 0,
-            separatorWidth: isBorderFrame ? Math.max(2, Math.round(size * this.BORDER_SEPARATOR_RATIO)) : 0,
+            borderWidth: isBorderFrame ? Math.max(2, Math.round(size * this.BORDER_FRAME_WIDTH_RATIO)) : 0,
+            separatorWidth: isBorderFrame ? Math.max(1, Math.round(size * this.BORDER_SEPARATOR_RATIO)) : 0,
             borderRadius: Math.max(3, Math.round(size * 0.01)),
             fontSize: hasText ? Math.max(6, Math.round(textHeight * 0.5)) : 0,
             textY: hasText ? size + (textHeight / 2) : size
@@ -448,9 +448,9 @@ const QRFrames = {
                 return {
                     beforeQR: `
                         <path d="${this.getTopRoundedRectPath(this.scaleArtboardX(1, metrics), this.scaleArtboardY(1, metrics), this.scaleArtboardX(62, metrics), this.scaleArtboardY(63, metrics), metrics.outerRadius)}" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="${this.formatMetric(metrics.strokeWidth)}" fill="none"></path>
-                        <path d="M ${this.scaleArtboardX(32.5, metrics)} ${this.scaleArtboardY(61, metrics)} L ${this.scaleArtboardX(35.531, metrics)} ${this.scaleArtboardY(66.25, metrics)} L ${this.scaleArtboardX(29.47, metrics)} ${this.scaleArtboardY(66.25, metrics)} Z" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
                         ${qrBackground}
-                        <path d="${this.getBottomRoundedRectPath(this.scaleArtboardX(1, metrics), this.scaleArtboardY(67, metrics), this.scaleArtboardX(62, metrics), this.scaleArtboardY(16, metrics), this.scaleArtboardY(1, metrics))}" fill="${this.FRAME_FOREGROUND_COLOR}" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="${this.formatMetric(metrics.strokeWidth)}"></path>
+                        <path d="M ${this.scaleArtboardX(32.5, metrics)} ${this.scaleArtboardY(61, metrics)} L ${this.scaleArtboardX(35.531, metrics)} ${this.scaleArtboardY(67, metrics)} L ${this.scaleArtboardX(29.47, metrics)} ${this.scaleArtboardY(67, metrics)} Z" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        <path d="${this.getBottomRoundedRectPath(this.scaleArtboardX(1, metrics), this.scaleArtboardY(67, metrics), this.scaleArtboardX(62, metrics), this.scaleArtboardY(16, metrics), metrics.outerRadius)}" fill="${this.FRAME_FOREGROUND_COLOR}" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="${this.formatMetric(metrics.strokeWidth)}"></path>
                     `,
                     afterQR: commonText(this.scaleArtboardY(75.765, metrics), '#ffffff')
                 };
@@ -766,8 +766,8 @@ const QRFrames = {
 
         ctx.beginPath();
         ctx.moveTo(this.scaleArtboardX(32.5, metrics), this.scaleArtboardY(61, metrics));
-        ctx.lineTo(this.scaleArtboardX(35.531, metrics), this.scaleArtboardY(66.25, metrics));
-        ctx.lineTo(this.scaleArtboardX(29.47, metrics), this.scaleArtboardY(66.25, metrics));
+        ctx.lineTo(this.scaleArtboardX(35.531, metrics), this.scaleArtboardY(67, metrics));
+        ctx.lineTo(this.scaleArtboardX(29.47, metrics), this.scaleArtboardY(67, metrics));
         ctx.closePath();
         ctx.fillStyle = this.FRAME_FOREGROUND_COLOR;
         ctx.fill();
@@ -778,7 +778,7 @@ const QRFrames = {
             this.scaleArtboardY(67, metrics),
             this.scaleArtboardX(62, metrics),
             this.scaleArtboardY(16, metrics),
-            this.scaleArtboardY(1, metrics)
+            metrics.outerRadius
         );
         ctx.fill();
         ctx.stroke();
