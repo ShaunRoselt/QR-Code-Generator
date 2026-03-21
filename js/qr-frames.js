@@ -22,7 +22,12 @@ const QRFrames = {
         OUTLINED_LABEL: 'outlined-label',
         FOOTER_PANEL: 'footer-panel',
         CENTER_BADGE: 'center-badge',
-        POINTER_PANEL: 'pointer-panel'
+        POINTER_PANEL: 'pointer-panel',
+        BOLD_BORDER: 'bold-border',
+        CENTERED_QR: 'centered-qr',
+        BOX_POINTER: 'box-pointer',
+        TOP_BANNER: 'top-banner',
+        SKETCH_BORDER: 'sketch-border'
     },
 
     getFrameOptions() {
@@ -58,13 +63,33 @@ const QRFrames = {
             {
                 id: this.FRAME_TYPES.POINTER_PANEL,
                 name: 'Pointer Panel'
+            },
+            {
+                id: this.FRAME_TYPES.BOLD_BORDER,
+                name: 'Bold Border'
+            },
+            {
+                id: this.FRAME_TYPES.CENTERED_QR,
+                name: 'Centered QR'
+            },
+            {
+                id: this.FRAME_TYPES.BOX_POINTER,
+                name: 'Box Pointer'
+            },
+            {
+                id: this.FRAME_TYPES.TOP_BANNER,
+                name: 'Top Banner'
+            },
+            {
+                id: this.FRAME_TYPES.SKETCH_BORDER,
+                name: 'Sketch Border'
             }
         ];
     },
 
     getFrameDisplayName(frameType) {
         const match = this.getFrameOptions().find(frame => frame.id === frameType);
-        return match ? match.name : 'Scan me!';
+        return match ? match.name : this.FRAME_TEXT;
     },
 
     isDecorativeFrame(frameType) {
@@ -73,7 +98,12 @@ const QRFrames = {
             this.FRAME_TYPES.OUTLINED_LABEL,
             this.FRAME_TYPES.FOOTER_PANEL,
             this.FRAME_TYPES.CENTER_BADGE,
-            this.FRAME_TYPES.POINTER_PANEL
+            this.FRAME_TYPES.POINTER_PANEL,
+            this.FRAME_TYPES.BOLD_BORDER,
+            this.FRAME_TYPES.CENTERED_QR,
+            this.FRAME_TYPES.BOX_POINTER,
+            this.FRAME_TYPES.TOP_BANNER,
+            this.FRAME_TYPES.SKETCH_BORDER
         ].includes(frameType);
     },
 
@@ -190,7 +220,7 @@ const QRFrames = {
      */
     getFrameMetrics(frameType, size) {
         if (this.isDecorativeFrame(frameType)) {
-            return this.getDecorativeFrameMetrics(size);
+            return this.getDecorativeFrameMetrics(frameType, size);
         }
 
         const hasText = frameType === this.FRAME_TYPES.SCAN_ME || frameType === this.FRAME_TYPES.SCAN_ME_BORDER;
@@ -210,28 +240,69 @@ const QRFrames = {
         };
     },
 
-    getDecorativeFrameMetrics(size) {
+    getDecorativeFrameConfig(frameType) {
+        const defaultConfig = {
+            artboardHeight: this.DECORATIVE_FRAME_ARTBOARD_HEIGHT,
+            qrBackground: { x: 6, y: 6, width: 52, height: 52, radius: 4 },
+            qrBounds: { x: 12, y: 12, size: 40 }
+        };
+
+        switch (frameType) {
+            case this.FRAME_TYPES.CENTERED_QR:
+                return {
+                    artboardHeight: 64,
+                    qrBackground: null,
+                    qrBounds: { x: 12, y: 12, size: 40 }
+                };
+            case this.FRAME_TYPES.BOX_POINTER:
+                return {
+                    artboardHeight: this.DECORATIVE_FRAME_ARTBOARD_HEIGHT,
+                    qrBackground: { x: 7, y: 5, width: 50, height: 50, radius: 4 },
+                    qrBounds: { x: 12, y: 12, size: 40 }
+                };
+            case this.FRAME_TYPES.TOP_BANNER:
+                return {
+                    artboardHeight: this.DECORATIVE_FRAME_ARTBOARD_HEIGHT,
+                    qrBackground: { x: 7, y: 29, width: 50, height: 50, radius: 4 },
+                    qrBounds: { x: 12, y: 34, size: 40 }
+                };
+            case this.FRAME_TYPES.SKETCH_BORDER:
+                return {
+                    artboardHeight: this.DECORATIVE_FRAME_ARTBOARD_HEIGHT,
+                    qrBackground: { x: 12, y: 15, width: 40, height: 40, radius: 4 },
+                    qrBounds: { x: 16, y: 19, size: 32 }
+                };
+            default:
+                return defaultConfig;
+        }
+    },
+
+    getDecorativeFrameMetrics(frameType, size) {
+        const config = this.getDecorativeFrameConfig(frameType);
         const scale = size / this.FRAME_ARTBOARD_WIDTH;
         const strokeWidth = Math.max(1.5, scale * 2);
+        const mapRect = rect => rect ? {
+            x: scale * rect.x,
+            y: scale * rect.y,
+            width: scale * rect.width,
+            height: scale * rect.height,
+            radius: scale * rect.radius
+        } : null;
+        const mapQRBounds = bounds => bounds ? {
+            x: scale * bounds.x,
+            y: scale * bounds.y,
+            size: scale * bounds.size
+        } : null;
 
         return {
             size,
             scale,
-            totalHeight: Math.ceil(scale * this.DECORATIVE_FRAME_ARTBOARD_HEIGHT),
+            artboardHeight: config.artboardHeight,
+            totalHeight: Math.ceil(scale * config.artboardHeight),
             strokeWidth,
             outerRadius: Math.max(2, scale * 3),
-            qrBackgroundRadius: Math.max(2, scale * 4),
-            qrBackground: {
-                x: scale * 6,
-                y: scale * 6,
-                width: scale * 52,
-                height: scale * 52
-            },
-            qrBounds: {
-                x: scale * 12,
-                y: scale * 12,
-                size: scale * 40
-            },
+            qrBackground: mapRect(config.qrBackground),
+            qrBounds: mapQRBounds(config.qrBounds),
             fontSize: Math.max(6, scale * 9)
         };
     },
@@ -305,7 +376,7 @@ const QRFrames = {
     },
 
     buildDecorativeFrameSVG(frameType, size, qrContent, sourceViewBox) {
-        const metrics = this.getDecorativeFrameMetrics(size);
+        const metrics = this.getDecorativeFrameMetrics(frameType, size);
         const qrScaleX = metrics.qrBounds.size / sourceViewBox.width;
         const qrScaleY = metrics.qrBounds.size / sourceViewBox.height;
         const qrTranslateX = metrics.qrBounds.x - (sourceViewBox.minX * qrScaleX);
@@ -325,7 +396,7 @@ const QRFrames = {
     },
 
     getDecorativeFrameSVGMarkup(frameType, metrics) {
-        const qrBackground = `<rect x="${this.formatMetric(metrics.qrBackground.x)}" y="${this.formatMetric(metrics.qrBackground.y)}" width="${this.formatMetric(metrics.qrBackground.width)}" height="${this.formatMetric(metrics.qrBackground.height)}" rx="${this.formatMetric(metrics.qrBackgroundRadius)}" fill="${this.QR_BACKGROUND_COLOR}"></rect>`;
+        const qrBackground = metrics.qrBackground ? `<rect x="${this.formatMetric(metrics.qrBackground.x)}" y="${this.formatMetric(metrics.qrBackground.y)}" width="${this.formatMetric(metrics.qrBackground.width)}" height="${this.formatMetric(metrics.qrBackground.height)}" rx="${this.formatMetric(metrics.qrBackground.radius)}" fill="${this.QR_BACKGROUND_COLOR}"></rect>` : '';
         const commonText = (textY, color) => `
             <text x="${this.formatMetric(metrics.size / 2)}" y="${this.formatMetric(textY)}" text-anchor="middle" dominant-baseline="middle" font-size="${this.formatMetric(metrics.fontSize)}" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="${color}">${this.FRAME_TEXT}</text>
         `;
@@ -374,6 +445,49 @@ const QRFrames = {
                         <path d="${this.getBottomRoundedRectPath(this.scaleArtboardX(1, metrics), this.scaleArtboardY(67, metrics), this.scaleArtboardX(62, metrics), this.scaleArtboardY(16, metrics), this.scaleArtboardY(1, metrics))}" fill="${this.FRAME_FOREGROUND_COLOR}" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="${this.formatMetric(metrics.strokeWidth)}"></path>
                     `,
                     afterQR: commonText(this.scaleArtboardY(75.765, metrics), '#ffffff')
+                };
+            case this.FRAME_TYPES.BOLD_BORDER:
+                return {
+                    beforeQR: `
+                        <path d="M64 3.815v76.27a1.3 1.3 0 0 1-.498.301c-1.572.382-2.568 1.345-2.926 2.911-.16.703-.677.683-1.234.683H40.61c-11.885 0-23.789 0-35.693.02-.816 0-1.254-.2-1.473-1.044a3.16 3.16 0 0 0-2.409-2.43C.2 80.307 0 79.865 0 79.042.02 54.327.02 29.633 0 4.92c0-.843.18-1.345 1.055-1.566 1.254-.321 2.03-1.185 2.389-2.45.06-.32.219-.642.418-.903h56.336c.04.06.1.1.12.16.378 1.968 1.552 3.153 3.503 3.534.08.02.14.08.179.12" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        ${qrBackground}
+                    `,
+                    afterQR: commonText(this.scaleArtboardY(73.765, metrics), '#ffffff')
+                };
+            case this.FRAME_TYPES.CENTERED_QR:
+                return {
+                    beforeQR: '',
+                    afterQR: ''
+                };
+            case this.FRAME_TYPES.BOX_POINTER:
+                return {
+                    beforeQR: `
+                        <path d="M6 1h52a3 3 0 0 1 3 3v52a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3Z" transform="scale(${this.formatMetric(metrics.scale)})" fill="none" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="2"></path>
+                        ${qrBackground}
+                        <path d="m32.5 61 3.031 5.25H29.47z" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        <path d="M4 67h56a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V68a1 1 0 0 1 1-1Z" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="2"></path>
+                    `,
+                    afterQR: commonText(this.scaleArtboardY(75.765, metrics), '#ffffff')
+                };
+            case this.FRAME_TYPES.TOP_BANNER:
+                return {
+                    beforeQR: `
+                        <path d="M4 1h56a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1Z" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="2"></path>
+                        <path d="m32.5 23-3.031-5.25h6.062z" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        <path d="M6 25h52a3 3 0 0 1 3 3v52a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V28a3 3 0 0 1 3-3Z" transform="scale(${this.formatMetric(metrics.scale)})" fill="none" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="2"></path>
+                        ${qrBackground}
+                    `,
+                    afterQR: commonText(this.scaleArtboardY(9.765, metrics), '#ffffff')
+                };
+            case this.FRAME_TYPES.SKETCH_BORDER:
+                return {
+                    beforeQR: `
+                        <path d="M49.392 6.206a.59.59 0 0 1-.478-.243.593.593 0 0 1 .12-.83l4.02-3.013a.57.57 0 0 1 .816.122c.2.263.14.627-.12.829l-4.02 3.013a.54.54 0 0 1-.338.122M22.233 8.674H12.41l-1.134.849a.54.54 0 0 1-.338.121.59.59 0 0 1-.478-.242.58.58 0 0 1-.038-.666.6.6 0 0 0 .356.12c.12 0 .239-.041.338-.122l4.021-3.014a.61.61 0 0 0 .12-.829.59.59 0 0 0-.817-.121l-4.02 3.013a.61.61 0 0 0-.087.87H8.61C7.176 8.653 6 9.826 6 11.303v8.141l-3.881 2.9a.593.593 0 0 0-.12.83.59.59 0 0 0 .478.242c.12.02.239-.02.338-.121l7.066-5.279a.61.61 0 0 0 .12-.829.57.57 0 0 0-.816-.121l-.577.43v-6.193h16.765q.029.096.094.181a.59.59 0 0 0 .477.243c.12 0 .259-.04.338-.121l4.021-3.014a.593.593 0 0 0 .12-.829.59.59 0 0 0-.816-.121l-1.35 1.011h-2.83l-3.205 2.427a.54.54 0 0 1-.338.121.59.59 0 0 1-.478-.242.585.585 0 0 1-.022-.675.6.6 0 0 0 .34.108c.12 0 .24-.04.34-.121l7.065-5.279a.593.593 0 0 0 .12-.829.57.57 0 0 0-.817-.121z" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        <path d="M.588 46.431a.59.59 0 0 1-.478-.242.61.61 0 0 1 .12-.83L6 41.031V26.288l1.891-1.415a.593.593 0 0 0-.004-.953.6.6 0 0 1-.135.144l-2.468 1.86a.64.64 0 0 1-.358.122.53.53 0 0 1-.458-.243.593.593 0 0 1 .12-.83L6 23.91v-2.09l2.608-1.942V58.83h46.714V27.522l2.607-1.941v2.308l3.901-2.915a.57.57 0 0 1 .816.12c.2.264.14.628-.12.83l-4.816 3.6a.54.54 0 0 1-.338.121.6.6 0 0 1-.367-.127.59.59 0 0 0 .009.694.59.59 0 0 0 .477.243c.12 0 .24-.04.339-.122l.12-.08v14.481l1.213-.911a.57.57 0 0 1 .816.121c.2.263.14.627-.12.83l-2.746 2.062c-.1.101-.219.121-.338.121a.6.6 0 0 1-.354-.117.585.585 0 0 0 .016.684.59.59 0 0 0 .477.242.54.54 0 0 0 .339-.12l.716-.527v2.25l5.096-3.808a.57.57 0 0 1 .816.122.59.59 0 0 1-.12.829l-7.065 5.279a.54.54 0 0 1-.339.12.6.6 0 0 1-.35-.114.58.58 0 0 0 .031.661.59.59 0 0 0 .478.243c.12 0 .239-.04.338-.121l1.115-.83v15.412l4.479-3.358a.57.57 0 0 1 .816.121.593.593 0 0 1-.12.83l-6.15 4.61a.54.54 0 0 1-.338.122.6.6 0 0 1-.341-.108.585.585 0 0 0 .022.674.59.59 0 0 0 .478.243c.12 0 .238-.04.338-.121l.816-.647v4.59c0 1.477-1.174 2.65-2.607 2.65H53.57l1.254-.95a.593.593 0 0 0-.01-.956.6.6 0 0 1-.149.166l-5.553 4.166a.38.38 0 0 1-.338.121.59.59 0 0 1-.478-.242.593.593 0 0 1 .12-.83l1.966-1.475H33.867l.438-.324a.593.593 0 0 0-.01-.955.6.6 0 0 1-.15.166l-7.065 5.279a.38.38 0 0 1-.339.121.59.59 0 0 1-.477-.242.593.593 0 0 1 .119-.83l4.305-3.215H11.913l1.532-1.133a.593.593 0 0 0-.011-.956.6.6 0 0 1-.147.167L6.22 80.124a.54.54 0 0 1-.339.122.59.59 0 0 1-.477-.243.61.61 0 0 1 .12-.83l3.193-2.385h-.11C7.155 76.788 6 75.595 6 74.138v-8.675l1.414-1.052a.593.593 0 0 0-.01-.957.6.6 0 0 1-.15.168l-2.747 2.063a.54.54 0 0 1-.338.121.59.59 0 0 1-.478-.243.593.593 0 0 1 .12-.829l2.19-1.644V47.584l1.512-1.132a.61.61 0 0 0 .12-.83.6.6 0 0 0-.123-.122.6.6 0 0 1-.156.183l-2.767 2.063a.54.54 0 0 1-.338.121.59.59 0 0 1-.478-.242.593.593 0 0 1 .12-.83l2.11-1.573v-1.804l2.13-1.597a.61.61 0 0 0 .119-.83.6.6 0 0 0-.125-.124.6.6 0 0 1-.134.144L.926 46.31a.54.54 0 0 1-.338.121" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        <path d="M53.551 27.845a.59.59 0 0 1-.477-.242.593.593 0 0 1 .12-.83l2.189-1.639V11.303h-5.334l3.543-2.65h1.79c1.454 0 2.608 1.193 2.608 2.65v11.879l1.632-1.222a.57.57 0 0 1 .816.122c.2.262.14.627-.12.829l-6.428 4.813a.54.54 0 0 1-.339.121M2.02 79.154a.59.59 0 0 0 .478.243c.12 0 .24-.02.339-.121l2.766-2.063a.61.61 0 0 0 .12-.83.59.59 0 0 0-.816-.12L2.14 78.324a.593.593 0 0 0-.12.83m45.062-67.285a.59.59 0 0 0 .478.242c.12 0 .239-.02.338-.101l5.852-4.389a.593.593 0 0 0 .12-.829.59.59 0 0 0-.817-.121l-2.655 1.982H30.662c.12.243.04.546-.179.728l-2.588 1.922h19.11a.58.58 0 0 0 .077.565M33.329 6.206a.59.59 0 0 1-.478-.243.593.593 0 0 1 .12-.83l1.353-1.01a.57.57 0 0 1 .816.121c.2.263.14.627-.12.83l-1.353 1.01a.54.54 0 0 1-.338.122m-.736 74.364a.59.59 0 0 0 .478.242c.14 0 .259-.04.338-.122l1.354-1.01a.593.593 0 0 0 .12-.83.59.59 0 0 0-.817-.121l-1.353 1.01a.593.593 0 0 0-.12.83" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        ${qrBackground}
+                    `,
+                    afterQR: commonText(this.scaleArtboardY(67.765, metrics), '#ffffff')
                 };
             default:
                 return {
@@ -426,24 +540,28 @@ const QRFrames = {
     },
 
     drawDecorativeFrame(ctx, canvas, frameType, metrics) {
-        ctx.fillStyle = this.QR_BACKGROUND_COLOR;
-        this.roundRect(
-            ctx,
-            metrics.qrBackground.x,
-            metrics.qrBackground.y,
-            metrics.qrBackground.width,
-            metrics.qrBackground.height,
-            metrics.qrBackgroundRadius
-        );
-        ctx.fill();
+        if (metrics.qrBackground) {
+            ctx.fillStyle = this.QR_BACKGROUND_COLOR;
+            this.roundRect(
+                ctx,
+                metrics.qrBackground.x,
+                metrics.qrBackground.y,
+                metrics.qrBackground.width,
+                metrics.qrBackground.height,
+                metrics.qrBackground.radius
+            );
+            ctx.fill();
+        }
 
-        ctx.drawImage(
-            canvas,
-            metrics.qrBounds.x,
-            metrics.qrBounds.y,
-            metrics.qrBounds.size,
-            metrics.qrBounds.size
-        );
+        if (metrics.qrBounds) {
+            ctx.drawImage(
+                canvas,
+                metrics.qrBounds.x,
+                metrics.qrBounds.y,
+                metrics.qrBounds.size,
+                metrics.qrBounds.size
+            );
+        }
 
         switch (frameType) {
             case this.FRAME_TYPES.ROUNDED_BANNER:
@@ -460,6 +578,21 @@ const QRFrames = {
                 break;
             case this.FRAME_TYPES.POINTER_PANEL:
                 this.drawPointerPanelFrame(ctx, metrics);
+                break;
+            case this.FRAME_TYPES.BOLD_BORDER:
+                this.drawBoldBorderFrame(ctx, metrics);
+                break;
+            case this.FRAME_TYPES.CENTERED_QR:
+                this.drawCenteredQRFrame(ctx, metrics);
+                break;
+            case this.FRAME_TYPES.BOX_POINTER:
+                this.drawBoxPointerFrame(ctx, metrics);
+                break;
+            case this.FRAME_TYPES.TOP_BANNER:
+                this.drawTopBannerFrame(ctx, metrics);
+                break;
+            case this.FRAME_TYPES.SKETCH_BORDER:
+                this.drawSketchBorderFrame(ctx, metrics);
                 break;
         }
     },
@@ -632,6 +765,62 @@ const QRFrames = {
         this.drawFrameLabel(ctx, metrics, this.scaleArtboardY(75.765, metrics), '#ffffff');
     },
 
+    drawBoldBorderFrame(ctx, metrics) {
+        this.drawArtboardPath(ctx, metrics, 'M64 3.815v76.27a1.3 1.3 0 0 1-.498.301c-1.572.382-2.568 1.345-2.926 2.911-.16.703-.677.683-1.234.683H40.61c-11.885 0-23.789 0-35.693.02-.816 0-1.254-.2-1.473-1.044a3.16 3.16 0 0 0-2.409-2.43C.2 80.307 0 79.865 0 79.042.02 54.327.02 29.633 0 4.92c0-.843.18-1.345 1.055-1.566 1.254-.321 2.03-1.185 2.389-2.45.06-.32.219-.642.418-.903h56.336c.04.06.1.1.12.16.378 1.968 1.552 3.153 3.503 3.534.08.02.14.08.179.12', {
+            fill: this.FRAME_FOREGROUND_COLOR
+        });
+        this.drawFrameLabel(ctx, metrics, this.scaleArtboardY(73.765, metrics), '#ffffff');
+    },
+
+    drawCenteredQRFrame(ctx, metrics) {
+        // Intentionally empty - this style only repositions the QR with padding.
+    },
+
+    drawBoxPointerFrame(ctx, metrics) {
+        this.drawArtboardPath(ctx, metrics, 'M6 1h52a3 3 0 0 1 3 3v52a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3Z', {
+            stroke: this.FRAME_FOREGROUND_COLOR,
+            lineWidth: 2
+        });
+        this.drawArtboardPath(ctx, metrics, 'm32.5 61 3.031 5.25H29.47z', {
+            fill: this.FRAME_FOREGROUND_COLOR
+        });
+        this.drawArtboardPath(ctx, metrics, 'M4 67h56a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V68a1 1 0 0 1 1-1Z', {
+            fill: this.FRAME_FOREGROUND_COLOR,
+            stroke: this.FRAME_FOREGROUND_COLOR,
+            lineWidth: 2
+        });
+        this.drawFrameLabel(ctx, metrics, this.scaleArtboardY(75.765, metrics), '#ffffff');
+    },
+
+    drawTopBannerFrame(ctx, metrics) {
+        this.drawArtboardPath(ctx, metrics, 'M4 1h56a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1Z', {
+            fill: this.FRAME_FOREGROUND_COLOR,
+            stroke: this.FRAME_FOREGROUND_COLOR,
+            lineWidth: 2
+        });
+        this.drawArtboardPath(ctx, metrics, 'm32.5 23-3.031-5.25h6.062z', {
+            fill: this.FRAME_FOREGROUND_COLOR
+        });
+        this.drawArtboardPath(ctx, metrics, 'M6 25h52a3 3 0 0 1 3 3v52a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V28a3 3 0 0 1 3-3Z', {
+            stroke: this.FRAME_FOREGROUND_COLOR,
+            lineWidth: 2
+        });
+        this.drawFrameLabel(ctx, metrics, this.scaleArtboardY(9.765, metrics), '#ffffff');
+    },
+
+    drawSketchBorderFrame(ctx, metrics) {
+        this.drawArtboardPath(ctx, metrics, 'M49.392 6.206a.59.59 0 0 1-.478-.243.593.593 0 0 1 .12-.83l4.02-3.013a.57.57 0 0 1 .816.122c.2.263.14.627-.12.829l-4.02 3.013a.54.54 0 0 1-.338.122M22.233 8.674H12.41l-1.134.849a.54.54 0 0 1-.338.121.59.59 0 0 1-.478-.242.58.58 0 0 1-.038-.666.6.6 0 0 0 .356.12c.12 0 .239-.041.338-.122l4.021-3.014a.61.61 0 0 0 .12-.829.59.59 0 0 0-.817-.121l-4.02 3.013a.61.61 0 0 0-.087.87H8.61C7.176 8.653 6 9.826 6 11.303v8.141l-3.881 2.9a.593.593 0 0 0-.12.83.59.59 0 0 0 .478.242c.12.02.239-.02.338-.121l7.066-5.279a.61.61 0 0 0 .12-.829.57.57 0 0 0-.816-.121l-.577.43v-6.193h16.765q.029.096.094.181a.59.59 0 0 0 .477.243c.12 0 .259-.04.338-.121l4.021-3.014a.593.593 0 0 0 .12-.829.59.59 0 0 0-.816-.121l-1.35 1.011h-2.83l-3.205 2.427a.54.54 0 0 1-.338.121.59.59 0 0 1-.478-.242.585.585 0 0 1-.022-.675.6.6 0 0 0 .34.108c.12 0 .24-.04.34-.121l7.065-5.279a.593.593 0 0 0 .12-.829.57.57 0 0 0-.817-.121z', {
+            fill: this.FRAME_FOREGROUND_COLOR
+        });
+        this.drawArtboardPath(ctx, metrics, 'M.588 46.431a.59.59 0 0 1-.478-.242.61.61 0 0 1 .12-.83L6 41.031V26.288l1.891-1.415a.593.593 0 0 0-.004-.953.6.6 0 0 1-.135.144l-2.468 1.86a.64.64 0 0 1-.358.122.53.53 0 0 1-.458-.243.593.593 0 0 1 .12-.83L6 23.91v-2.09l2.608-1.942V58.83h46.714V27.522l2.607-1.941v2.308l3.901-2.915a.57.57 0 0 1 .816.12c.2.264.14.628-.12.83l-4.816 3.6a.54.54 0 0 1-.338.121.6.6 0 0 1-.367-.127.59.59 0 0 0 .009.694.59.59 0 0 0 .477.243c.12 0 .24-.04.339-.122l.12-.08v14.481l1.213-.911a.57.57 0 0 1 .816.121c.2.263.14.627-.12.83l-2.746 2.062c-.1.101-.219.121-.338.121a.6.6 0 0 1-.354-.117.585.585 0 0 0 .016.684.59.59 0 0 0 .477.242.54.54 0 0 0 .339-.12l.716-.527v2.25l5.096-3.808a.57.57 0 0 1 .816.122.59.59 0 0 1-.12.829l-7.065 5.279a.54.54 0 0 1-.339.12.6.6 0 0 1-.35-.114.58.58 0 0 0 .031.661.59.59 0 0 0 .478.243c.12 0 .239-.04.338-.121l1.115-.83v15.412l4.479-3.358a.57.57 0 0 1 .816.121.593.593 0 0 1-.12.83l-6.15 4.61a.54.54 0 0 1-.338.122.6.6 0 0 1-.341-.108.585.585 0 0 0 .022.674.59.59 0 0 0 .478.243c.12 0 .238-.04.338-.121l.816-.647v4.59c0 1.477-1.174 2.65-2.607 2.65H53.57l1.254-.95a.593.593 0 0 0-.01-.956.6.6 0 0 1-.149.166l-5.553 4.166a.38.38 0 0 1-.338.121.59.59 0 0 1-.478-.242.593.593 0 0 1 .12-.83l1.966-1.475H33.867l.438-.324a.593.593 0 0 0-.01-.955.6.6 0 0 1-.15.166l-7.065 5.279a.38.38 0 0 1-.339.121.59.59 0 0 1-.477-.242.593.593 0 0 1 .119-.83l4.305-3.215H11.913l1.532-1.133a.593.593 0 0 0-.011-.956.6.6 0 0 1-.147.167L6.22 80.124a.54.54 0 0 1-.339.122.59.59 0 0 1-.477-.243.61.61 0 0 1 .12-.83l3.193-2.385h-.11C7.155 76.788 6 75.595 6 74.138v-8.675l1.414-1.052a.593.593 0 0 0-.01-.957.6.6 0 0 1-.15.168l-2.747 2.063a.54.54 0 0 1-.338.121.59.59 0 0 1-.478-.243.593.593 0 0 1 .12-.829l2.19-1.644V47.584l1.512-1.132a.61.61 0 0 0 .12-.83.6.6 0 0 0-.123-.122.6.6 0 0 1-.156.183l-2.767 2.063a.54.54 0 0 1-.338.121.59.59 0 0 1-.478-.242.593.593 0 0 1 .12-.83l2.11-1.573v-1.804l2.13-1.597a.61.61 0 0 0 .119-.83.6.6 0 0 0-.125-.124.6.6 0 0 1-.134.144L.926 46.31a.54.54 0 0 1-.338.121', {
+            fill: this.FRAME_FOREGROUND_COLOR
+        });
+        this.drawArtboardPath(ctx, metrics, 'M53.551 27.845a.59.59 0 0 1-.477-.242.593.593 0 0 1 .12-.83l2.189-1.639V11.303h-5.334l3.543-2.65h1.79c1.454 0 2.608 1.193 2.608 2.65v11.879l1.632-1.222a.57.57 0 0 1 .816.122c.2.262.14.627-.12.829l-6.428 4.813a.54.54 0 0 1-.339.121M2.02 79.154a.59.59 0 0 0 .478.243c.12 0 .24-.02.339-.121l2.766-2.063a.61.61 0 0 0 .12-.83.59.59 0 0 0-.816-.12L2.14 78.324a.593.593 0 0 0-.12.83m45.062-67.285a.59.59 0 0 0 .478.242c.12 0 .239-.02.338-.101l5.852-4.389a.593.593 0 0 0 .12-.829.59.59 0 0 0-.817-.121l-2.655 1.982H30.662c.12.243.04.546-.179.728l-2.588 1.922h19.11a.58.58 0 0 0 .077.565M33.329 6.206a.59.59 0 0 1-.478-.243.593.593 0 0 1 .12-.83l1.353-1.01a.57.57 0 0 1 .816.121c.2.263.14.627-.12.83l-1.353 1.01a.54.54 0 0 1-.338.122m-.736 74.364a.59.59 0 0 0 .478.242c.14 0 .259-.04.338-.122l1.354-1.01a.593.593 0 0 0 .12-.83.59.59 0 0 0-.817-.121l-1.353 1.01a.593.593 0 0 0-.12.83', {
+            fill: this.FRAME_FOREGROUND_COLOR
+        });
+        this.drawFrameLabel(ctx, metrics, this.scaleArtboardY(67.765, metrics), '#ffffff');
+    },
+
     drawFrameLabel(ctx, metrics, y, color) {
         ctx.fillStyle = color;
         ctx.font = `700 ${metrics.fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
@@ -703,6 +892,25 @@ const QRFrames = {
             `Q ${this.formatMetric(x)} ${this.formatMetric(y + height)} ${this.formatMetric(x)} ${this.formatMetric(y + height - radius)}`,
             'Z'
         ].join(' ');
+    },
+
+    drawArtboardPath(ctx, metrics, pathData, options = {}) {
+        const path = new Path2D(pathData);
+        ctx.save();
+        ctx.scale(metrics.scale, metrics.scale);
+
+        if (options.fill) {
+            ctx.fillStyle = options.fill;
+            ctx.fill(path);
+        }
+
+        if (options.stroke) {
+            ctx.strokeStyle = options.stroke;
+            ctx.lineWidth = options.lineWidth || 2;
+            ctx.stroke(path);
+        }
+
+        ctx.restore();
     },
 
     scaleArtboardX(value, metrics) {
