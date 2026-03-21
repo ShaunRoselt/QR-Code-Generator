@@ -12,6 +12,8 @@ const QRFrames = {
     QR_BACKGROUND_COLOR: '#E6E7ED',
     FRAME_FOREGROUND_COLOR: '#000000',
     FRAME_TEXT: 'Scan me!',
+    FRAME_FONT_DEFAULT: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    FRAME_FONT_SCRIPT: 'cursive',
     RENDER_PHASES: {
         BEFORE: 'before',
         AFTER: 'after'
@@ -20,6 +22,24 @@ const QRFrames = {
     BOLD_BORDER_PATH: 'M64 3.815v76.27a1.3 1.3 0 0 1-.498.301c-1.572.382-2.568 1.345-2.926 2.911-.16.703-.677.683-1.234.683H40.61c-11.885 0-23.789 0-35.693.02-.816 0-1.254-.2-1.473-1.044a3.16 3.16 0 0 0-2.409-2.43C.2 80.307 0 79.865 0 79.042.02 54.327.02 29.633 0 4.92c0-.843.18-1.345 1.055-1.566 1.254-.321 2.03-1.185 2.389-2.45.06-.32.219-.642.418-.903h56.336c.04.06.1.1.12.16.378 1.968 1.552 3.153 3.503 3.534.08.02.14.08.179.12',
     CENTERED_QR_FRAME_PATH: 'M-2 4a6 6 0 0 1 6-6h56a6 6 0 0 1 6 6h-4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2zm66 74H0zm-66 0V4a6 6 0 0 1 6-6v4a2 2 0 0 0-2 2v74zM60-2a6 6 0 0 1 6 6v74h-4V4a2 2 0 0 0-2-2z',
     CENTERED_QR_RIP_PATH: 'M3.016 83.259 0 78l1.767-1 2.574 4.66 2.132-3.86c.546-.989 2.105-.989 2.65 0l2.133 3.86 2.132-3.86c.546-.989 2.104-.989 2.65 0l2.133 3.86 2.131-3.86c.547-.989 2.105-.989 2.651 0l2.132 3.86 2.132-3.86c.546-.989 2.105-.989 2.65 0L32 81.66l2.132-3.86c.546-.989 2.105-.989 2.65 0l2.133 3.86 2.132-3.86c.546-.989 2.104-.989 2.65 0l2.133 3.86 2.132-3.86c.546-.989 2.104-.989 2.65 0l2.132 3.86 2.132-3.86c.546-.989 2.105-.989 2.651 0l2.132 3.86L62.233 77 64 78l-3.016 5.259c-.546.988-2.104.988-2.65 0l-2.132-3.86-2.132 3.86c-.546.988-2.105.988-2.651 0l-2.132-3.86-2.132 3.86c-.546.988-2.105.988-2.65 0l-2.133-3.86-2.132 3.86c-.546.988-2.105.988-2.65 0l-2.133-3.86-2.132 3.86c-.546.988-2.104.988-2.65 0l-2.132-3.86-2.133 3.86c-.546.988-2.104.988-2.65 0l-2.132-3.86-2.132 3.86c-.546.988-2.105.988-2.65 0l-2.133-3.86-2.132 3.86c-.546.988-2.105.988-2.65 0l-2.133-3.86-2.132 3.86c-.546.988-2.104.988-2.65 0',
+    VIDEO_ICON_PATH: 'M13.9917 72.9938C13.8958 72.6354 13.6146 72.3542 13.2563 72.2583C12.6083 72.0833 10 72.0833 10 72.0833C10 72.0833 7.39375 72.0833 6.74375 72.2583C6.38542 72.3542 6.10417 72.6354 6.00834 72.9938C5.8875 73.6563 5.82917 74.3271 5.83334 75C5.82917 75.6729 5.8875 76.3438 6.00834 77.0063C6.10417 77.3646 6.38542 77.6458 6.74375 77.7417C7.39167 77.9167 10 77.9167 10 77.9167C10 77.9167 12.6063 77.9167 13.2563 77.7417C13.6146 77.6458 13.8958 77.3646 13.9917 77.0063C14.1125 76.3438 14.1708 75.6729 14.1667 75C14.1708 74.3271 14.1125 73.6563 13.9917 72.9938ZM9.16667 76.25V73.75L11.3313 75L9.16667 76.25Z',
+    PHONE_FRAME_PATH: 'M8 0a4 4 0 0 0-4 4v76a4 4 0 0 0 4 4h48a4 4 0 0 0 4-4V4a4 4 0 0 0-4-4zm15 4a1 1 0 1 0 0 2h2a1 1 0 1 0 0-2zm6 0a1 1 0 1 0 0 2h11a1 1 0 1 0 0-2zm6 72a3 3 0 1 1-6 0 3 3 0 0 1 6 0M7 11a2 2 0 0 1 2-2h46a2 2 0 0 1 2 2v56a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z',
+    CORNER_ACCENT_PATH_PRIMARY: 'M59.78 10.864H64l-.04 1.122h-3.54c.1.2.18.421.26.662a.568.568 0 1 1-1.08.36 4.8 4.8 0 0 0-.66-1.362l-.005-.007c-1.075-1.417-1.166-1.537-8.015-1.537H48.9a.76.76 0 0 0 0 1.523.581.581 0 0 1 0 1.163.76.76 0 0 0 0 1.524.581.581 0 0 1 0 1.162.76.76 0 0 0-.76.762c0 .36.24.661.58.741h.2c.32 0 .58.26.58.582q0 .12-.06.24c-.1.22-.3.36-.54.36-.1 0-.2 0-.3-.02H44c-.36 0-.74.281-.74.762 0 .482.3.822.74.822h7.56c1 0 1.74.26 2.2.742.36.4.54.922.5 1.523a24 24 0 0 1-.086 1.306l-.034.418c-.08.962-.14 1.724-.06 2.225.08.38.2.5.54.561.54.08.8-.4 1.36-2.065l.085-.25c.178-.521.377-1.105.635-1.674.26-.56.718-.8 1.137-1.02l.003-.002c.4-.2.78-.42 1.12-.882.72-.982 1.02-2.666 1.02-2.686a.57.57 0 0 1 .66-.46c.3.04.52.34.46.66 0 .04-.14.782-.44 1.624H64v1.163h-3.86c-.046.124-.117.224-.183.318q-.03.041-.057.083c-.5.701-1.08 1.002-1.52 1.222-.34.18-.52.281-.6.461-.24.531-.42 1.062-.592 1.568l-.088.256-.1.28c-.235.665-.441 1.247-.74 1.705-.38.58-.88.881-1.48.881-.1 0-.22 0-.32-.02-.82-.12-1.32-.62-1.48-1.483-.12-.641-.06-1.483.04-2.525.04-.501.08-1.083.12-1.684 0-.3-.06-.5-.2-.661-.24-.26-.7-.381-1.36-.381H44c-1.08 0-1.9-.842-1.9-1.964 0-1.063.86-1.925 1.9-1.925h3.14a2.2 2.2 0 0 1-.14-.741c0-.521.22-1.002.56-1.343-.34-.34-.56-.822-.56-1.343s.22-1.002.56-1.343c-.34-.34-.56-.822-.56-1.343C47 9.862 47.86 9 48.92 9h2.02c3.72 0 5.46.04 6.58.28 1.22.281 1.68.822 2.26 1.584M8.9 51.813c0 .32.26.581.58.581s.56-.26.56-.56v-31.37c0-.42.26-.762.6-.762h27.72a.581.581 0 0 0 0-1.162h-27.7c-.98 0-1.76.862-1.76 1.904zM25.64 64.84h27.7c.98 0 1.76-.862 1.76-1.904V31.568a.581.581 0 1 0-1.16 0v31.348c0 .42-.26.761-.6.761h-27.7a.581.581 0 0 0 0 1.163',
+    CORNER_ACCENT_PATH_SECONDARY: 'M20 62.174h-7.58c-.66 0-1.12-.12-1.36-.38-.14-.161-.2-.361-.2-.662.04-.601.08-1.183.12-1.684.1-1.042.16-1.884.04-2.525-.16-.862-.66-1.363-1.48-1.483-.74-.12-1.36.18-1.8.861-.299.458-.505 1.04-.74 1.704l-.1.28-.088.257a17 17 0 0 1-.592 1.568c-.08.18-.26.28-.6.46-.44.221-1.02.522-1.52 1.223l-.049.073a3 3 0 0 0-.191.308H0v1.163h3.34c-.3.841-.44 1.583-.44 1.623a.57.57 0 1 0 1.12.2c0-.02.3-1.703 1.02-2.685.34-.461.72-.682 1.12-.882l.003-.002c.419-.22.878-.46 1.137-1.02.258-.57.457-1.153.635-1.675l.085-.25c.56-1.663.82-2.144 1.36-2.064.34.06.46.18.54.561.08.501.02 1.263-.06 2.225q-.023.295-.052.61c-.03.346-.063.715-.088 1.114-.04.601.14 1.122.5 1.523.46.481 1.2.742 2.2.742H20c.44 0 .74.34.74.822 0 .48-.38.761-.74.761h-4.6c-.1-.02-.2-.02-.3-.02h-4.22a1.923 1.923 0 0 0-.96 3.588c-.2.3-.3.661-.3 1.042 0 .662.34 1.243.84 1.584-.22.32-.34.701-.34 1.102 0 .26.06.521.16.762-4.086-.06-4.299-.34-5.191-1.512l-.009-.012a4.8 4.8 0 0 1-.66-1.363.568.568 0 1 0-1.08.36c.08.242.16.442.26.663H0v1.162h4.22c.56.762 1.04 1.303 2.26 1.583 1 .221 2.5.281 5.46.281h3.14c1.06 0 1.92-.862 1.92-1.924 0-.521-.22-1.002-.56-1.343.34-.34.56-.822.56-1.343s-.22-1.002-.56-1.343c.34-.34.56-.822.56-1.343 0-.26-.06-.52-.14-.741H20c1.04 0 1.9-.862 1.9-1.925 0-1.182-.82-2.024-1.9-2.024m-4.14 7.316a.76.76 0 0 1-.76.762h-3.58a.76.76 0 0 1 0-1.524h3.56c.44 0 .78.341.78.762m-.78 3.468H12c-.4-.02-.74-.361-.74-.762a.76.76 0 0 1 .76-.762h3.08a.76.76 0 1 1-.02 1.523m.78-6.154a.76.76 0 0 1-.76.762h-4.24a.76.76 0 0 1 0-1.523h4.04c.06.02.1.02.16.02h.2c.36.08.6.38.6.741',
+    BAG_FRAME_PATH: 'M59.123 17.153c0-2.303-1.857-4.153-4.128-4.153H8.024c-2.29 0-4.129 1.869-4.129 4.153L2 75.847C2 78.15 3.858 80 6.129 80H56.87c2.292 0 4.13-1.869 4.13-4.153zm-52.788 0c0-.925.75-1.699 1.689-1.699h46.97a1.7 1.7 0 0 1 1.69 1.7v48.951H6.334z',
+    BAG_HANDLE_LEFT_PATH: 'm22.81 3.02-4.69 4.663v9.93h4.69z',
+    BAG_HANDLE_RIGHT_PATH: 'm40.188 3.02 4.692 4.663v9.93h-4.692z',
+    BAG_HANDLE_SHADOW_PATH: 'M40.188 3H22.81v4.72h17.377z',
+    GIFT_FRAME_PATH: 'M56.525 20.57v49.175H7.475V20.569zm0-2.425H7.475a2.395 2.395 0 0 0-2.4 2.406v49.175a2.395 2.395 0 0 0 2.4 2.405h49.069c1.331 0 2.4-1.07 2.4-2.405V20.569a2.427 2.427 0 0 0-2.419-2.424',
+    GIFT_TEXT_CONTAINER_PATH: 'M56.525 81.546H7.475a2.395 2.395 0 0 1-2.4-2.406v-9.094h53.887v9.094a2.44 2.44 0 0 1-2.437 2.406',
+    BOW_SHADOW_PATH: 'M62.094 18.333v.921l-12.619-.094c.112.77.075 1.635-.375 2.48-.506.94-1.613 2.067-3.994 2.067-3.15 0-7.443-2.048-9.956-4.171a2.9 2.9 0 0 1-1.612.507h-2.25a2.77 2.77 0 0 1-1.594-.507c-2.494 2.104-6.806 4.171-9.956 4.171-2.382 0-3.488-1.127-3.994-2.067-.45-.845-.488-1.71-.375-2.48l-13.481.113.077-.94 30.258-2.482z',
+    BOW_LEFT_RIBBON_PATH: 'M20.9 8.205s-13.875-.507-18-.113c2.175 1.973 4.144 4.623 4.144 4.623l-5.081 5.618 22.275-.15c-.507-2.01-3.338-9.978-3.338-9.978',
+    BOW_RIGHT_RIBBON_PATH: 'M43.156 8.205s13.875-.507 18-.113c-2.175 1.973-4.143 4.623-4.143 4.623l5.08 5.618-22.274-.15c.525-2.01 3.337-9.978 3.337-9.978',
+    BOW_LEFT_SOLID_PATH: 'M30.594 8.487s-6.225-5.374-10.95-5.337c-4.725.038-4.444 3.007-4.238 3.852.356 1.504 2.175 5.187 2.175 7.216s-2.137 4.735-1.031 6.915c2.25 4.397 12.188-.958 14.044-4.153 1.837-3.194 0-8.493 0-8.493',
+    BOW_RIGHT_SOLID_PATH: 'M34.269 8.487s6.225-5.374 10.95-5.337c4.725.038 4.444 2.988 4.237 3.834-.356 1.503-2.175 5.186-2.175 7.215s2.157 4.754 1.032 6.934c-2.25 4.397-12.188-.958-14.044-4.153s0-8.493 0-8.493',
+    BOW_LEFT_SHADOW_PATH: 'M28.006 8.618S20 2.85 17.675 5.255c-2.569 2.687 10.331 3.363 10.331 3.363',
+    BOW_RIGHT_SHADOW_PATH: 'M36.838 8.618s8.006-5.768 10.33-3.363c2.588 2.687-10.33 3.363-10.33 3.363',
+    BOW_KNOT_PATH: 'M31.306 7.867h2.25a1.93 1.93 0 0 1 1.931 1.935v7.235a1.93 1.93 0 0 1-1.93 1.935h-2.25a1.93 1.93 0 0 1-1.932-1.935V9.783c0-1.052.863-1.916 1.931-1.916',
     POINTER_PANEL_TRIANGLE_POINTS: {
         tip: { x: 32.5, y: 61 },
         right: { x: 35.531, y: 67 },
@@ -40,7 +60,14 @@ const QRFrames = {
         CENTERED_QR: 'centered-qr',
         BOX_POINTER: 'box-pointer',
         TOP_BANNER: 'top-banner',
-        SKETCH_BORDER: 'sketch-border'
+        SKETCH_BORDER: 'sketch-border',
+        SCRIPT_CARD: 'script-card',
+        VIDEO_PANEL: 'video-panel',
+        PHONE_SCREEN: 'phone-screen',
+        ARROW_NOTE: 'arrow-note',
+        CORNER_ACCENT: 'corner-accent',
+        BAG_TAG: 'bag-tag',
+        GIFT_BOW: 'gift-bow'
     },
 
     getFrameOptions() {
@@ -96,6 +123,34 @@ const QRFrames = {
             {
                 id: this.FRAME_TYPES.SKETCH_BORDER,
                 name: 'Sketch Border'
+            },
+            {
+                id: this.FRAME_TYPES.SCRIPT_CARD,
+                name: 'Script Card'
+            },
+            {
+                id: this.FRAME_TYPES.VIDEO_PANEL,
+                name: 'Video Panel'
+            },
+            {
+                id: this.FRAME_TYPES.PHONE_SCREEN,
+                name: 'Phone Screen'
+            },
+            {
+                id: this.FRAME_TYPES.ARROW_NOTE,
+                name: 'Arrow Note'
+            },
+            {
+                id: this.FRAME_TYPES.CORNER_ACCENT,
+                name: 'Corner Accent'
+            },
+            {
+                id: this.FRAME_TYPES.BAG_TAG,
+                name: 'Bag Tag'
+            },
+            {
+                id: this.FRAME_TYPES.GIFT_BOW,
+                name: 'Gift Bow'
             }
         ];
     },
@@ -116,7 +171,14 @@ const QRFrames = {
             this.FRAME_TYPES.CENTERED_QR,
             this.FRAME_TYPES.BOX_POINTER,
             this.FRAME_TYPES.TOP_BANNER,
-            this.FRAME_TYPES.SKETCH_BORDER
+            this.FRAME_TYPES.SKETCH_BORDER,
+            this.FRAME_TYPES.SCRIPT_CARD,
+            this.FRAME_TYPES.VIDEO_PANEL,
+            this.FRAME_TYPES.PHONE_SCREEN,
+            this.FRAME_TYPES.ARROW_NOTE,
+            this.FRAME_TYPES.CORNER_ACCENT,
+            this.FRAME_TYPES.BAG_TAG,
+            this.FRAME_TYPES.GIFT_BOW
         ].includes(frameType);
     },
 
@@ -286,6 +348,30 @@ const QRFrames = {
                     qrBackground: { x: 12, y: 15, width: 40, height: 40, radius: 4 },
                     qrBounds: { x: 16, y: 19, size: 32 }
                 };
+            case this.FRAME_TYPES.PHONE_SCREEN:
+                return {
+                    artboardHeight: this.DECORATIVE_FRAME_ARTBOARD_HEIGHT,
+                    qrBackground: { x: 10, y: 12, width: 44, height: 44, radius: 2 },
+                    qrBounds: { x: 15, y: 17, size: 34 }
+                };
+            case this.FRAME_TYPES.CORNER_ACCENT:
+                return {
+                    artboardHeight: this.DECORATIVE_FRAME_ARTBOARD_HEIGHT,
+                    qrBackground: { x: 14.5, y: 24, width: 35, height: 35, radius: 2 },
+                    qrBounds: { x: 20, y: 29.5, size: 24 }
+                };
+            case this.FRAME_TYPES.BAG_TAG:
+                return {
+                    artboardHeight: this.DECORATIVE_FRAME_ARTBOARD_HEIGHT,
+                    qrBackground: { x: 10, y: 19.5, width: 43, height: 43, radius: 2 },
+                    qrBounds: { x: 16.5, y: 26, size: 30 }
+                };
+            case this.FRAME_TYPES.GIFT_BOW:
+                return {
+                    artboardHeight: this.DECORATIVE_FRAME_ARTBOARD_HEIGHT,
+                    qrBackground: { x: 11, y: 24, width: 42, height: 42, radius: 2 },
+                    qrBounds: { x: 17, y: 30, size: 30 }
+                };
             default:
                 return defaultConfig;
         }
@@ -415,9 +501,20 @@ const QRFrames = {
 
     getDecorativeFrameSVGMarkup(frameType, metrics) {
         const qrBackground = metrics.qrBackground ? `<rect x="${this.formatMetric(metrics.qrBackground.x)}" y="${this.formatMetric(metrics.qrBackground.y)}" width="${this.formatMetric(metrics.qrBackground.width)}" height="${this.formatMetric(metrics.qrBackground.height)}" rx="${this.formatMetric(metrics.qrBackground.radius)}" fill="${this.QR_BACKGROUND_COLOR}"></rect>` : '';
-        const commonText = (textY, color) => `
-            <text x="${this.formatMetric(metrics.size / 2)}" y="${this.formatMetric(textY)}" text-anchor="middle" dominant-baseline="middle" font-size="${this.formatMetric(metrics.fontSize)}" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="${color}">${this.FRAME_TEXT}</text>
+        const customText = ({
+            x = metrics.size / 2,
+            y,
+            color,
+            fontSize = metrics.fontSize,
+            fontWeight = '700',
+            fontFamily = 'var(--font-frame-default)',
+            rotation,
+            rotateX = x,
+            rotateY = y
+        }) => `
+            <text x="${this.formatMetric(x)}" y="${this.formatMetric(y)}" text-anchor="middle" dominant-baseline="middle" font-size="${this.formatMetric(fontSize)}" font-weight="${fontWeight}" font-family="${fontFamily}" fill="${color}"${rotation !== undefined ? ` transform="rotate(${rotation} ${this.formatMetric(rotateX)} ${this.formatMetric(rotateY)})"` : ''}>${this.FRAME_TEXT}</text>
         `;
+        const commonText = (textY, color) => customText({ y: textY, color });
 
         switch (frameType) {
             case this.FRAME_TYPES.ROUNDED_BANNER:
@@ -513,6 +610,121 @@ const QRFrames = {
                     `,
                     afterQR: commonText(this.scaleArtboardY(67.765, metrics), '#ffffff')
                 };
+            case this.FRAME_TYPES.SCRIPT_CARD:
+                return {
+                    beforeQR: `
+                        <rect x="0" y="0" width="${this.formatMetric(metrics.size)}" height="${this.formatMetric(metrics.totalHeight)}" rx="${this.scaleArtboardY(4, metrics)}" fill="${this.FRAME_BACKGROUND_COLOR}"></rect>
+                        ${qrBackground}
+                    `,
+                    afterQR: customText({
+                        y: this.scaleArtboardY(72.7, metrics),
+                        color: this.FRAME_FOREGROUND_COLOR,
+                        fontSize: this.scaleArtboardY(20, metrics),
+                        fontWeight: '400',
+                        fontFamily: 'var(--font-frame-cursive), var(--font-frame-cursive-fallback)'
+                    })
+                };
+            case this.FRAME_TYPES.VIDEO_PANEL:
+                return {
+                    beforeQR: `
+                        <path d="M4 1h56a3 3 0 0 1 3 3v56a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3Z" transform="scale(${this.formatMetric(metrics.scale)})" fill="none" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="2"></path>
+                        ${qrBackground}
+                        <path d="M2 67h60a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V68a1 1 0 0 1 1-1" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        <path d="M2 67h60a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V68a1 1 0 0 1 1-1Z" transform="scale(${this.formatMetric(metrics.scale)})" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="2"></path>
+                    `,
+                    afterQR: `
+                        <path d="${this.VIDEO_ICON_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="#ffffff"></path>
+                        ${customText({
+                            x: this.scaleArtboardX(39, metrics),
+                            y: this.scaleArtboardY(75.765, metrics),
+                            color: '#ffffff',
+                            fontSize: this.scaleArtboardY(9, metrics)
+                        })}
+                    `
+                };
+            case this.FRAME_TYPES.PHONE_SCREEN:
+                return {
+                    beforeQR: `
+                        <path d="${this.PHONE_FRAME_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}" fill-rule="evenodd"></path>
+                        ${qrBackground}
+                    `,
+                    afterQR: customText({
+                        y: this.scaleArtboardY(63.18, metrics),
+                        color: this.FRAME_FOREGROUND_COLOR,
+                        fontSize: this.scaleArtboardY(8, metrics)
+                    })
+                };
+            case this.FRAME_TYPES.ARROW_NOTE:
+                return {
+                    beforeQR: `
+                        <rect x="0" y="0" width="${this.formatMetric(metrics.size)}" height="${this.formatMetric(metrics.totalHeight)}" rx="${this.scaleArtboardY(4, metrics)}" fill="${this.FRAME_BACKGROUND_COLOR}"></rect>
+                        ${qrBackground}
+                    `,
+                    afterQR: `
+                        <path d="M6.096 77.37s-3.764-5.443-1.203-11.627C6.01 63.022 7.539 61.8 7.539 61.8l-1.478.361-.24-.878s2.939-.379 3.643-.258c-.584 1.292-.859 3.324-.859 3.324l-.842-.086.447-1.809s-2.458 2.326-3.077 5.581c-1.048 5.495 1.255 9.198 1.255 9.198z" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        ${customText({
+                            x: this.scaleArtboardX(33, metrics),
+                            y: this.scaleArtboardY(75.7, metrics),
+                            color: this.FRAME_FOREGROUND_COLOR,
+                            fontSize: this.scaleArtboardY(20, metrics),
+                            fontWeight: '400',
+                            fontFamily: 'var(--font-frame-cursive), var(--font-frame-cursive-fallback)',
+                            rotation: -8.34,
+                            rotateX: this.scaleArtboardX(16.5, metrics),
+                            rotateY: this.scaleArtboardY(75.7, metrics)
+                        })}
+                    `
+                };
+            case this.FRAME_TYPES.CORNER_ACCENT:
+                return {
+                    beforeQR: `
+                        <path d="${this.CORNER_ACCENT_PATH_PRIMARY}" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        <path d="${this.CORNER_ACCENT_PATH_SECONDARY}" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}" fill-rule="evenodd"></path>
+                        ${qrBackground}
+                    `,
+                    afterQR: customText({
+                        x: this.scaleArtboardX(37, metrics),
+                        y: this.scaleArtboardY(71.68, metrics),
+                        color: this.FRAME_FOREGROUND_COLOR,
+                        fontSize: this.scaleArtboardY(8, metrics)
+                    })
+                };
+            case this.FRAME_TYPES.BAG_TAG:
+                return {
+                    beforeQR: `
+                        <path d="${this.BAG_FRAME_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        <path d="${this.BAG_HANDLE_LEFT_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        <path d="${this.BAG_HANDLE_RIGHT_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        <path d="${this.BAG_HANDLE_SHADOW_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="#84868E"></path>
+                        ${qrBackground}
+                    `,
+                    afterQR: customText({
+                        y: this.scaleArtboardY(73.765, metrics),
+                        color: '#ffffff',
+                        fontSize: this.scaleArtboardY(9, metrics)
+                    })
+                };
+            case this.FRAME_TYPES.GIFT_BOW:
+                return {
+                    beforeQR: `
+                        <path d="${this.GIFT_FRAME_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        <path d="${this.GIFT_TEXT_CONTAINER_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        ${qrBackground}
+                        <path d="${this.BOW_SHADOW_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="#84868E"></path>
+                        <path d="${this.BOW_LEFT_RIBBON_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="#84868E"></path>
+                        <path d="${this.BOW_RIGHT_RIBBON_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="#84868E"></path>
+                        <path d="${this.BOW_LEFT_SOLID_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        <path d="${this.BOW_RIGHT_SOLID_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        <path d="${this.BOW_LEFT_SHADOW_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="#84868E"></path>
+                        <path d="${this.BOW_RIGHT_SHADOW_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="#84868E"></path>
+                        <path d="${this.BOW_KNOT_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="#84868E"></path>
+                    `,
+                    afterQR: customText({
+                        y: this.scaleArtboardY(76.345, metrics),
+                        color: '#ffffff',
+                        fontSize: this.scaleArtboardY(7, metrics)
+                    })
+                };
             default:
                 return {
                     beforeQR: qrBackground,
@@ -574,6 +786,14 @@ const QRFrames = {
             this.drawBoldBorderShell(ctx, metrics);
         } else if (frameType === this.FRAME_TYPES.CENTERED_QR) {
             this.drawCenteredQRFrame(ctx, metrics, this.RENDER_PHASES.BEFORE);
+        } else if (frameType === this.FRAME_TYPES.PHONE_SCREEN) {
+            this.drawPhoneScreenFrame(ctx, metrics, this.RENDER_PHASES.BEFORE);
+        } else if (frameType === this.FRAME_TYPES.CORNER_ACCENT) {
+            this.drawCornerAccentFrame(ctx, metrics, this.RENDER_PHASES.BEFORE);
+        } else if (frameType === this.FRAME_TYPES.BAG_TAG) {
+            this.drawBagTagFrame(ctx, metrics, this.RENDER_PHASES.BEFORE);
+        } else if (frameType === this.FRAME_TYPES.GIFT_BOW) {
+            this.drawGiftBowFrame(ctx, metrics, this.RENDER_PHASES.BEFORE);
         }
 
         if (metrics.qrBackground) {
@@ -629,6 +849,27 @@ const QRFrames = {
                 break;
             case this.FRAME_TYPES.SKETCH_BORDER:
                 this.drawSketchBorderFrame(ctx, metrics);
+                break;
+            case this.FRAME_TYPES.SCRIPT_CARD:
+                this.drawScriptCardFrame(ctx, metrics);
+                break;
+            case this.FRAME_TYPES.VIDEO_PANEL:
+                this.drawVideoPanelFrame(ctx, metrics);
+                break;
+            case this.FRAME_TYPES.PHONE_SCREEN:
+                this.drawPhoneScreenFrame(ctx, metrics, this.RENDER_PHASES.AFTER);
+                break;
+            case this.FRAME_TYPES.ARROW_NOTE:
+                this.drawArrowNoteFrame(ctx, metrics);
+                break;
+            case this.FRAME_TYPES.CORNER_ACCENT:
+                this.drawCornerAccentFrame(ctx, metrics, this.RENDER_PHASES.AFTER);
+                break;
+            case this.FRAME_TYPES.BAG_TAG:
+                this.drawBagTagFrame(ctx, metrics, this.RENDER_PHASES.AFTER);
+                break;
+            case this.FRAME_TYPES.GIFT_BOW:
+                this.drawGiftBowFrame(ctx, metrics, this.RENDER_PHASES.AFTER);
                 break;
         }
     },
@@ -872,12 +1113,197 @@ const QRFrames = {
         this.drawFrameLabel(ctx, metrics, this.scaleArtboardY(67.765, metrics), '#ffffff');
     },
 
+    drawScriptCardFrame(ctx, metrics) {
+        ctx.fillStyle = this.FRAME_BACKGROUND_COLOR;
+        this.roundRect(ctx, 0, 0, metrics.size, metrics.totalHeight, this.scaleArtboardY(4, metrics));
+        ctx.fill();
+        this.drawArtboardText(ctx, metrics, {
+            y: 72.7,
+            fontSize: 20,
+            fontWeight: '400',
+            fontFamily: this.FRAME_FONT_SCRIPT,
+            color: this.FRAME_FOREGROUND_COLOR
+        });
+    },
+
+    drawVideoPanelFrame(ctx, metrics) {
+        this.drawArtboardPath(ctx, metrics, 'M4 1h56a3 3 0 0 1 3 3v56a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3Z', {
+            stroke: this.FRAME_FOREGROUND_COLOR,
+            lineWidth: 2
+        });
+        this.drawArtboardPath(ctx, metrics, 'M2 67h60a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V68a1 1 0 0 1 1-1', {
+            fill: this.FRAME_FOREGROUND_COLOR
+        });
+        this.drawArtboardPath(ctx, metrics, 'M2 67h60a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V68a1 1 0 0 1 1-1Z', {
+            stroke: this.FRAME_FOREGROUND_COLOR,
+            lineWidth: 2
+        });
+        this.drawArtboardPath(ctx, metrics, this.VIDEO_ICON_PATH, {
+            fill: '#ffffff'
+        });
+        this.drawArtboardText(ctx, metrics, {
+            x: 39,
+            y: 75.765,
+            fontSize: 9,
+            color: '#ffffff'
+        });
+    },
+
+    drawPhoneScreenFrame(ctx, metrics, phase = this.RENDER_PHASES.AFTER) {
+        if (phase === this.RENDER_PHASES.BEFORE) {
+            this.drawArtboardPath(ctx, metrics, this.PHONE_FRAME_PATH, {
+                fill: this.FRAME_FOREGROUND_COLOR,
+                fillRule: 'evenodd'
+            });
+            return;
+        }
+
+        this.drawArtboardText(ctx, metrics, {
+            y: 63.18,
+            fontSize: 8,
+            color: this.FRAME_FOREGROUND_COLOR
+        });
+    },
+
+    drawArrowNoteFrame(ctx, metrics) {
+        ctx.fillStyle = this.FRAME_BACKGROUND_COLOR;
+        this.roundRect(ctx, 0, 0, metrics.size, metrics.totalHeight, this.scaleArtboardY(4, metrics));
+        ctx.fill();
+        this.drawArtboardPath(ctx, metrics, 'M6.096 77.37s-3.764-5.443-1.203-11.627C6.01 63.022 7.539 61.8 7.539 61.8l-1.478.361-.24-.878s2.939-.379 3.643-.258c-.584 1.292-.859 3.324-.859 3.324l-.842-.086.447-1.809s-2.458 2.326-3.077 5.581c-1.048 5.495 1.255 9.198 1.255 9.198z', {
+            fill: this.FRAME_FOREGROUND_COLOR
+        });
+        this.drawArtboardText(ctx, metrics, {
+            x: 33,
+            y: 75.7,
+            fontSize: 20,
+            fontWeight: '400',
+            fontFamily: this.FRAME_FONT_SCRIPT,
+            color: this.FRAME_FOREGROUND_COLOR,
+            rotation: -8.34,
+            rotateX: 16.5,
+            rotateY: 75.7
+        });
+    },
+
+    drawCornerAccentFrame(ctx, metrics, phase = this.RENDER_PHASES.AFTER) {
+        if (phase === this.RENDER_PHASES.BEFORE) {
+            this.drawArtboardPath(ctx, metrics, this.CORNER_ACCENT_PATH_PRIMARY, {
+                fill: this.FRAME_FOREGROUND_COLOR
+            });
+            this.drawArtboardPath(ctx, metrics, this.CORNER_ACCENT_PATH_SECONDARY, {
+                fill: this.FRAME_FOREGROUND_COLOR,
+                fillRule: 'evenodd'
+            });
+            return;
+        }
+
+        this.drawArtboardText(ctx, metrics, {
+            x: 37,
+            y: 71.68,
+            fontSize: 8,
+            color: this.FRAME_FOREGROUND_COLOR
+        });
+    },
+
+    drawBagTagFrame(ctx, metrics, phase = this.RENDER_PHASES.AFTER) {
+        if (phase === this.RENDER_PHASES.BEFORE) {
+            this.drawArtboardPath(ctx, metrics, this.BAG_FRAME_PATH, {
+                fill: this.FRAME_FOREGROUND_COLOR
+            });
+            this.drawArtboardPath(ctx, metrics, this.BAG_HANDLE_LEFT_PATH, {
+                fill: this.FRAME_FOREGROUND_COLOR
+            });
+            this.drawArtboardPath(ctx, metrics, this.BAG_HANDLE_RIGHT_PATH, {
+                fill: this.FRAME_FOREGROUND_COLOR
+            });
+            this.drawArtboardPath(ctx, metrics, this.BAG_HANDLE_SHADOW_PATH, {
+                fill: '#84868E'
+            });
+            return;
+        }
+
+        this.drawArtboardText(ctx, metrics, {
+            y: 73.765,
+            fontSize: 9,
+            color: '#ffffff'
+        });
+    },
+
+    drawGiftBowFrame(ctx, metrics, phase = this.RENDER_PHASES.AFTER) {
+        if (phase === this.RENDER_PHASES.BEFORE) {
+            this.drawArtboardPath(ctx, metrics, this.GIFT_FRAME_PATH, {
+                fill: this.FRAME_FOREGROUND_COLOR
+            });
+            this.drawArtboardPath(ctx, metrics, this.GIFT_TEXT_CONTAINER_PATH, {
+                fill: this.FRAME_FOREGROUND_COLOR
+            });
+            this.drawArtboardPath(ctx, metrics, this.BOW_SHADOW_PATH, {
+                fill: '#84868E'
+            });
+            this.drawArtboardPath(ctx, metrics, this.BOW_LEFT_RIBBON_PATH, {
+                fill: '#84868E'
+            });
+            this.drawArtboardPath(ctx, metrics, this.BOW_RIGHT_RIBBON_PATH, {
+                fill: '#84868E'
+            });
+            this.drawArtboardPath(ctx, metrics, this.BOW_LEFT_SOLID_PATH, {
+                fill: this.FRAME_FOREGROUND_COLOR
+            });
+            this.drawArtboardPath(ctx, metrics, this.BOW_RIGHT_SOLID_PATH, {
+                fill: this.FRAME_FOREGROUND_COLOR
+            });
+            this.drawArtboardPath(ctx, metrics, this.BOW_LEFT_SHADOW_PATH, {
+                fill: '#84868E'
+            });
+            this.drawArtboardPath(ctx, metrics, this.BOW_RIGHT_SHADOW_PATH, {
+                fill: '#84868E'
+            });
+            this.drawArtboardPath(ctx, metrics, this.BOW_KNOT_PATH, {
+                fill: '#84868E'
+            });
+            return;
+        }
+
+        this.drawArtboardText(ctx, metrics, {
+            y: 76.345,
+            fontSize: 7,
+            color: '#ffffff'
+        });
+    },
+
     drawFrameLabel(ctx, metrics, y, color) {
         ctx.fillStyle = color;
-        ctx.font = `700 ${metrics.fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+        ctx.font = `700 ${metrics.fontSize}px ${this.FRAME_FONT_DEFAULT}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(this.FRAME_TEXT, metrics.size / 2, y);
+    },
+
+    drawArtboardText(ctx, metrics, {
+        x = 32,
+        y,
+        fontSize = 9,
+        fontWeight = '700',
+        fontFamily = this.FRAME_FONT_DEFAULT,
+        color = this.FRAME_FOREGROUND_COLOR,
+        rotation,
+        rotateX = x,
+        rotateY = y
+    }) {
+        ctx.save();
+        ctx.fillStyle = color;
+        ctx.font = `${fontWeight} ${this.scaleArtboardY(fontSize, metrics)}px ${fontFamily}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        if (rotation !== undefined) {
+            ctx.translate(this.scaleArtboardX(rotateX, metrics), this.scaleArtboardY(rotateY, metrics));
+            ctx.rotate((rotation * Math.PI) / 180);
+            ctx.translate(-this.scaleArtboardX(rotateX, metrics), -this.scaleArtboardY(rotateY, metrics));
+        }
+
+        ctx.fillText(this.FRAME_TEXT, this.scaleArtboardX(x, metrics), this.scaleArtboardY(y, metrics));
+        ctx.restore();
     },
 
     /**
@@ -980,7 +1406,7 @@ const QRFrames = {
 
         if (options.fill) {
             ctx.fillStyle = options.fill;
-            ctx.fill(path);
+            ctx.fill(path, options.fillRule || 'nonzero');
         }
 
         if (options.stroke) {
