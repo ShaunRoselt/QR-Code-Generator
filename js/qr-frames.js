@@ -247,6 +247,7 @@ const QRFrames = {
             textHeight,
             borderWidth: isBorderFrame ? Math.max(2, Math.round(size * this.BORDER_FRAME_WIDTH_RATIO)) : 0,
             separatorWidth: isBorderFrame ? Math.max(1, Math.round(size * this.BORDER_SEPARATOR_RATIO)) : 0,
+            qrInset: isBorderFrame ? Math.max(4, Math.round(size * 0.04)) : 0,
             borderRadius: Math.max(3, Math.round(size * 0.01)),
             fontSize: hasText ? Math.max(6, Math.round(textHeight * 0.5)) : 0,
             textY: hasText ? size + (textHeight / 2) : size
@@ -365,10 +366,14 @@ const QRFrames = {
         }
 
         const metrics = this.getFrameMetrics(frameType, size);
-        const scaleX = size / sourceViewBox.width;
-        const scaleY = size / sourceViewBox.height;
-        const translateX = -sourceViewBox.minX * scaleX;
-        const translateY = -sourceViewBox.minY * scaleY;
+        const qrRenderSize = frameType === this.FRAME_TYPES.SCAN_ME_BORDER
+            ? size - (metrics.qrInset * 2)
+            : size;
+        const qrOffset = frameType === this.FRAME_TYPES.SCAN_ME_BORDER ? metrics.qrInset : 0;
+        const scaleX = qrRenderSize / sourceViewBox.width;
+        const scaleY = qrRenderSize / sourceViewBox.height;
+        const translateX = qrOffset - (sourceViewBox.minX * scaleX);
+        const translateY = qrOffset - (sourceViewBox.minY * scaleY);
         const borderInset = metrics.borderWidth / 2;
 
         return `
@@ -454,8 +459,8 @@ const QRFrames = {
                     beforeQR: `
                         <path d="${this.getTopRoundedRectPath(this.scaleArtboardX(1, metrics), this.scaleArtboardY(1, metrics), this.scaleArtboardX(62, metrics), this.scaleArtboardY(63, metrics), metrics.outerRadius)}" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="${this.formatMetric(metrics.strokeWidth)}" fill="none"></path>
                         ${qrBackground}
-                        <path d="${this.getPointerPanelTrianglePath(metrics)}" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
-                        <path d="${this.getBottomRoundedRectPath(this.scaleArtboardX(1, metrics), this.scaleArtboardY(67, metrics), this.scaleArtboardX(62, metrics), this.scaleArtboardY(16, metrics), metrics.outerRadius)}" fill="${this.FRAME_FOREGROUND_COLOR}" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="${this.formatMetric(metrics.strokeWidth)}"></path>
+                        <path d="${this.getPointerPanelTrianglePath(metrics)}" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="${this.formatMetric(metrics.strokeWidth)}" fill="none"></path>
+                        <path d="${this.getBottomRoundedRectPath(this.scaleArtboardX(1, metrics), this.scaleArtboardY(68, metrics), this.scaleArtboardX(62, metrics), this.scaleArtboardY(14, metrics), this.scaleArtboardY(1, metrics))}" fill="${this.FRAME_FOREGROUND_COLOR}" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="${this.formatMetric(metrics.strokeWidth)}"></path>
                     `,
                     afterQR: commonText(this.scaleArtboardY(75.765, metrics), '#ffffff')
                 };
@@ -546,7 +551,12 @@ const QRFrames = {
         }
 
         // Draw QR code at top
-        ctx.drawImage(canvas, 0, 0, targetSize, targetSize);
+        if (frameType === this.FRAME_TYPES.SCAN_ME_BORDER) {
+            const qrRenderSize = targetSize - (metrics.qrInset * 2);
+            ctx.drawImage(canvas, metrics.qrInset, metrics.qrInset, qrRenderSize, qrRenderSize);
+        } else {
+            ctx.drawImage(canvas, 0, 0, targetSize, targetSize);
+        }
 
         // Apply frame based on type
         if (frameType === this.FRAME_TYPES.SCAN_ME) {
@@ -775,17 +785,18 @@ const QRFrames = {
         ctx.lineTo(trianglePoints.right.x, trianglePoints.right.y);
         ctx.lineTo(trianglePoints.left.x, trianglePoints.left.y);
         ctx.closePath();
-        ctx.fillStyle = this.FRAME_FOREGROUND_COLOR;
-        ctx.fill();
+        ctx.lineWidth = Math.max(1, metrics.strokeWidth);
+        ctx.stroke();
 
         this.bottomRoundedRect(
             ctx,
             this.scaleArtboardX(1, metrics),
-            this.scaleArtboardY(67, metrics),
+            this.scaleArtboardY(68, metrics),
             this.scaleArtboardX(62, metrics),
-            this.scaleArtboardY(16, metrics),
-            metrics.outerRadius
+            this.scaleArtboardY(14, metrics),
+            this.scaleArtboardY(1, metrics)
         );
+        ctx.fillStyle = this.FRAME_FOREGROUND_COLOR;
         ctx.fill();
         ctx.stroke();
 
