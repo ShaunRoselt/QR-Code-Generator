@@ -12,6 +12,14 @@ const QRFrames = {
     QR_BACKGROUND_COLOR: '#E6E7ED',
     FRAME_FOREGROUND_COLOR: '#000000',
     FRAME_TEXT: 'Scan me!',
+    RENDER_PHASES: {
+        BEFORE: 'before',
+        AFTER: 'after'
+    },
+    // Path data authored against the shared 64x84 decorative frame artboard.
+    BOLD_BORDER_PATH: 'M64 3.815v76.27a1.3 1.3 0 0 1-.498.301c-1.572.382-2.568 1.345-2.926 2.911-.16.703-.677.683-1.234.683H40.61c-11.885 0-23.789 0-35.693.02-.816 0-1.254-.2-1.473-1.044a3.16 3.16 0 0 0-2.409-2.43C.2 80.307 0 79.865 0 79.042.02 54.327.02 29.633 0 4.92c0-.843.18-1.345 1.055-1.566 1.254-.321 2.03-1.185 2.389-2.45.06-.32.219-.642.418-.903h56.336c.04.06.1.1.12.16.378 1.968 1.552 3.153 3.503 3.534.08.02.14.08.179.12',
+    CENTERED_QR_FRAME_PATH: 'M-2 4a6 6 0 0 1 6-6h56a6 6 0 0 1 6 6h-4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2zm66 74H0zm-66 0V4a6 6 0 0 1 6-6v4a2 2 0 0 0-2 2v74zM60-2a6 6 0 0 1 6 6v74h-4V4a2 2 0 0 0-2-2z',
+    CENTERED_QR_RIP_PATH: 'M3.016 83.259 0 78l1.767-1 2.574 4.66 2.132-3.86c.546-.989 2.105-.989 2.65 0l2.133 3.86 2.132-3.86c.546-.989 2.104-.989 2.65 0l2.133 3.86 2.131-3.86c.547-.989 2.105-.989 2.651 0l2.132 3.86 2.132-3.86c.546-.989 2.105-.989 2.65 0L32 81.66l2.132-3.86c.546-.989 2.105-.989 2.65 0l2.133 3.86 2.132-3.86c.546-.989 2.104-.989 2.65 0l2.133 3.86 2.132-3.86c.546-.989 2.104-.989 2.65 0l2.132 3.86 2.132-3.86c.546-.989 2.105-.989 2.651 0l2.132 3.86L62.233 77 64 78l-3.016 5.259c-.546.988-2.104.988-2.65 0l-2.132-3.86-2.132 3.86c-.546.988-2.105.988-2.651 0l-2.132-3.86-2.132 3.86c-.546.988-2.105.988-2.65 0l-2.133-3.86-2.132 3.86c-.546.988-2.105.988-2.65 0l-2.133-3.86-2.132 3.86c-.546.988-2.104.988-2.65 0l-2.132-3.86-2.133 3.86c-.546.988-2.104.988-2.65 0l-2.132-3.86-2.132 3.86c-.546.988-2.105.988-2.65 0l-2.133-3.86-2.132 3.86c-.546.988-2.105.988-2.65 0l-2.133-3.86-2.132 3.86c-.546.988-2.104.988-2.65 0',
 
     // Available frame types
     FRAME_TYPES: {
@@ -250,8 +258,8 @@ const QRFrames = {
         switch (frameType) {
             case this.FRAME_TYPES.CENTERED_QR:
                 return {
-                    artboardHeight: 64,
-                    qrBackground: null,
+                    artboardHeight: this.DECORATIVE_FRAME_ARTBOARD_HEIGHT,
+                    qrBackground: { x: 6, y: 6, width: 52, height: 52, radius: 4 },
                     qrBounds: { x: 12, y: 12, size: 40 }
                 };
             case this.FRAME_TYPES.BOX_POINTER:
@@ -449,15 +457,21 @@ const QRFrames = {
             case this.FRAME_TYPES.BOLD_BORDER:
                 return {
                     beforeQR: `
-                        <path d="M64 3.815v76.27a1.3 1.3 0 0 1-.498.301c-1.572.382-2.568 1.345-2.926 2.911-.16.703-.677.683-1.234.683H40.61c-11.885 0-23.789 0-35.693.02-.816 0-1.254-.2-1.473-1.044a3.16 3.16 0 0 0-2.409-2.43C.2 80.307 0 79.865 0 79.042.02 54.327.02 29.633 0 4.92c0-.843.18-1.345 1.055-1.566 1.254-.321 2.03-1.185 2.389-2.45.06-.32.219-.642.418-.903h56.336c.04.06.1.1.12.16.378 1.968 1.552 3.153 3.503 3.534.08.02.14.08.179.12" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        <path d="${this.BOLD_BORDER_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
                         ${qrBackground}
                     `,
                     afterQR: commonText(this.scaleArtboardY(73.765, metrics), '#ffffff')
                 };
             case this.FRAME_TYPES.CENTERED_QR:
                 return {
-                    beforeQR: '',
-                    afterQR: ''
+                    beforeQR: `
+                        <path d="${this.CENTERED_QR_FRAME_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        ${qrBackground}
+                    `,
+                    afterQR: `
+                        <path d="${this.CENTERED_QR_RIP_PATH}" transform="scale(${this.formatMetric(metrics.scale)})" fill="${this.FRAME_FOREGROUND_COLOR}"></path>
+                        ${commonText(this.scaleArtboardY(68.765, metrics), this.FRAME_FOREGROUND_COLOR)}
+                    `
                 };
             case this.FRAME_TYPES.BOX_POINTER:
                 return {
@@ -540,6 +554,13 @@ const QRFrames = {
     },
 
     drawDecorativeFrame(ctx, canvas, frameType, metrics) {
+        // Only filled shell-style frames need their outer art drawn before the QR background and QR modules.
+        if (frameType === this.FRAME_TYPES.BOLD_BORDER) {
+            this.drawBoldBorderShell(ctx, metrics);
+        } else if (frameType === this.FRAME_TYPES.CENTERED_QR) {
+            this.drawCenteredQRFrame(ctx, metrics, this.RENDER_PHASES.BEFORE);
+        }
+
         if (metrics.qrBackground) {
             ctx.fillStyle = this.QR_BACKGROUND_COLOR;
             this.roundRect(
@@ -580,10 +601,10 @@ const QRFrames = {
                 this.drawPointerPanelFrame(ctx, metrics);
                 break;
             case this.FRAME_TYPES.BOLD_BORDER:
-                this.drawBoldBorderFrame(ctx, metrics);
+                this.drawBoldBorderLabel(ctx, metrics);
                 break;
             case this.FRAME_TYPES.CENTERED_QR:
-                this.drawCenteredQRFrame(ctx, metrics);
+                this.drawCenteredQRFrame(ctx, metrics, this.RENDER_PHASES.AFTER);
                 break;
             case this.FRAME_TYPES.BOX_POINTER:
                 this.drawBoxPointerFrame(ctx, metrics);
@@ -765,15 +786,28 @@ const QRFrames = {
         this.drawFrameLabel(ctx, metrics, this.scaleArtboardY(75.765, metrics), '#ffffff');
     },
 
-    drawBoldBorderFrame(ctx, metrics) {
-        this.drawArtboardPath(ctx, metrics, 'M64 3.815v76.27a1.3 1.3 0 0 1-.498.301c-1.572.382-2.568 1.345-2.926 2.911-.16.703-.677.683-1.234.683H40.61c-11.885 0-23.789 0-35.693.02-.816 0-1.254-.2-1.473-1.044a3.16 3.16 0 0 0-2.409-2.43C.2 80.307 0 79.865 0 79.042.02 54.327.02 29.633 0 4.92c0-.843.18-1.345 1.055-1.566 1.254-.321 2.03-1.185 2.389-2.45.06-.32.219-.642.418-.903h56.336c.04.06.1.1.12.16.378 1.968 1.552 3.153 3.503 3.534.08.02.14.08.179.12', {
+    drawBoldBorderShell(ctx, metrics) {
+        this.drawArtboardPath(ctx, metrics, this.BOLD_BORDER_PATH, {
             fill: this.FRAME_FOREGROUND_COLOR
         });
+    },
+
+    drawBoldBorderLabel(ctx, metrics) {
         this.drawFrameLabel(ctx, metrics, this.scaleArtboardY(73.765, metrics), '#ffffff');
     },
 
-    drawCenteredQRFrame(ctx, metrics) {
-        // Intentionally empty - this style only repositions the QR with padding.
+    drawCenteredQRFrame(ctx, metrics, phase = this.RENDER_PHASES.AFTER) {
+        if (phase === this.RENDER_PHASES.BEFORE) {
+            this.drawArtboardPath(ctx, metrics, this.CENTERED_QR_FRAME_PATH, {
+                fill: this.FRAME_FOREGROUND_COLOR
+            });
+            return;
+        }
+
+        this.drawArtboardPath(ctx, metrics, this.CENTERED_QR_RIP_PATH, {
+            fill: this.FRAME_FOREGROUND_COLOR
+        });
+        this.drawFrameLabel(ctx, metrics, this.scaleArtboardY(68.765, metrics), this.FRAME_FOREGROUND_COLOR);
     },
 
     drawBoxPointerFrame(ctx, metrics) {
