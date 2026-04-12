@@ -1,0 +1,13 @@
+{
+  "name": "qr-code-generator",
+  "version": "1.0.0",
+  "description": "A professional QR Code Generator with 12 different QR code types, multiple frame styles, and high-resolution export support (up to 8K). Features include URL, text, email, phone, SMS, WhatsApp, WiFi, location, calendar events, app store links, social media profiles, and vCard generation.",
+  "releaseDate": "2026-03-17",
+  "author": "Shaun Roselt",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ShaunRoselt/QR-Code-Generator"
+  },
+  "homepage": "https://qrcode.shaunroselt.com"
+}

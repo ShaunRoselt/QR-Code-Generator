@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Professional QR Code Generator - Create custom QR codes">
+    <title>QR Code Generator</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="alternate icon" href="favicon.ico">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <!-- Frame Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Allison&family=Caveat:wght@400;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+    
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+    <!-- Language Management -->
+    <script src="js/i18n.js"></script>
+    <script src="js/languages/en.js"></script>
+    <script src="js/languages/af.js"></script>
+    
+    <!-- Theme Styles -->
+    <link rel="stylesheet" href="css/themes/dark.css">
+    <link rel="stylesheet" href="css/themes/light.css">
+
+    <!-- App Styles -->
+    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="css/public.css">
+</head>
+<body data-theme="dark">
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <button class="menu-toggle" id="menuToggle">
+            <i class="bi bi-list"></i>
+        </button>
+        <a class="app-title" href="?page=public" data-route="/public" target="_blank" rel="noopener noreferrer" title="Back to website" aria-label="Back to website">
+            <i class="bi bi-qr-code-scan"></i>
+            <span>QR Code Generator</span>
+        </a>
+    </div>
+
+    <!-- App Container -->
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <nav class="sidebar-nav">
+                <a href="?page=home" class="nav-item active" data-route="/home" title="Home">
+                    <i class="bi bi-house-door"></i>
+                    <span>Home</span>
+                </a>
+                
+                <a href="?page=url" class="nav-item" data-route="/url" title="URL / Website">
+                    <i class="bi bi-link-45deg"></i>
+                    <span>URL / Website</span>
+                </a>
+                <a href="?page=text" class="nav-item" data-route="/text" title="Plain Text">
+                    <i class="bi bi-fonts"></i>
+                    <span>Plain Text</span>
+                </a>
+                <a href="?page=email" class="nav-item" data-route="/email" title="Email">
+                    <i class="bi bi-envelope"></i>
+                    <span>Email</span>
+                </a>
+                <a href="?page=phone" class="nav-item" data-route="/phone" title="Phone">
+                    <i class="bi bi-telephone"></i>
+                    <span>Phone</span>
+                </a>
+                <a href="?page=sms" class="nav-item" data-route="/sms" title="SMS">
+                    <i class="bi bi-chat-dots"></i>
+                    <span>SMS</span>
+                </a>
+                <a href="?page=whatsapp" class="nav-item" data-route="/whatsapp" title="WhatsApp">
+                    <i class="bi bi-whatsapp"></i>
+                    <span>WhatsApp</span>
+                </a>
+                <a href="?page=wifi" class="nav-item" data-route="/wifi" title="WiFi">
+                    <i class="bi bi-wifi"></i>
+                    <span>WiFi</span>
+                </a>
+                <a href="?page=location" class="nav-item" data-route="/location" title="Location">
+                    <i class="bi bi-geo-alt"></i>
+                    <span>Location</span>
+                </a>
+                <a href="?page=event" class="nav-item" data-route="/event" title="Calendar Event">
+                    <i class="bi bi-calendar-event"></i>
+                    <span>Calendar Event</span>
+                </a>
+                <a href="?page=appstore" class="nav-item" data-route="/appstore" title="App Store">
+                    <i class="bi bi-shop"></i>
+                    <span>App Store</span>
+                </a>
+                <a href="?page=social" class="nav-item" data-route="/social" title="Social Media">
+                    <i class="bi bi-share"></i>
+                    <span>Social Media</span>
+                </a>
+                <a href="?page=vcard" class="nav-item" data-route="/vcard" title="vCard">
+                    <i class="bi bi-person-vcard"></i>
+                    <span>vCard</span>
+                </a>
+                
+                <!-- Spacer to push settings to bottom -->
+                <div class="nav-spacer"></div>
+                
+                <a href="?page=settings" class="nav-item" data-route="/settings" title="Settings">
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <!-- Content will be loaded here dynamically -->
+        </main>
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="js/theme.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/frame-color-control.js"></script>
+    <script src="js/qr-utils.js"></script>
+    <script src="js/qr-frames.js"></script>
+    <script src="js/share-link.js"></script>
+    
+    <!-- QR Mode Modules -->
+    <script src="js/public.js"></script>
+    <script src="pages/home.js"></script>
+    <script src="pages/settings.js"></script>
+    <script src="pages/release-notes.js"></script>
+    <script src="pages/qr-types/url.js"></script>
+    <script src="pages/qr-types/text.js"></script>
+    <script src="pages/qr-types/email.js"></script>
+    <script src="pages/qr-types/phone.js"></script>
+    <script src="pages/qr-types/sms.js"></script>
+    <script src="pages/qr-types/whatsapp.js"></script>
+    <script src="pages/qr-types/wifi.js"></script>
+    <script src="pages/qr-types/location.js"></script>
+    <script src="pages/qr-types/event.js"></script>
+    <script src="pages/qr-types/appstore.js"></script>
+    <script src="pages/qr-types/social.js"></script>
+    <script src="pages/qr-types/vcard.js"></script>
+    
+    <!-- App Initialization -->
+    <script src="js/app.js"></script>
+</body>
+</html>
