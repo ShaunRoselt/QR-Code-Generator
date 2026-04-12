@@ -264,9 +264,7 @@ const QRCodeLogoControls = {
                 </div>
                 <div class="logo-presets-grid" id="qrLogoPresets">
                     <button type="button" class="logo-preset-button logo-preset-button-action" data-logo-action="clear" data-logo-preset-name="none remove clear" aria-label="${I18n.translateString('Clear logo')}">
-                        <span class="logo-preset-thumb logo-preset-thumb-action logo-preset-thumb-none">
-                            <i class="bi bi-slash-lg"></i>
-                        </span>
+                        <span class="logo-preset-thumb logo-preset-thumb-action"></span>
                         <span class="logo-preset-name">${I18n.translateString('None')}</span>
                     </button>
                     <button type="button" class="logo-preset-button logo-preset-button-action" data-logo-action="upload" data-logo-preset-name="upload custom file logo" aria-label="${I18n.translateString('Upload logo')}">
@@ -319,6 +317,11 @@ const QRCodeLogoControls = {
             this.createTwitchPreset(),
             this.createThreadsPreset(),
             this.createMediumPreset(),
+            this.createBehancePreset(),
+            this.createDribbblePreset(),
+            this.createPatreonPreset(),
+            this.createDevToPreset(),
+            this.createSubstackPreset(),
             this.createNetflixPreset()
         ];
 
@@ -349,6 +352,27 @@ const QRCodeLogoControls = {
         return { id, name, dataUrl: this.svgToDataUrl(svg) };
     },
 
+    createTextBadgePreset({
+        id,
+        name,
+        text,
+        background = '#111111',
+        foreground = '#ffffff',
+        shape = 'rounded'
+    }) {
+        const frameMarkup = shape === 'circle'
+            ? `<circle cx="48" cy="48" r="42" fill="${background}"/>`
+            : `<rect x="12" y="12" width="72" height="72" rx="18" fill="${background}"/>`;
+        const fontSize = text.length >= 4 ? 23 : text.length === 3 ? 27 : text.length === 2 ? 32 : 40;
+        const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+                ${frameMarkup}
+                <text x="48" y="54" text-anchor="middle" dominant-baseline="middle" fill="${foreground}" font-size="${fontSize}" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif" letter-spacing="${text.length >= 3 ? '-1.2' : '-0.6'}">${text}</text>
+            </svg>
+        `;
+
+        return { id, name, dataUrl: this.svgToDataUrl(svg) };
+    },
     createTwitterPreset() {
         return this.createContainedIconPreset({
             id: 'twitter',
@@ -657,6 +681,62 @@ const QRCodeLogoControls = {
         });
     },
 
+    createBehancePreset() {
+        return this.createTextBadgePreset({
+            id: 'behance',
+            name: 'Behance',
+            text: 'Be',
+            background: '#1769ff',
+            foreground: '#ffffff'
+        });
+    },
+
+    createDribbblePreset() {
+        return this.createTextBadgePreset({
+            id: 'dribbble',
+            name: 'Dribbble',
+            text: 'D',
+            background: '#ea4c89',
+            foreground: '#ffffff',
+            shape: 'circle'
+        });
+    },
+
+    createPatreonPreset() {
+        return this.createTextBadgePreset({
+            id: 'patreon',
+            name: 'Patreon',
+            text: 'P',
+            background: '#ff424d',
+            foreground: '#ffffff',
+            shape: 'circle'
+        });
+    },
+
+    createDevToPreset() {
+        return this.createTextBadgePreset({
+            id: 'devto',
+            name: 'DEV',
+            text: 'DEV',
+            background: '#0f0f0f',
+            foreground: '#ffffff'
+        });
+    },
+
+    createSubstackPreset() {
+        const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+                <rect x="12" y="12" width="72" height="72" rx="18" fill="#ff6b2c"/>
+                <rect x="26" y="26" width="44" height="6" rx="3" fill="#ffffff"/>
+                <rect x="26" y="37" width="44" height="6" rx="3" fill="#ffffff" opacity="0.92"/>
+                <rect x="26" y="48" width="44" height="6" rx="3" fill="#ffffff" opacity="0.82"/>
+                <path d="M28 61h40v11c0 2.2-1.8 4-4 4H32c-2.2 0-4-1.8-4-4V61Z" fill="#ffffff"/>
+            </svg>
+        `;
+
+        return { id: 'substack', name: 'Substack', dataUrl: this.svgToDataUrl(svg) };
+    },
+
     createNetflixPreset() {
         return this.createContainedIconPreset({
             id: 'netflix',
@@ -699,6 +779,7 @@ const QRCodeLogoControls = {
                     return;
                 }
 
+                this.insertUploadedTile(root);
                 this.syncUI(root);
                 QRCodeFrameControls.triggerActiveFrameRefresh(root);
             });
@@ -761,6 +842,58 @@ const QRCodeLogoControls = {
 
         this.syncUI(root);
         this.applyPresetSearch(root, [...actionButtons, ...presetButtons], presetSearchInput, presetEmptyState);
+    },
+
+    insertUploadedTile(root = document) {
+        const grid = root.querySelector('#qrLogoPresets');
+        if (!grid) {
+            return;
+        }
+
+        let tile = grid.querySelector('[data-logo-uploaded]');
+        if (tile) {
+            const thumb = tile.querySelector('img');
+            if (thumb) {
+                thumb.src = this.logoDataUrl;
+                thumb.alt = this.activeLogoLabel;
+            }
+            return;
+        }
+
+        const uploadButton = grid.querySelector('[data-logo-action="upload"]');
+        tile = document.createElement('button');
+        tile.type = 'button';
+        tile.className = 'logo-preset-button';
+        tile.dataset.logoUploaded = 'true';
+        tile.dataset.logoPresetName = 'uploaded custom';
+        tile.setAttribute('aria-label', I18n.translateString('Uploaded logo'));
+        tile.innerHTML = `
+            <span class="logo-preset-thumb logo-preset-thumb-uploaded">
+                <img src="${this.logoDataUrl}" alt="${this.activeLogoLabel}">
+            </span>
+            <span class="logo-preset-name">${I18n.translateString('Uploaded')}</span>
+        `;
+
+        tile.addEventListener('click', async () => {
+            if (this.logoDataUrl === tile.querySelector('img')?.src) {
+                return;
+            }
+            const dataUrl = tile.querySelector('img')?.src;
+            if (dataUrl) {
+                await this.setLogoSource(dataUrl, {
+                    label: 'Uploaded logo',
+                    selectedPresetId: ''
+                });
+                this.syncUI(root);
+                QRCodeFrameControls.triggerActiveFrameRefresh(root);
+            }
+        });
+
+        if (uploadButton && uploadButton.nextSibling) {
+            grid.insertBefore(tile, uploadButton.nextSibling);
+        } else if (uploadButton) {
+            grid.appendChild(tile);
+        }
     },
 
     applyPresetSearch(root, presetButtons, presetSearchInput, presetEmptyState) {
@@ -857,6 +990,11 @@ const QRCodeLogoControls = {
             logoInput.value = '';
         }
 
+        const uploadedTile = root.querySelector('[data-logo-uploaded]');
+        if (uploadedTile) {
+            uploadedTile.remove();
+        }
+
         this.syncUI(root);
     },
 
@@ -885,6 +1023,12 @@ const QRCodeLogoControls = {
 
         if (clearActionButton) {
             clearActionButton.classList.toggle('active', !this.hasLogo());
+        }
+
+        const uploadedTile = root.querySelector('[data-logo-uploaded]');
+        if (uploadedTile) {
+            const isUploadedActive = this.hasLogo() && !this.selectedPresetId;
+            uploadedTile.classList.toggle('active', isUploadedActive);
         }
 
         presetButtons.forEach(button => {

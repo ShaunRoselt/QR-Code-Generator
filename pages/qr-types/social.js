@@ -3,6 +3,12 @@ const SocialMode = {
     getPlatformOptions() {
         return [
             {
+                value: 'other',
+                label: 'Other',
+                hint: 'Enter the full social profile URL',
+                url: ''
+            },
+            {
                 value: 'facebook',
                 label: 'Facebook',
                 hint: 'Enter your Facebook username',
@@ -70,6 +76,18 @@ const SocialMode = {
                 url: 'https://t.me/'
             },
             {
+                value: 'bluesky',
+                label: 'Bluesky',
+                hint: 'Enter your Bluesky handle',
+                url: 'https://bsky.app/profile/'
+            },
+            {
+                value: 'mastodon',
+                label: 'Mastodon',
+                hint: 'Enter your full Mastodon handle',
+                url: 'https://mastodon.social/@'
+            },
+            {
                 value: 'threads',
                 label: 'Threads',
                 hint: 'Enter your Threads username',
@@ -80,6 +98,54 @@ const SocialMode = {
                 label: 'GitHub',
                 hint: 'Enter your GitHub username',
                 url: 'https://github.com/'
+            },
+            {
+                value: 'messenger',
+                label: 'Messenger',
+                hint: 'Enter your Messenger username',
+                url: 'https://m.me/'
+            },
+            {
+                value: 'tumblr',
+                label: 'Tumblr',
+                hint: 'Enter your Tumblr blog name',
+                url: 'https://'
+            },
+            {
+                value: 'medium',
+                label: 'Medium',
+                hint: 'Enter your Medium username',
+                url: 'https://medium.com/@'
+            },
+            {
+                value: 'behance',
+                label: 'Behance',
+                hint: 'Enter your Behance username',
+                url: 'https://www.behance.net/'
+            },
+            {
+                value: 'dribbble',
+                label: 'Dribbble',
+                hint: 'Enter your Dribbble username',
+                url: 'https://dribbble.com/'
+            },
+            {
+                value: 'patreon',
+                label: 'Patreon',
+                hint: 'Enter your Patreon username',
+                url: 'https://patreon.com/'
+            },
+            {
+                value: 'devto',
+                label: 'DEV',
+                hint: 'Enter your DEV username',
+                url: 'https://dev.to/'
+            },
+            {
+                value: 'substack',
+                label: 'Substack',
+                hint: 'Enter your Substack username',
+                url: 'https://substack.com/@'
             },
             {
                 value: 'twitch',
@@ -111,8 +177,24 @@ const SocialMode = {
 
     getPlatformOptionsMarkup() {
         return this.getPlatformOptions()
-            .map(option => `<option value="${option.value}">${option.label}</option>`)
+            .map(option => `<option value="${option.value}"${option.value === 'other' ? ' selected' : ''}>${option.label}</option>`)
             .join('');
+    },
+
+    buildPlatformUrl(platform, username, platformConfig) {
+        if (!platformConfig) {
+            return '';
+        }
+
+        if (platform === 'other') {
+            return username;
+        }
+
+        if (platform === 'tumblr') {
+            return `https://${username}.tumblr.com`;
+        }
+
+        return platformConfig.url + username;
     },
 
     getPlatformDropdownItemsMarkup() {
@@ -255,6 +337,12 @@ const SocialMode = {
         const usernameInput = document.getElementById('usernameInput');
         const usernameHint = document.getElementById('usernameHint');
         const errorCorrection = document.getElementById('errorCorrection');
+        let typeaheadBuffer = '';
+        let typeaheadTimer = null;
+
+        if (platformSelect && !platformSelect.value) {
+            platformSelect.value = 'other';
+        }
         
         let currentQRCanvas = null;
         let selectedFrame = 'none';
@@ -300,6 +388,56 @@ const SocialMode = {
             platformDropdownMenu.hidden = false;
         };
 
+        const focusPlatformOption = optionButton => {
+            if (!optionButton) {
+                return;
+            }
+
+            optionButton.focus();
+            optionButton.scrollIntoView({ block: 'nearest' });
+        };
+
+        const findPlatformOptionBySearch = searchTerm => {
+            const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+            if (!normalizedSearchTerm) {
+                return null;
+            }
+
+            return platformDropdownOptions.find(optionButton => {
+                const optionLabel = optionButton.querySelector('.platform-dropdown-option-label')?.textContent?.trim().toLowerCase() || '';
+                return optionLabel.startsWith(normalizedSearchTerm);
+            }) || platformDropdownOptions.find(optionButton => {
+                const optionLabel = optionButton.querySelector('.platform-dropdown-option-label')?.textContent?.trim().toLowerCase() || '';
+                return optionLabel.includes(normalizedSearchTerm);
+            }) || null;
+        };
+
+        const handlePlatformTypeahead = event => {
+            if (event.ctrlKey || event.metaKey || event.altKey || event.key.length !== 1) {
+                return false;
+            }
+
+            typeaheadBuffer += event.key.toLowerCase();
+            window.clearTimeout(typeaheadTimer);
+            typeaheadTimer = window.setTimeout(() => {
+                typeaheadBuffer = '';
+            }, 700);
+
+            const matchedOption = findPlatformOptionBySearch(typeaheadBuffer);
+            if (!matchedOption) {
+                return false;
+            }
+
+            event.preventDefault();
+
+            if (!platformDropdown.classList.contains('is-open')) {
+                openPlatformDropdown();
+            }
+
+            focusPlatformOption(matchedOption);
+            return true;
+        };
+
         const syncPlatformDropdown = platform => {
             const platformConfig = platformConfigs[platform];
 
@@ -331,13 +469,18 @@ const SocialMode = {
         });
 
         platformDropdownTrigger.addEventListener('keydown', event => {
+            if (handlePlatformTypeahead(event)) {
+                return;
+            }
+
             if (event.key !== 'ArrowDown' && event.key !== 'Enter' && event.key !== ' ') {
                 return;
             }
 
             event.preventDefault();
             openPlatformDropdown();
-            platformDropdownOptions[0]?.focus();
+            const selectedOption = platformDropdownOptions.find(optionButton => optionButton.dataset.platform === platformSelect.value);
+            focusPlatformOption(selectedOption || platformDropdownOptions[0]);
         });
 
         platformDropdownOptions.forEach((optionButton, index) => {
@@ -349,6 +492,10 @@ const SocialMode = {
             });
 
             optionButton.addEventListener('keydown', event => {
+                if (handlePlatformTypeahead(event)) {
+                    return;
+                }
+
                 if (event.key === 'Escape') {
                     event.preventDefault();
                     closePlatformDropdown();
@@ -399,7 +546,7 @@ const SocialMode = {
             // Remove @ if user included it
             username = username.replace(/^@/, '');
             
-            const url = platformConfig.url + username;
+            const url = this.buildPlatformUrl(platform, username, platformConfig);
             
             const errorCorrectionLevel = errorCorrection.value;
             const frameType = selectedFrame;
@@ -445,7 +592,7 @@ const SocialMode = {
                 return;
             }
 
-            const url = platformConfig.url + username;
+            const url = this.buildPlatformUrl(platform, username, platformConfig);
             
             // Generate high-res QR code for export
             const tempContainer = document.createElement('div');
@@ -488,7 +635,7 @@ const SocialMode = {
                 return;
             }
 
-            const url = platformConfig.url + username;
+            const url = this.buildPlatformUrl(platform, username, platformConfig);
             
             // Generate SVG QR code for export
             const tempContainer = document.createElement('div');
