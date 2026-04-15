@@ -270,9 +270,15 @@ const QRFrames = {
                 <div class="frame-settings-grid logo-settings-grid">
                     <div class="form-group">
                         <label class="form-label" for="qrLogoSizeRange">${I18n.translateString('Logo Size')}</label>
+                        <div class="form-hint">${I18n.translateString('Choose how large the selected logo appears inside the QR code.')}</div>
                         <input type="range" class="logo-size-range" id="qrLogoSizeRange" min="12" max="32" step="1" value="22">
                         <div class="form-hint" id="qrLogoSizeValue">${I18n.translate('{size}% of QR width', { size: 22 })}</div>
                     </div>
+                    ${FrameColorControl.render({
+                        id: 'logoBackgroundColor',
+                        label: 'Logo Background Color',
+                        value: typeof QRCodeLogoControls !== 'undefined' ? QRCodeLogoControls.logoBackgroundColor : '#ffffff'
+                    })}
                 </div>
             </div>
         `;

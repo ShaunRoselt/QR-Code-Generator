@@ -1,5 +1,6 @@
 // Main App Initialization
 const MOBILE_SIDEBAR_BREAKPOINT = 768;
+const AUTO_COLLAPSE_SIDEBAR_BREAKPOINT = 1064;
 const DEFAULT_PAGE_META = {
     title: 'QR Code Generator',
     description: 'Professional QR Code Generator - Create custom QR codes',
@@ -220,7 +221,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');
     const isOverlaySidebar = () => appContainer.clientWidth <= MOBILE_SIDEBAR_BREAKPOINT;
+    const shouldAutoCollapseSidebar = () => appContainer.clientWidth <= AUTO_COLLAPSE_SIDEBAR_BREAKPOINT;
     const closeOverlaySidebar = () => sidebar.classList.remove('open');
+    let desktopSidebarCollapsedPreference = sidebar.classList.contains('collapsed');
+    let sidebarAutoCollapsed = false;
+
     const syncSidebarMode = () => {
         if (isOverlaySidebar()) {
             sidebar.classList.remove('collapsed');
@@ -228,6 +233,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         closeOverlaySidebar();
+
+        if (shouldAutoCollapseSidebar()) {
+            if (!sidebarAutoCollapsed && !sidebar.classList.contains('collapsed')) {
+                sidebar.classList.add('collapsed');
+                sidebarAutoCollapsed = true;
+            }
+            return;
+        }
+
+        if (sidebarAutoCollapsed) {
+            sidebar.classList.remove('collapsed');
+            sidebarAutoCollapsed = false;
+            desktopSidebarCollapsedPreference = false;
+            return;
+        }
+
+        sidebar.classList.toggle('collapsed', desktopSidebarCollapsedPreference);
     };
     
     menuToggle.addEventListener('click', () => {
@@ -238,6 +260,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         sidebar.classList.toggle('collapsed');
+        desktopSidebarCollapsedPreference = sidebar.classList.contains('collapsed');
+        sidebarAutoCollapsed = false;
     });
     
     // Handle navigation clicks

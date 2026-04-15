@@ -242,25 +242,83 @@ const QRCodePreviewRenderer = {
 
 const QRCodeLogoControls = {
     MAX_FILE_SIZE_BYTES: 5 * 1024 * 1024,
+    ICONS_ASSET_PATH: 'assets/icons',
     logoDataUrl: '',
     logoImage: null,
+    logoBackgroundColor: '#ffffff',
     activeLogoLabel: '',
     selectedPresetId: '',
     logoPresets: null,
+    assetPresetSlugSet: null,
     sizePercent: 22,
+    assetPresetNameOverrides: {
+        '1and1': '1&1',
+        '1dot1dot1dot1': '1.1.1.1',
+        '3m': '3M',
+        '4chan': '4chan',
+        '4d': '4D',
+        '500px': '500px',
+        '7zip': '7-Zip',
+        '99designs': '99designs',
+        '9gag': '9GAG',
+        atandt: 'AT&T',
+        c: 'C',
+        cplusplus: 'C++',
+        cplusplusbuilder: 'C++Builder',
+        css: 'CSS',
+        d3: 'D3.js',
+        dotnet: '.NET',
+        e3: 'E3',
+        f1: 'F1',
+        f5: 'F5',
+        g2: 'G2',
+        h2database: 'H2',
+        h3: 'H3',
+        html5: 'HTML5',
+        i18next: 'i18next',
+        i3: 'i3',
+        k3s: 'K3s',
+        k6: 'k6',
+        mdnwebdocs: 'MDN Web Docs',
+        nextdotjs: 'Next.js',
+        nodedotjs: 'Node.js',
+        o2: 'O2',
+        p5dotjs: 'p5.js',
+        qt: 'Qt',
+        r: 'R',
+        r3: 'R3',
+        svgdotjs: 'SVG.js',
+        tv4play: 'TV4 Play',
+        v0: 'v0',
+        v8: 'V8',
+        w3schools: 'W3Schools',
+        web3dotjs: 'Web3.js',
+        x: 'X',
+        xdotorg: 'X.Org'
+    },
 
     getPresetMarkup() {
         const presets = this.getLogoPresets();
+
+        presets.forEach(preset => {
+            if (preset.hex) {
+                const invert = !this.isLightColor(preset.hex);
+                preset.thumbCls = invert ? ' logo-preset-thumb-branded logo-preset-thumb-invert' : ' logo-preset-thumb-branded';
+                preset.thumbStyle = ` style="background-color: #${preset.hex}"`;
+            } else {
+                preset.thumbCls = '';
+                preset.thumbStyle = '';
+            }
+        });
 
         return `
             <div class="logo-presets-panel">
                 <input type="file" class="logo-upload-input" id="qrLogoInput" accept="image/png,image/jpeg,image/svg+xml">
                 <div class="logo-presets-header">
-                    <div class="logo-presets-title">${I18n.translateString('Default logos')}</div>
-                    <div class="form-hint">${I18n.translateString('One click applies the logo to the live preview and export.')}</div>
+                    <div class="logo-presets-title">${I18n.translateString('Logos')}</div>
                 </div>
                 <div class="logo-presets-search">
-                    <input type="search" class="form-input logo-presets-search-input" id="logoPresetSearchInput" placeholder="${I18n.translateString('Search default logos')}" aria-label="${I18n.translateString('Filter logos by name')}">
+                    <input type="search" class="form-input logo-presets-search-input" id="logoPresetSearchInput" placeholder="${I18n.translateString('Search logos')}" aria-label="${I18n.translateString('Filter logos by name')}">
                 </div>
                 <div class="logo-presets-grid" id="qrLogoPresets">
                     <button type="button" class="logo-preset-button logo-preset-button-action" data-logo-action="clear" data-logo-preset-name="none remove clear" aria-label="${I18n.translateString('Clear logo')}">
@@ -274,9 +332,9 @@ const QRCodeLogoControls = {
                         <span class="logo-preset-name">${I18n.translateString('Upload logo')}</span>
                     </button>
                     ${presets.map(preset => `
-                        <button type="button" class="logo-preset-button" data-logo-preset="${preset.id}" data-logo-preset-name="${preset.name.toLowerCase()}" aria-label="${preset.name} logo preset">
-                            <span class="logo-preset-thumb">
-                                <img src="${preset.dataUrl}" alt="${preset.name} logo preset">
+                        <button type="button" class="logo-preset-button" data-logo-preset="${preset.id}" data-logo-preset-name="${`${preset.name} ${preset.slug || preset.id}`.toLowerCase()}" aria-label="${preset.name} logo preset">
+                            <span class="logo-preset-thumb${preset.thumbCls}"${preset.thumbStyle}>
+                                <img src="${preset.dataUrl}" alt="${preset.name} logo preset" loading="lazy">
                             </span>
                             <span class="logo-preset-name">${preset.name}</span>
                         </button>
@@ -292,40 +350,132 @@ const QRCodeLogoControls = {
             return this.logoPresets;
         }
 
+        const manualPresets = [];
+
+        if (!this.hasAssetPreset('twitter')) {
+            manualPresets.push(this.createTwitterPreset());
+        }
+
+        if (!this.hasAssetPreset('linkedin')) {
+            manualPresets.push(this.createLinkedInPreset());
+        }
+
+        if (!this.hasAssetPreset('outlook')) {
+            manualPresets.push(this.createOutlookPreset());
+        }
+
+        if (this.hasAssetPreset('devdotto')) {
+            manualPresets.push(this.createDevToPreset());
+        }
+
         this.logoPresets = [
-            this.createTwitterPreset(),
-            this.createXPreset(),
-            this.createYouTubePreset(),
-            this.createInstagramPreset(),
-            this.createTikTokPreset(),
-            this.createLinkedInPreset(),
-            this.createSnapchatPreset(),
-            this.createPinterestPreset(),
-            this.createRedditPreset(),
-            this.createDiscordPreset(),
-            this.createBlueskyPreset(),
-            this.createMastodonPreset(),
-            this.createOutlookPreset(),
-            this.createTelegramPreset(),
-            this.createApplePreset(),
-            this.createGmailPreset(),
-            this.createWhatsAppPreset(),
-            this.createFacebookPreset(),
-            this.createGitHubPreset(),
-            this.createMessengerPreset(),
-            this.createTumblrPreset(),
-            this.createTwitchPreset(),
-            this.createThreadsPreset(),
-            this.createMediumPreset(),
-            this.createBehancePreset(),
-            this.createDribbblePreset(),
-            this.createPatreonPreset(),
-            this.createDevToPreset(),
-            this.createSubstackPreset(),
-            this.createNetflixPreset()
+            ...manualPresets,
+            ...this.createCatalogIconPresets()
         ];
 
         return this.logoPresets;
+    },
+
+    getAssetPresetSlugs() {
+        return Array.isArray(window.QRCodeLogoPresetData)
+            ? window.QRCodeLogoPresetData.map(entry => entry[0])
+            : [];
+    },
+
+    getAssetPresetSlugSet() {
+        if (!this.assetPresetSlugSet) {
+            this.assetPresetSlugSet = new Set(this.getAssetPresetSlugs());
+        }
+
+        return this.assetPresetSlugSet;
+    },
+
+    hasAssetPreset(slug) {
+        return this.getAssetPresetSlugSet().has(slug);
+    },
+
+    getAssetPresetHex(slug) {
+        if (!this.assetPresetHexMap) {
+            this.assetPresetHexMap = new Map(
+                Array.isArray(window.QRCodeLogoPresetData) ? window.QRCodeLogoPresetData : []
+            );
+        }
+        return this.assetPresetHexMap.get(slug) || '';
+    },
+
+    isLightColor(hex) {
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        return (0.299 * r + 0.587 * g + 0.114 * b) > 186;
+    },
+
+    getAssetPresetName(slug) {
+        if (this.assetPresetNameOverrides[slug]) {
+            return this.assetPresetNameOverrides[slug];
+        }
+
+        const normalized = slug
+            .replace(/_/g, ' ')
+            .replace(/dotjs/g, '.js')
+            .replace(/dotio/g, '.io')
+            .replace(/dotcom/g, '.com')
+            .replace(/dotorg/g, '.org')
+            .replace(/dotnet/g, '.net')
+            .replace(/dotrs/g, '.rs')
+            .replace(/dotgg/g, '.gg')
+            .replace(/dotcv/g, '.cv')
+            .replace(/dotde/g, '.de')
+            .replace(/dotas/g, '.as')
+            .replace(/dotat/g, '.at')
+            .replace(/dotco/g, '.co')
+            .replace(/dotsh/g, '.sh')
+            .replace(/dotlv/g, '.lv')
+            .replace(/([0-9])([a-z])/gi, '$1 $2')
+            .replace(/([a-z])([0-9])/gi, '$1 $2')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        return normalized
+            .split(' ')
+            .filter(Boolean)
+            .map(token => this.formatAssetPresetToken(token))
+            .join(' ');
+    },
+
+    formatAssetPresetToken(token) {
+        if (!token) {
+            return '';
+        }
+
+        if (token.includes('.')) {
+            return token
+                .split('.')
+                .map((segment, index) => {
+                    if (!segment) {
+                        return '';
+                    }
+
+                    if (segment.length <= 3) {
+                        return segment.toUpperCase();
+                    }
+
+                    return index === 0
+                        ? segment.charAt(0).toUpperCase() + segment.slice(1)
+                        : segment.toLowerCase();
+                })
+                .join('.');
+        }
+
+        if (/^[0-9.+&-]+$/.test(token)) {
+            return token;
+        }
+
+        if (token.length <= 3 && /^[a-z0-9.+&-]+$/i.test(token)) {
+            return token.toUpperCase();
+        }
+
+        return token.charAt(0).toUpperCase() + token.slice(1);
     },
 
     createContainedIconPreset({
@@ -373,6 +523,28 @@ const QRCodeLogoControls = {
 
         return { id, name, dataUrl: this.svgToDataUrl(svg) };
     },
+
+    createAssetSvgPreset({ id, name, slug = id, hex = '' }) {
+        const presetId = id || slug;
+        return {
+            id: presetId,
+            slug,
+            name,
+            hex,
+            dataUrl: `${this.ICONS_ASSET_PATH}/${slug}.svg`
+        };
+    },
+
+    createCatalogIconPresets() {
+        const data = Array.isArray(window.QRCodeLogoPresetData) ? window.QRCodeLogoPresetData : [];
+        return data.map(([slug, hex]) => this.createAssetSvgPreset({
+            id: slug,
+            slug,
+            hex: hex || '',
+            name: this.getAssetPresetName(slug)
+        }));
+    },
+
     createTwitterPreset() {
         return this.createContainedIconPreset({
             id: 'twitter',
@@ -682,70 +854,56 @@ const QRCodeLogoControls = {
     },
 
     createBehancePreset() {
-        return this.createTextBadgePreset({
+        return this.createAssetSvgPreset({
             id: 'behance',
             name: 'Behance',
-            text: 'Be',
-            background: '#1769ff',
-            foreground: '#ffffff'
+            slug: 'behance',
+            hex: this.getAssetPresetHex('behance')
         });
     },
 
     createDribbblePreset() {
-        return this.createTextBadgePreset({
+        return this.createAssetSvgPreset({
             id: 'dribbble',
             name: 'Dribbble',
-            text: 'D',
-            background: '#ea4c89',
-            foreground: '#ffffff',
-            shape: 'circle'
+            slug: 'dribbble',
+            hex: this.getAssetPresetHex('dribbble')
         });
     },
 
     createPatreonPreset() {
-        return this.createTextBadgePreset({
+        return this.createAssetSvgPreset({
             id: 'patreon',
             name: 'Patreon',
-            text: 'P',
-            background: '#ff424d',
-            foreground: '#ffffff',
-            shape: 'circle'
+            slug: 'patreon',
+            hex: this.getAssetPresetHex('patreon')
         });
     },
 
     createDevToPreset() {
-        return this.createTextBadgePreset({
+        return this.createAssetSvgPreset({
             id: 'devto',
             name: 'DEV',
-            text: 'DEV',
-            background: '#0f0f0f',
-            foreground: '#ffffff'
+            slug: 'devdotto',
+            hex: this.getAssetPresetHex('devdotto')
         });
     },
 
     createSubstackPreset() {
-        const svg = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
-                <rect x="12" y="12" width="72" height="72" rx="18" fill="#ff6b2c"/>
-                <rect x="26" y="26" width="44" height="6" rx="3" fill="#ffffff"/>
-                <rect x="26" y="37" width="44" height="6" rx="3" fill="#ffffff" opacity="0.92"/>
-                <rect x="26" y="48" width="44" height="6" rx="3" fill="#ffffff" opacity="0.82"/>
-                <path d="M28 61h40v11c0 2.2-1.8 4-4 4H32c-2.2 0-4-1.8-4-4V61Z" fill="#ffffff"/>
-            </svg>
-        `;
-
-        return { id: 'substack', name: 'Substack', dataUrl: this.svgToDataUrl(svg) };
+        return this.createAssetSvgPreset({
+            id: 'substack',
+            name: 'Substack',
+            slug: 'substack',
+            hex: this.getAssetPresetHex('substack')
+        });
     },
 
     createNetflixPreset() {
-        return this.createContainedIconPreset({
+        return this.createAssetSvgPreset({
             id: 'netflix',
             name: 'Netflix',
-            backgroundMarkup: '<rect x="12" y="12" width="72" height="72" rx="16" fill="#0b0b0b"/>',
-            iconWidth: 24,
-            iconHeight: 24,
-            box: { x: 26, y: 18, width: 44, height: 60 },
-            iconMarkup: '<path fill="#e50914" d="m5.398 0 8.348 23.602c2.346.059 4.856.398 4.856.398L10.113 0H5.398zm8.489 0v9.172l4.715 13.33V0h-4.715zM5.398 1.5V24c1.873-.225 2.81-.312 4.715-.398V14.83L5.398 1.5z"/>'
+            slug: 'netflix',
+            hex: this.getAssetPresetHex('netflix')
         });
     },
 
@@ -756,13 +914,14 @@ const QRCodeLogoControls = {
     init(root = document) {
         const logoInput = root.querySelector('#qrLogoInput');
         const logoSizeRange = root.querySelector('#qrLogoSizeRange');
+        const logoBackgroundColorControl = FrameColorControl.getControl(root, 'logoBackgroundColor');
         const presetSearchInput = root.querySelector('#logoPresetSearchInput');
         const presetEmptyState = root.querySelector('#logoPresetSearchEmpty');
         const sizeValueLabel = root.querySelector('#qrLogoSizeValue');
         const presetButtons = root.querySelectorAll('[data-logo-preset]');
         const actionButtons = root.querySelectorAll('[data-logo-action]');
 
-        if (!logoInput || !logoSizeRange || !sizeValueLabel) {
+        if (!logoInput || !logoSizeRange || !sizeValueLabel || !logoBackgroundColorControl) {
             return;
         }
 
@@ -787,6 +946,13 @@ const QRCodeLogoControls = {
             logoSizeRange.addEventListener('input', () => {
                 this.sizePercent = parseInt(logoSizeRange.value, 10) || 22;
                 this.syncUI(root);
+                if (this.hasLogo()) {
+                    QRCodeFrameControls.triggerActiveFrameRefresh(root);
+                }
+            });
+
+            FrameColorControl.bindControl(logoBackgroundColorControl, control => {
+                this.logoBackgroundColor = FrameColorControl.getValue(control);
                 if (this.hasLogo()) {
                     QRCodeFrameControls.triggerActiveFrameRefresh(root);
                 }
@@ -952,7 +1118,8 @@ const QRCodeLogoControls = {
         }
 
         try {
-            await this.setLogoSource(preset.dataUrl, {
+            const presetSource = await this.resolvePresetDataUrl(preset);
+            await this.setLogoSource(presetSource, {
                 label: `${preset.name} preset`,
                 selectedPresetId: preset.id
             });
@@ -969,6 +1136,10 @@ const QRCodeLogoControls = {
             alert(I18n.translateString('Unable to load the selected preset logo.'));
             return false;
         }
+    },
+
+    async resolvePresetDataUrl(preset) {
+        return preset?.dataUrl || '';
     },
 
     async setLogoSource(dataUrl, { label = '', selectedPresetId = '' } = {}) {
@@ -1004,6 +1175,7 @@ const QRCodeLogoControls = {
 
     syncUI(root = document, uploadedFileName = '') {
         const sizeRange = root.querySelector('#qrLogoSizeRange');
+        const logoBackgroundColorControl = FrameColorControl.getControl(root, 'logoBackgroundColor');
         const sizeValueLabel = root.querySelector('#qrLogoSizeValue');
         const presetButtons = root.querySelectorAll('[data-logo-preset]');
         const clearActionButton = root.querySelector('[data-logo-action="clear"]');
@@ -1019,6 +1191,10 @@ const QRCodeLogoControls = {
             if (sizeValueLabel.textContent !== newSizeText) {
                 sizeValueLabel.textContent = newSizeText;
             }
+        }
+
+        if (logoBackgroundColorControl) {
+            FrameColorControl.setValue(logoBackgroundColorControl, this.logoBackgroundColor);
         }
 
         if (clearActionButton) {
@@ -1076,7 +1252,7 @@ const QRCodeLogoControls = {
 
         ctx.save();
         ctx.imageSmoothingEnabled = true;
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = this.logoBackgroundColor;
         this.roundRect(ctx, backgroundX, backgroundY, backgroundSize, backgroundSize, backgroundRadius);
         ctx.fill();
         ctx.drawImage(this.logoImage, imageX, imageY, imageWidth, imageHeight);
@@ -1111,6 +1287,7 @@ const QRCodeLogoControls = {
     loadImage(src) {
         return new Promise((resolve, reject) => {
             const image = new Image();
+            image.crossOrigin = 'anonymous';
             image.onload = () => resolve(image);
             image.onerror = reject;
             image.src = src;
@@ -1337,7 +1514,7 @@ const QRCodeConfigurationAccordion = {
         },
         Logo: {
             icon: 'bi-image',
-            description: 'Upload a logo or choose a default preset for the center mark.'
+            description: 'Choose a logo for the center mark and adjust its size.'
         }
     },
 
