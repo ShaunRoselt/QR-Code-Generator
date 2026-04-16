@@ -264,6 +264,7 @@ const QRFrames = {
     },
 
     getLogoControlsMarkup() {
+        const currentShape = typeof QRCodeLogoControls !== 'undefined' ? QRCodeLogoControls.logoShape : 'rounded';
         return `
             <div class="frame-settings-panel logo-settings-panel">
                 ${typeof QRCodeLogoControls !== 'undefined' ? QRCodeLogoControls.getPresetMarkup() : ''}
@@ -271,8 +272,223 @@ const QRFrames = {
                     <div class="form-group">
                         <label class="form-label" for="qrLogoSizeRange">${I18n.translateString('Logo Size')}</label>
                         <div class="form-hint">${I18n.translateString('Choose how large the selected logo appears inside the QR code.')}</div>
-                        <input type="range" class="logo-size-range" id="qrLogoSizeRange" min="12" max="32" step="1" value="22">
-                        <div class="form-hint" id="qrLogoSizeValue">${I18n.translate('{size}% of QR width', { size: 22 })}</div>
+                        <input type="range" class="logo-size-range" id="qrLogoSizeRange" min="12" max="44" step="1" value="${typeof QRCodeLogoControls !== 'undefined' ? QRCodeLogoControls.sizePercent : 22}">
+                        <div class="form-hint" id="qrLogoSizeValue">${I18n.translate('{size}% of QR width', { size: typeof QRCodeLogoControls !== 'undefined' ? QRCodeLogoControls.sizePercent : 22 })}</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">${I18n.translateString('Logo Shape')}</label>
+                        <div class="logo-shape-toggle">
+                            <button type="button" class="logo-shape-button${currentShape === 'rounded' ? ' active' : ''}" data-logo-shape="rounded" title="${I18n.translateString('Rounded Square')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="1" width="18" height="18" rx="4" stroke="currentColor" stroke-width="2"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'square' ? ' active' : ''}" data-logo-shape="square" title="${I18n.translateString('Square')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="1" width="18" height="18" stroke="currentColor" stroke-width="2"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'circle' ? ' active' : ''}" data-logo-shape="circle" title="${I18n.translateString('Circle')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'hexagon' ? ' active' : ''}" data-logo-shape="hexagon" title="${I18n.translateString('Hexagon')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 18.66,5.5 18.66,14.5 10,19 1.34,14.5 1.34,5.5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'heart' ? ' active' : ''}" data-logo-shape="heart" title="${I18n.translateString('Heart')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 18 C10 18 1 12 1 6.5 C1 3.46 3.46 1 6.5 1 C8.24 1 9.73 1.81 10 3 C10.27 1.81 11.76 1 13.5 1 C16.54 1 19 3.46 19 6.5 C19 12 10 18 10 18Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'diamond' ? ' active' : ''}" data-logo-shape="diamond" title="${I18n.translateString('Diamond')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 19,10 10,19 1,10" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'star' ? ' active' : ''}" data-logo-shape="star" title="${I18n.translateString('Star')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 12.47,7.6 19.51,7.64 13.82,11.72 15.88,18.36 10,14.58 4.12,18.36 6.18,11.72 0.49,7.64 7.53,7.6" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'shield' ? ' active' : ''}" data-logo-shape="shield" title="${I18n.translateString('Shield')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 L18 4 L18 10 C18 14.42 14.42 17.5 10 19 C5.58 17.5 2 14.42 2 10 L2 4 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'octagon' ? ' active' : ''}" data-logo-shape="octagon" title="${I18n.translateString('Octagon')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="6.27,1 13.73,1 19,6.27 19,13.73 13.73,19 6.27,19 1,13.73 1,6.27" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'pentagon' ? ' active' : ''}" data-logo-shape="pentagon" title="${I18n.translateString('Pentagon')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 19,7.85 15.56,18.15 4.44,18.15 1,7.85" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'cross' ? ' active' : ''}" data-logo-shape="cross" title="${I18n.translateString('Cross')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="7,1 13,1 13,7 19,7 19,13 13,13 13,19 7,19 7,13 1,13 1,7 7,7" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'teardrop' ? ' active' : ''}" data-logo-shape="teardrop" title="${I18n.translateString('Teardrop')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 C10 1 18 8 18 12.5 C18 16.92 14.42 19 10 19 C5.58 19 2 16.92 2 12.5 C2 8 10 1 10 1Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'arch' ? ' active' : ''}" data-logo-shape="arch" title="${I18n.translateString('Arch')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 19 L1 10 C1 5.03 5.03 1 10 1 C14.97 1 19 5.03 19 10 L19 19 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'leaf' ? ' active' : ''}" data-logo-shape="leaf" title="${I18n.translateString('Leaf')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 C16 1 19 4 19 10 C19 16 16 19 10 19 C4 19 1 16 1 10 C1 4 4 1 10 1Z" stroke="currentColor" stroke-width="2"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'squircle' ? ' active' : ''}" data-logo-shape="squircle" title="${I18n.translateString('Squircle')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="1" width="18" height="18" rx="7" stroke="currentColor" stroke-width="2"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'oval' ? ' active' : ''}" data-logo-shape="oval" title="${I18n.translateString('Oval')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><ellipse cx="10" cy="10" rx="9" ry="6.5" stroke="currentColor" stroke-width="2"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'triangle' ? ' active' : ''}" data-logo-shape="triangle" title="${I18n.translateString('Triangle')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 19,19 1,19" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'egg' ? ' active' : ''}" data-logo-shape="egg" title="${I18n.translateString('Egg')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 C5 1 2 7 2 12 C2 16 5.5 19 10 19 C14.5 19 18 16 18 12 C18 7 15 1 10 1Z" stroke="currentColor" stroke-width="2"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'cloud' ? ' active' : ''}" data-logo-shape="cloud" title="${I18n.translateString('Cloud')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 16 C2.5 16 1 14.2 1 12 C1 10 2.5 8.5 4.5 8.2 C4.2 7.5 4 6.8 4 6 C4 3.2 6.2 1 9 1 C11.2 1 13 2.4 13.7 4.4 C14.2 4.1 14.8 4 15.5 4 C17.4 4 19 5.6 19 7.5 C19 7.8 18.9 8.1 18.8 8.4 C19.5 9 19 10.8 19 12 C19 14.2 17.2 16 15 16 Z" stroke="currentColor" stroke-width="1.5"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'clover' ? ' active' : ''}" data-logo-shape="clover" title="${I18n.translateString('Clover')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5.5" r="4" stroke="currentColor" stroke-width="1.5"/><circle cx="14.5" cy="10" r="4" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="14.5" r="4" stroke="currentColor" stroke-width="1.5"/><circle cx="5.5" cy="10" r="4" stroke="currentColor" stroke-width="1.5"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'badge' ? ' active' : ''}" data-logo-shape="badge" title="${I18n.translateString('Badge')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 12,4.5 16,3.5 14.5,7.5 18,10 14.5,12.5 16,16.5 12,15.5 10,19 8,15.5 4,16.5 5.5,12.5 2,10 5.5,7.5 4,3.5 8,4.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'arrow' ? ' active' : ''}" data-logo-shape="arrow" title="${I18n.translateString('Arrow')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="19,10 10,1 10,6.5 1,6.5 1,13.5 10,13.5 10,19" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'trapezoid' ? ' active' : ''}" data-logo-shape="trapezoid" title="${I18n.translateString('Trapezoid')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="4,3 16,3 19,17 1,17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'semicircle' ? ' active' : ''}" data-logo-shape="semicircle" title="${I18n.translateString('Semicircle')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 13 A9 9 0 0 1 19 13 L19 13 L1 13Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'parallelogram' ? ' active' : ''}" data-logo-shape="parallelogram" title="${I18n.translateString('Parallelogram')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="5,2 19,2 15,18 1,18" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'rhombus' ? ' active' : ''}" data-logo-shape="rhombus" title="${I18n.translateString('Rhombus')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 19,10 10,19 1,10" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'kite' ? ' active' : ''}" data-logo-shape="kite" title="${I18n.translateString('Kite')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 15.5,8 10,19 4.5,8" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'heptagon' ? ' active' : ''}" data-logo-shape="heptagon" title="${I18n.translateString('Heptagon')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 17.2,4.5 19,12 14.5,18 5.5,18 1,12 2.8,4.5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'nonagon' ? ' active' : ''}" data-logo-shape="nonagon" title="${I18n.translateString('Nonagon')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 15.8,2.8 19,7.5 18.5,13 14.7,17.5 10,19 5.3,17.5 1.5,13 1,7.5 4.2,2.8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'decagon' ? ' active' : ''}" data-logo-shape="decagon" title="${I18n.translateString('Decagon')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 15,2.2 18.5,6 19.5,11 17.5,15.5 13.5,18.5 10,19 6.5,18.5 2.5,15.5 0.5,11 1.5,6 5,2.2" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'starburst' ? ' active' : ''}" data-logo-shape="starburst" title="${I18n.translateString('Starburst')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 11.5,5 15,2.5 13.5,6.5 18,6 14.5,8.5 18,11 14,10.5 15,14.5 12,12 11.5,16 10,13 8.5,16 8,12 5,14.5 6,10.5 2,11 5.5,8.5 2,6 6.5,6.5 5,2.5 8.5,5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'ribbon' ? ' active' : ''}" data-logo-shape="ribbon" title="${I18n.translateString('Ribbon')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="1,1 19,1 19,19 10,15 1,19" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'chevron' ? ' active' : ''}" data-logo-shape="chevron" title="${I18n.translateString('Chevron')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="1,1 19,1 19,14 10,19 1,14" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'tab' ? ' active' : ''}" data-logo-shape="tab" title="${I18n.translateString('Tab')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 10 A9 9 0 0 1 19 10 L19 19 L1 19 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'raindrop' ? ' active' : ''}" data-logo-shape="raindrop" title="${I18n.translateString('Raindrop')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 Q12 7 15 10 A6 6 0 0 1 5 10 Q8 7 10 1Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'flower' ? ' active' : ''}" data-logo-shape="flower" title="${I18n.translateString('Flower')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="3.5" stroke="currentColor" stroke-width="1.5"/><circle cx="14.5" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"/><circle cx="13" cy="13.5" r="3.5" stroke="currentColor" stroke-width="1.5"/><circle cx="7" cy="13.5" r="3.5" stroke="currentColor" stroke-width="1.5"/><circle cx="5.5" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'gear' ? ' active' : ''}" data-logo-shape="gear" title="${I18n.translateString('Gear')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M8.5 1H11.5L12 4L15 5L17.5 3L19 5L17 7.5L18 10L19 10.5V12.5L16 13L15 16L17 18.5L15 19.5L12.5 17L10 18L9 19H7.5L7 16L4 15L2 17.5L0.5 15.5L3 13L2 10L1 9.5V7.5L4 7L5 4L3 2L5 0.5L7 3L8.5 1Z" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'explosion' ? ' active' : ''}" data-logo-shape="explosion" title="${I18n.translateString('Explosion')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,0.5 12,5 17,2 14,7 19.5,8 15,10.5 19,14 14,13 13,18.5 10,14 7,18.5 6,13 1,14 5,10.5 0.5,8 6,7 3,2 8,5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'bookmark' ? ' active' : ''}" data-logo-shape="bookmark" title="${I18n.translateString('Bookmark')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="3,1 17,1 17,19 10,14.5 3,19" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'ticket' ? ' active' : ''}" data-logo-shape="ticket" title="${I18n.translateString('Ticket')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 3 H19 V8 A2 2 0 0 0 19 12 V17 H1 V12 A2 2 0 0 0 1 8 Z" stroke="currentColor" stroke-width="2"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'speech-bubble' ? ' active' : ''}" data-logo-shape="speech-bubble" title="${I18n.translateString('Speech Bubble')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 1 H17 Q19 1 19 3 V11 Q19 13 17 13 H11 L7 17 L8 13 H3 Q1 13 1 11 V3 Q1 1 3 1Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'tombstone' ? ' active' : ''}" data-logo-shape="tombstone" title="${I18n.translateString('Tombstone')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 19 V9 A8 8 0 0 1 18 9 V19 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'pill' ? ' active' : ''}" data-logo-shape="pill" title="${I18n.translateString('Pill')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><ellipse cx="10" cy="10" rx="9" ry="5" stroke="currentColor" stroke-width="2"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'wavy-circle' ? ' active' : ''}" data-logo-shape="wavy-circle" title="${I18n.translateString('Wavy Circle')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1.5 Q12.5 3 13.5 2 Q15 3.5 14 5 Q16 5.5 16 7.5 Q17.5 8.5 17 10 Q18 11.5 16.5 13 Q16.5 15 15 15.5 Q14.5 17 13 17 Q12 18.5 10 18 Q8 18.5 7 17 Q5.5 17 5 15.5 Q3.5 15 3.5 13 Q2 11.5 3 10 Q2.5 8.5 4 7.5 Q4 5.5 6 5 Q5 3.5 6.5 2 Q7.5 3 10 1.5Z" stroke="currentColor" stroke-width="1.5"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'arrow-up' ? ' active' : ''}" data-logo-shape="arrow-up" title="${I18n.translateString('Arrow Up')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2 L17 9 H13 V18 H7 V9 H3 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'arrow-down' ? ' active' : ''}" data-logo-shape="arrow-down" title="${I18n.translateString('Arrow Down')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 18 L17 11 H13 V2 H7 V11 H3 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'arrow-left' ? ' active' : ''}" data-logo-shape="arrow-left" title="${I18n.translateString('Arrow Left')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 10 L9 3 V7 H18 V13 H9 V17 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'chevron-up' ? ' active' : ''}" data-logo-shape="chevron-up" title="${I18n.translateString('Chevron Up')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 18 V13 L10 5 L18 13 V18 H13 L10 15 L7 18 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'chevron-left' ? ' active' : ''}" data-logo-shape="chevron-left" title="${I18n.translateString('Chevron Left')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M18 2 H13 L5 10 L13 18 H18" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'chevron-right' ? ' active' : ''}" data-logo-shape="chevron-right" title="${I18n.translateString('Chevron Right')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 2 H7 L15 10 L7 18 H2" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'plus-sign' ? ' active' : ''}" data-logo-shape="plus-sign" title="${I18n.translateString('Plus')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M8 2 H12 V8 H18 V12 H12 V18 H8 V12 H2 V8 H8 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'x-mark' ? ' active' : ''}" data-logo-shape="x-mark" title="${I18n.translateString('Cross')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 2 L10 7 L16 2 L18 4 L13 10 L18 16 L16 18 L10 13 L4 18 L2 16 L7 10 L2 4 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'checkmark' ? ' active' : ''}" data-logo-shape="checkmark" title="${I18n.translateString('Checkmark')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 11 L4 8 L8 12 L16 3 L18 6 L8 18 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'crescent' ? ' active' : ''}" data-logo-shape="crescent" title="${I18n.translateString('Crescent')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15 3 A8 8 0 1 0 15 17 A6 6 0 1 1 15 3 Z" stroke="currentColor" stroke-width="1.5"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'sunburst' ? ' active' : ''}" data-logo-shape="sunburst" title="${I18n.translateString('Sunburst')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="4" stroke="currentColor" stroke-width="1.5"/><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="10" y1="1" x2="10" y2="4"/><line x1="10" y1="16" x2="10" y2="19"/><line x1="1" y1="10" x2="4" y2="10"/><line x1="16" y1="10" x2="19" y2="10"/><line x1="3.5" y1="3.5" x2="5.5" y2="5.5"/><line x1="14.5" y1="14.5" x2="16.5" y2="16.5"/><line x1="3.5" y1="16.5" x2="5.5" y2="14.5"/><line x1="14.5" y1="5.5" x2="16.5" y2="3.5"/></g></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'lightning' ? ' active' : ''}" data-logo-shape="lightning" title="${I18n.translateString('Lightning')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 1 L4 11 H9 L7 19 L16 8 H11 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'play-triangle' ? ' active' : ''}" data-logo-shape="play-triangle" title="${I18n.translateString('Play')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 2 L18 10 L4 18 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'location-pin' ? ' active' : ''}" data-logo-shape="location-pin" title="${I18n.translateString('Location Pin')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 19 C10 19 3 12 3 8 A7 7 0 0 1 17 8 C17 12 10 19 10 19 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="10" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'house' ? ' active' : ''}" data-logo-shape="house" title="${I18n.translateString('House')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 10 L10 2 L18 10 V18 H2 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'hendecagon' ? ' active' : ''}" data-logo-shape="hendecagon" title="${I18n.translateString('11-sided')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 L15.1 3 L18.3 7.4 L18.3 12.6 L15.1 17 L10 19 L4.9 17 L1.7 12.6 L1.7 7.4 L4.9 3 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'dodecagon' ? ' active' : ''}" data-logo-shape="dodecagon" title="${I18n.translateString('12-sided')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 L14.5 2.2 L17.8 5.5 L19 10 L17.8 14.5 L14.5 17.8 L10 19 L5.5 17.8 L2.2 14.5 L1 10 L2.2 5.5 L5.5 2.2 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'tag' ? ' active' : ''}" data-logo-shape="tag" title="${I18n.translateString('Tag')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 6 L7 2 H17 V17 H7 L2 13 L5 9.5 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="13" cy="6" r="1.2" stroke="currentColor" stroke-width="1.2"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'blob' ? ' active' : ''}" data-logo-shape="blob" title="${I18n.translateString('Blob')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2 C14 2 18 5 17 10 C19 14 14 18 10 17 C5 19 1 14 3 10 C1 5 6 2 10 2 Z" stroke="currentColor" stroke-width="1.5"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'barrel' ? ' active' : ''}" data-logo-shape="barrel" title="${I18n.translateString('Barrel')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 4 Q10 2 17 4 V16 Q10 18 3 16 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'flag' ? ' active' : ''}" data-logo-shape="flag" title="${I18n.translateString('Flag')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 2 V18 M3 3 H17 L14 7 L17 11 H3" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'lens' ? ' active' : ''}" data-logo-shape="lens" title="${I18n.translateString('Lens')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 10 Q10 1 19 10 Q10 19 1 10 Z" stroke="currentColor" stroke-width="1.5"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'sun' ? ' active' : ''}" data-logo-shape="sun" title="${I18n.translateString('Sun')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 L11.5 4 L14.5 2.5 L14 6 L17.5 5.5 L16 9 L19 10 L16 11 L17.5 14.5 L14 14 L14.5 17.5 L11.5 16 L10 19 L8.5 16 L5.5 17.5 L6 14 L2.5 14.5 L4 11 L1 10 L4 9 L2.5 5.5 L6 6 L5.5 2.5 L8.5 4 Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" class="logo-shape-button${currentShape === 'gemstone' ? ' active' : ''}" data-logo-shape="gemstone" title="${I18n.translateString('Gemstone')}">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 2 H15 L19 8 L10 19 L1 8 Z M1 8 H19 M5 2 L10 19 M15 2 L10 19 M5 2 L10 8 M15 2 L10 8" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="qrLogoPaddingRange">${I18n.translateString('Inner Logo Padding')}</label>
+                        <div class="form-hint">${I18n.translateString('Controls the space between the inner logo and its outer shape.')}</div>
+                        <input type="range" class="logo-size-range" id="qrLogoPaddingRange" min="0" max="80" step="1" value="${typeof QRCodeLogoControls !== 'undefined' ? QRCodeLogoControls.logoPadding : 20}">
+                        <div class="form-hint" id="qrLogoPaddingValue">${typeof QRCodeLogoControls !== 'undefined' ? QRCodeLogoControls.logoPadding : 20}%</div>
                     </div>
                     ${FrameColorControl.render({
                         id: 'logoBackgroundColor',

@@ -1512,7 +1512,7 @@ body.kiosk-mode .qr-placeholder {
     display: grid;
     width: 100%;
     max-width: 100%;
-    grid-auto-flow: column;
+    grid-auto-flow: column dense;
     grid-auto-columns: minmax(88px, 88px);
     grid-template-rows: repeat(2, minmax(0, 1fr));
     align-items: stretch;
@@ -1583,6 +1583,7 @@ body.kiosk-mode .qr-placeholder {
 
 .logo-preset-button-action {
     justify-content: center;
+    grid-row: 1;
 }
 
 .logo-preset-thumb {
@@ -1635,6 +1636,37 @@ body.kiosk-mode .qr-placeholder {
 .logo-settings-grid {
     align-items: stretch;
     grid-template-columns: 1fr;
+}
+
+.logo-shape-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.logo-shape-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 34px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.logo-shape-button:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+}
+
+.logo-shape-button.active {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    background: var(--bg-card);
 }
 
 .config-accordion-panel .frame-settings-panel {

@@ -251,9 +251,15 @@ const QRCodeLogoControls = {
     logoPresets: null,
     assetPresetSlugSet: null,
     sizePercent: 22,
+    logoPadding: 20,
+    logoIconColor: '',
+    logoShape: 'rounded',
     assetPresetNameOverrides: {
         '1and1': '1&1',
         '1dot1dot1dot1': '1.1.1.1',
+        '1001tracklists': '1001 Tracklists',
+        '30secondsofcode': '30 Seconds of Code',
+        '365datascience': '365 Data Science',
         '3m': '3M',
         '4chan': '4chan',
         '4d': '4D',
@@ -261,40 +267,904 @@ const QRCodeLogoControls = {
         '7zip': '7-Zip',
         '99designs': '99designs',
         '9gag': '9GAG',
+        abdownloadmanager: 'AB Download Manager',
+        aboutdotme: 'about.me',
+        abusedotch: 'abuse.ch',
+        accuweather: 'AccuWeather',
+        activitypub: 'ActivityPub',
+        actualbudget: 'Actual Budget',
+        addydotio: 'addy.io',
+        adblockplus: 'Adblock Plus',
+        adonisjs: 'AdonisJS',
+        adventofcode: 'Advent of Code',
+        aegisauthenticator: 'Aegis Authenticator',
+        aftership: 'AfterShip',
+        aidungeon: 'AI Dungeon',
+        airplayaudio: 'AirPlay Audio',
+        airplayvideo: 'AirPlay Video',
+        albertheijn: 'Albert Heijn',
+        alibabacloud: 'Alibaba Cloud',
+        alibabadotcom: 'Alibaba.com',
+        alienware: 'Alienware',
+        aliexpress: 'AliExpress',
+        alliedmodders: 'Allied Modders',
+        alltrails: 'AllTrails',
+        almalinux: 'AlmaLinux',
+        alpinedotjs: 'Alpine.js',
+        alpinelinux: 'Alpine Linux',
+        alternativeto: 'AlternativeTo',
+        alwaysdata: 'alwaysdata',
+        americanairlines: 'American Airlines',
+        americanexpress: 'American Express',
+        androidauto: 'Android Auto',
+        androidstudio: 'Android Studio',
+        animedotjs: 'Anime.js',
+        ankermake: 'AnkerMake',
+        animalplanet: 'Animal Planet',
+        antennapod: 'AntennaPod',
+        antdesign: 'Ant Design',
+        apacheairflow: 'Apache Airflow',
+        apacheant: 'Apache Ant',
+        apacheavro: 'Apache Avro',
+        apachecassandra: 'Apache Cassandra',
+        apachecloudstack: 'Apache CloudStack',
+        apachecordova: 'Apache Cordova',
+        apachecouchdb: 'Apache CouchDB',
+        apachedolphinscheduler: 'Apache DolphinScheduler',
+        apachedoris: 'Apache Doris',
+        apachedruid: 'Apache Druid',
+        apacheecharts: 'Apache ECharts',
+        apacheflink: 'Apache Flink',
+        apachefreemarker: 'Apache FreeMarker',
+        apachegroovy: 'Apache Groovy',
+        apacheguacamole: 'Apache Guacamole',
+        apachehadoop: 'Apache Hadoop',
+        apachehbase: 'Apache HBase',
+        apachehive: 'Apache Hive',
+        apachejmeter: 'Apache JMeter',
+        apachekafka: 'Apache Kafka',
+        apachekylin: 'Apache Kylin',
+        apachelucene: 'Apache Lucene',
+        apachemaven: 'Apache Maven',
+        apachenetbeanside: 'Apache NetBeans IDE',
+        apachenifi: 'Apache NiFi',
+        apacheopenoffice: 'Apache OpenOffice',
+        apacheparquet: 'Apache Parquet',
+        apachepdfbox: 'Apache PDFBox',
+        apachepulsar: 'Apache Pulsar',
+        apacherocketmq: 'Apache RocketMQ',
+        apachesolr: 'Apache Solr',
+        apachespark: 'Apache Spark',
+        apachestorm: 'Apache Storm',
+        apachesuperset: 'Apache Superset',
+        apachetomcat: 'Apache Tomcat',
+        apollographql: 'Apollo GraphQL',
+        applearcade: 'Apple Arcade',
+        applemusic: 'Apple Music',
+        applenews: 'Apple News',
+        applepay: 'Apple Pay',
+        applepodcasts: 'Apple Podcasts',
+        appletv: 'Apple TV',
+        appmanager: 'App Manager',
+        appstore: 'App Store',
+        archiveofourown: 'Archive of Our Own',
+        archlinux: 'Arch Linux',
+        arstechnica: 'Ars Technica',
+        artifacthub: 'Artifact Hub',
+        artixlinux: 'Artix Linux',
+        artstation: 'ArtStation',
+        asahilinux: 'Asahi Linux',
+        assemblyscript: 'AssemblyScript',
+        astonmartin: 'Aston Martin',
         atandt: 'AT&T',
+        audiobookshelf: 'Audiobookshelf',
+        audiotechnica: 'Audio-Technica',
+        autohotkey: 'AutoHotkey',
+        avaloniaui: 'Avalonia UI',
+        axisbank: 'Axis Bank',
+        babylondotjs: 'Babylon.js',
+        backbonedotjs: 'Backbone.js',
+        bankofamerica: 'Bank of America',
+        bandsintown: 'Bandsintown',
+        bandrautomation: 'B&R Automation',
+        basicattentiontoken: 'Basic Attention Token',
+        battledotnet: 'Battle.net',
+        beatsbydre: 'Beats by Dre',
+        beatstars: 'BeatStars',
+        beekeeperstudio: 'Beekeeper Studio',
+        beijingsubway: 'Beijing Subway',
+        betterauth: 'Better Auth',
+        betterdiscord: 'BetterDiscord',
+        betterstack: 'Better Stack',
+        bigbasket: 'BigBasket',
+        bigbluebutton: 'BigBlueButton',
+        bigcartel: 'Big Cartel',
+        bigcommerce: 'BigCommerce',
+        bisecthosting: 'BisectHosting',
+        bitcoincash: 'Bitcoin Cash',
+        bitcoinsv: 'Bitcoin SV',
+        blackberry: 'BlackBerry',
+        blackmagicdesign: 'Blackmagic Design',
+        blockchaindotcom: 'Blockchain.com',
+        boardgamegeek: 'BoardGameGeek',
+        boehringeringelheim: 'Boehringer Ingelheim',
+        bohemiainteractive: 'Bohemia Interactive',
+        bookingdotcom: 'Booking.com',
+        bookmeter: 'Bookmeter',
+        bookmyshow: 'BookMyShow',
+        bookstack: 'BookStack',
+        botblecms: 'Botble CMS',
+        boxysvg: 'Boxy SVG',
+        brandfolder: 'Brandfolder',
+        britishairways: 'British Airways',
+        bugcrowd: 'Bugcrowd',
+        buildkite: 'Buildkite',
+        builtbybit: 'BuiltByBit',
+        burgerking: 'Burger King',
+        burpsuite: 'Burp Suite',
+        buymeacoffee: 'Buy Me a Coffee',
+        buysellads: 'BuySellAds',
+        buzzfeed: 'BuzzFeed',
+        bytedance: 'ByteDance',
         c: 'C',
+        cachyos: 'CachyOS',
+        cairographics: 'Cairo Graphics',
+        cairometro: 'Cairo Metro',
+        caixabank: 'CaixaBank',
+        cakephp: 'CakePHP',
+        caldotcom: 'Cal.com',
+        campaignmonitor: 'Campaign Monitor',
+        carlsberggroup: 'Carlsberg Group',
+        cashapp: 'Cash App',
+        chartdotjs: 'Chart.js',
+        chessdotcom: 'Chess.com',
+        chianetwork: 'Chia Network',
+        chinaeasternairlines: 'China Eastern Airlines',
+        chinarailway: 'China Railway',
+        chinasouthernairlines: 'China Southern Airlines',
+        chromewebstore: 'Chrome Web Store',
+        cloudflarepages: 'Cloudflare Pages',
+        cloudflareworkers: 'Cloudflare Workers',
+        cloudfoundry: 'Cloud Foundry',
+        cloudnativebuild: 'Cloud Native Build',
+        codeblocks: 'Code::Blocks',
+        codecademy: 'Codecademy',
+        codeceptjs: 'CodeceptJS',
+        codechef: 'CodeChef',
+        codeclimate: 'Code Climate',
+        codecrafters: 'CodeCrafters',
+        codefactor: 'CodeFactor',
+        codeforces: 'Codeforces',
+        codefresh: 'Codefresh',
+        codeigniter: 'CodeIgniter',
+        codemagic: 'Codemagic',
+        codementor: 'Codementor',
+        codemirror: 'CodeMirror',
+        codenewbie: 'CodeNewbie',
+        codeproject: 'CodeProject',
+        coderabbit: 'CodeRabbit',
+        codersrank: 'CodersRank',
+        codesandbox: 'CodeSandbox',
+        codesignal: 'CodeSignal',
+        codestream: 'CodeStream',
+        codewars: 'Codewars',
+        codingninjas: 'Coding Ninjas',
+        coffeescript: 'CoffeeScript',
+        coinmarketcap: 'CoinMarketCap',
+        collaboraonline: 'Collabora Online',
+        comicfury: 'Comic Fury',
+        commonlisp: 'Common Lisp',
+        commonworkflowlanguage: 'Common Workflow Language',
+        compilerexplorer: 'Compiler Explorer',
+        contactlesspayment: 'Contactless Payment',
+        conventionalcommits: 'Conventional Commits',
+        cookiecutter: 'Cookiecutter',
+        coolermaster: 'Cooler Master',
+        copaairlines: 'Copa Airlines',
+        counterstrike: 'Counter-Strike',
+        countingworkspro: 'CountingWorks Pro',
         cplusplus: 'C++',
         cplusplusbuilder: 'C++Builder',
+        createreactapp: 'Create React App',
+        creativecommons: 'Creative Commons',
+        creativetechnology: 'Creative Technology',
         css: 'CSS',
+        cssdesignawards: 'CSS Design Awards',
+        cssmodules: 'CSS Modules',
+        csswizardry: 'CSS Wizardry',
+        curseforge: 'CurseForge',
+        customink: 'Custom Ink',
+        cyberdefenders: 'CyberDefenders',
+        cytoscapedotjs: 'Cytoscape.js',
         d3: 'D3.js',
+        dailydotdev: 'daily.dev',
+        dailymotion: 'Dailymotion',
+        darkreader: 'Dark Reader',
+        dassaultsystemes: 'Dassault Systèmes',
+        datadotai: 'Data.ai',
+        datacamp: 'DataCamp',
+        datefns: 'date-fns',
+        davinciresolve: 'DaVinci Resolve',
+        dazhongdianping: 'Dazhong Dianping',
+        dcentertainment: 'DC Entertainment',
+        debridlink: 'Debrid Link',
+        decapcms: 'Decap CMS',
+        deepcool: 'DeepCool',
+        deepgram: 'Deepgram',
+        dependencycheck: 'Dependency-Check',
+        depositphotos: 'Depositphotos',
+        derspiegel: 'Der Spiegel',
+        deutschebahn: 'Deutsche Bahn',
+        deutschebank: 'Deutsche Bank',
+        deutschepost: 'Deutsche Post',
+        deutschetelekom: 'Deutsche Telekom',
+        deutschewelle: 'Deutsche Welle',
+        developmentcontainers: 'Development Containers',
+        deviantart: 'DeviantArt',
+        devexpress: 'DevExpress',
+        diagramsdotnet: 'diagrams.net',
+        dialogflow: 'Dialogflow',
+        dictionarydotcom: 'Dictionary.com',
+        digikeyelectronics: 'Digi-Key Electronics',
+        digitalocean: 'DigitalOcean',
+        dinersclub: 'Diners Club',
+        discorddotjs: 'Discord.js',
+        docsdotrs: 'docs.rs',
         dotnet: '.NET',
+        dota2: 'Dota 2',
+        duckduckgo: 'DuckDuckGo',
+        dungeonsanddragons: 'Dungeons & Dragons',
         e3: 'E3',
+        eclipseadoptium: 'Eclipse Adoptium',
+        eclipseche: 'Eclipse Che',
+        eclipseide: 'Eclipse IDE',
+        eclipsejetty: 'Eclipse Jetty',
+        eclipsemosquitto: 'Eclipse Mosquitto',
+        eclipsevertdotx: 'Eclipse Vert.x',
+        edgeimpulse: 'Edge Impulse',
+        editorconfig: 'EditorConfig',
+        edotleclerc: 'E.Leclerc',
+        eightsleep: 'Eight Sleep',
+        electronbuilder: 'electron-builder',
+        electronfiddle: 'Electron Fiddle',
+        emberdotjs: 'Ember.js',
+        endeavouros: 'EndeavourOS',
+        enterprisedb: 'EnterpriseDB',
+        envoyproxy: 'Envoy Proxy',
+        epicgames: 'Epic Games',
+        equinixmetal: 'Equinix Metal',
+        esotericsoftware: 'Esoteric Software',
+        ethiopianairlines: 'Ethiopian Airlines',
+        etihadairways: 'Etihad Airways',
+        europeanunion: 'European Union',
+        eventstore: 'Event Store',
+        everydotorg: 'Every.org',
+        expressdotcom: 'Express.com',
+        expressvpn: 'ExpressVPN',
         f1: 'F1',
         f5: 'F5',
+        facebookgaming: 'Facebook Gaming',
+        facebooklive: 'Facebook Live',
+        fairphone: 'Fairphone',
+        fareharbor: 'FareHarbor',
+        fastapi: 'FastAPI',
+        filedotio: 'File.io',
+        filemaker: 'FileMaker',
+        filezilla: 'FileZilla',
+        fireflyiii: 'Firefly III',
+        firefoxbrowser: 'Firefox Browser',
+        flashforge: 'FlashForge',
+        flathub: 'Flathub',
+        flightaware: 'FlightAware',
+        floatplane: 'Floatplane',
+        fluentbit: 'Fluent Bit',
+        fluentd: 'Fluentd',
+        flydotio: 'Fly.io',
+        fontawesome: 'Font Awesome',
+        fontforge: 'FontForge',
+        foodpanda: 'foodpanda',
+        foundryvirtualtabletop: 'Foundry Virtual Tabletop',
+        foursquare: 'Foursquare',
+        fraunhofergesellschaft: 'Fraunhofer-Gesellschaft',
+        freebsd: 'FreeBSD',
+        freecad: 'FreeCAD',
+        freecodecamp: 'freeCodeCamp',
+        freedesktopdotorg: 'freedesktop.org',
+        freelancermap: 'freelancermap',
+        frontendmentor: 'Frontend Mentor',
+        fusionauth: 'FusionAuth',
+        futurelearn: 'FutureLearn',
         g2: 'G2',
+        g2a: 'G2A',
+        g2g: 'G2G',
+        gamedeveloper: 'Game Developer',
+        gamejolt: 'Game Jolt',
+        gamemaker: 'GameMaker',
+        gamescience: 'Game Science',
+        garudalinux: 'Garuda Linux',
+        geeksforgeeks: 'GeeksforGeeks',
+        generalelectric: 'General Electric',
+        generalmotors: 'General Motors',
+        ghostfolio: 'Ghostfolio',
+        gitconnected: 'gitconnected',
+        gitextensions: 'Git Extensions',
+        gitforwindows: 'Git for Windows',
+        githubactions: 'GitHub Actions',
+        githubcopilot: 'GitHub Copilot',
+        githubpages: 'GitHub Pages',
+        githubsponsors: 'GitHub Sponsors',
+        gitignoredotio: 'gitignore.io',
+        gitkraken: 'GitKraken',
+        gldotinet: 'GL.iNet',
+        gnometerminal: 'GNOME Terminal',
+        gnuprivacyguard: 'GNU Privacy Guard',
+        gnuicecat: 'GNU IceCat',
+        godotengine: 'Godot Engine',
+        gogdotcom: 'GOG.com',
+        goldmansachs: 'Goldman Sachs',
+        goodreads: 'Goodreads',
+        googleadmob: 'Google AdMob',
+        googleads: 'Google Ads',
+        googleadsense: 'Google AdSense',
+        googleanalytics: 'Google Analytics',
+        googleappsscript: 'Google Apps Script',
+        googleassistant: 'Google Assistant',
+        googleauthenticator: 'Google Authenticator',
+        googlebigquery: 'Google BigQuery',
+        googlebigtable: 'Google Bigtable',
+        googlecalendar: 'Google Calendar',
+        googlecampaignmanager360: 'Google Campaign Manager 360',
+        googlecardboard: 'Google Cardboard',
+        googlecast: 'Google Cast',
+        googlechat: 'Google Chat',
+        googlechrome: 'Google Chrome',
+        googlechronicle: 'Google Chronicle',
+        googleclassroom: 'Google Classroom',
+        googlecloud: 'Google Cloud',
+        googlecloudcomposer: 'Google Cloud Composer',
+        googlecloudspanner: 'Google Cloud Spanner',
+        googlecloudstorage: 'Google Cloud Storage',
+        googlecolab: 'Google Colab',
+        googlecontaineroptimizedos: 'Google Container-Optimized OS',
+        googledataflow: 'Google Dataflow',
+        googledataproc: 'Google Dataproc',
+        googledisplayandvideo360: 'Google Display & Video 360',
+        googledocs: 'Google Docs',
+        googledrive: 'Google Drive',
+        googleearth: 'Google Earth',
+        googleearthengine: 'Google Earth Engine',
+        googlefonts: 'Google Fonts',
+        googleforms: 'Google Forms',
+        googlegemini: 'Google Gemini',
+        googlehome: 'Google Home',
+        googlejules: 'Google Jules',
+        googlekeep: 'Google Keep',
+        googlelens: 'Google Lens',
+        googlemaps: 'Google Maps',
+        googlemarketingplatform: 'Google Marketing Platform',
+        googlemeet: 'Google Meet',
+        googlemessages: 'Google Messages',
+        googlenearby: 'Google Nearby',
+        googlenews: 'Google News',
+        googlepay: 'Google Pay',
+        googlephotos: 'Google Photos',
+        googleplay: 'Google Play',
+        googlepubsub: 'Google Pub/Sub',
+        googlescholar: 'Google Scholar',
+        googlesearchconsole: 'Google Search Console',
+        googlesheets: 'Google Sheets',
+        googleslides: 'Google Slides',
+        googlestreetview: 'Google Street View',
+        googlesummerofcode: 'Google Summer of Code',
+        googletagmanager: 'Google Tag Manager',
+        googletasks: 'Google Tasks',
+        googletranslate: 'Google Translate',
+        googletv: 'Google TV',
+        gotomeeting: 'GoTo Meeting',
+        gradleplaypublisher: 'Gradle Play Publisher',
+        grapheneos: 'GrapheneOS',
+        greasyfork: 'Greasy Fork',
+        greatlearning: 'Great Learning',
+        greensock: 'GreenSock',
+        greptimedb: 'GreptimeDB',
+        griddotai: 'Grid.ai',
+        guangzhoumetro: 'Guangzhou Metro',
+        guitarpro: 'Guitar Pro',
         h2database: 'H2',
         h3: 'H3',
+        hackerearth: 'HackerEarth',
+        hackernoon: 'Hacker Noon',
+        hackerone: 'HackerOne',
+        hackerrank: 'HackerRank',
+        hackthebox: 'Hack The Box',
+        handlebarsdotjs: 'Handlebars.js',
+        handm: 'H&M',
+        handshake_protocol: 'Handshake Protocol',
+        happycow: 'HappyCow',
+        harmonyos: 'HarmonyOS',
+        hatenabookmark: 'Hatena Bookmark',
+        haveibeenpwned: 'Have I Been Pwned',
+        hdfcbank: 'HDFC Bank',
+        headlessui: 'Headless UI',
+        headphonezone: 'Headphone Zone',
+        hearthisdotat: 'hearthis.at',
+        hellofresh: 'HelloFresh',
+        hellyhansen: 'Helly Hansen',
+        heroicgameslauncher: 'Heroic Games Launcher',
+        hiltonhotelsandresorts: 'Hilton Hotels & Resorts',
+        hive_blockchain: 'Hive Blockchain',
+        homeadvisor: 'HomeAdvisor',
+        homeassistant: 'Home Assistant',
+        homeassistantcommunitystore: 'Home Assistant Community Store',
+        honeybadger: 'Honeybadger',
+        honeygain: 'Honeygain',
+        hotelsdotcom: 'Hotels.com',
         html5: 'HTML5',
+        hungryjacks: "Hungry Jack's",
+        hyprland: 'Hyprland',
         i18next: 'i18next',
         i3: 'i3',
+        icicibank: 'ICICI Bank',
+        iledefrancemobilites: 'Île-de-France Mobilités',
+        ilovepdf: 'iLovePDF',
+        imagedotsc: 'Image.sc',
+        imagetoolbox: 'Image Toolbox',
+        immersivetranslate: 'Immersive Translate',
+        indiansuperleague: 'Indian Super League',
+        indiehackers: 'Indie Hackers',
+        indieweb: 'IndieWeb',
+        inductiveautomation: 'Inductive Automation',
+        infinityfree: 'InfinityFree',
+        intellijidea: 'IntelliJ IDEA',
+        interactiondesignfoundation: 'Interaction Design Foundation',
+        interactjs: 'interact.js',
+        internetarchive: 'Internet Archive',
+        internetcomputer: 'Internet Computer',
+        invoiceninja: 'Invoice Ninja',
+        itchdotio: 'itch.io',
+        japanairlines: 'Japan Airlines',
+        javascript: 'JavaScript',
+        jetpackcompose: 'Jetpack Compose',
+        jfrogpipelines: 'JFrog Pipelines',
+        jirasoftware: 'Jira Software',
+        johndeere: 'John Deere',
+        jsonwebtokens: 'JSON Web Tokens',
+        junipernetworks: 'Juniper Networks',
+        junit5: 'JUnit 5',
         k3s: 'K3s',
         k6: 'k6',
+        kalilinux: 'Kali Linux',
+        karlsruherverkehrsverbund: 'Karlsruher Verkehrsverbund',
+        kasasmart: 'Kasa Smart',
+        kdeneon: 'KDE Neon',
+        kdeplasma: 'KDE Plasma',
+        keepachangelog: 'Keep a Changelog',
+        khanacademy: 'Khan Academy',
+        khronosgroup: 'Khronos Group',
+        kingstontechnology: 'Kingston Technology',
+        knowledgebase: 'Knowledge Base',
+        knexdotjs: 'Knex.js',
+        languagetool: 'LanguageTool',
+        laravelhorizon: 'Laravel Horizon',
+        laravelnova: 'Laravel Nova',
+        lastdotfm: 'Last.fm',
+        leagueoflegends: 'League of Legends',
+        leaderprice: 'Leader Price',
+        lefthook: 'Lefthook',
+        legacygames: 'Legacy Games',
+        lemonsqueezy: 'Lemon Squeezy',
+        leroymerlin: 'Leroy Merlin',
+        leslibraires: 'Les Libraires',
+        letsencrypt: "Let's Encrypt",
+        letterboxd: 'Letterboxd',
+        levelsdotfyi: 'Levels.fyi',
+        liberadotchat: 'Libera.Chat',
+        librariesdotio: 'Libraries.io',
+        librarything: 'LibraryThing',
+        libreoffice: 'LibreOffice',
+        libreofficebase: 'LibreOffice Base',
+        libreofficecalc: 'LibreOffice Calc',
+        libreofficedraw: 'LibreOffice Draw',
+        libreofficeimpress: 'LibreOffice Impress',
+        libreofficemath: 'LibreOffice Math',
+        libreofficewriter: 'LibreOffice Writer',
+        libretranslate: 'LibreTranslate',
+        libretube: 'LibreTube',
+        librewolf: 'LibreWolf',
+        lineageos: 'LineageOS',
+        linktree: 'Linktree',
+        lintcode: 'LintCode',
+        linuxcontainers: 'Linux Containers',
+        linuxfoundation: 'Linux Foundation',
+        linuxmint: 'Linux Mint',
+        linuxprofessionalinstitute: 'Linux Professional Institute',
+        linuxserver: 'LinuxServer',
+        lionair: 'Lion Air',
+        livechat: 'LiveChat',
+        livejournal: 'LiveJournal',
+        localsend: 'LocalSend',
+        localxpose: 'LocalXpose',
+        lotpolishairlines: 'LOT Polish Airlines',
+        lottiefiles: 'LottieFiles',
+        majorleaguehacking: 'Major League Hacking',
+        makerbot: 'MakerBot',
+        malwarebytes: 'Malwarebytes',
+        mangacollec: 'Manga Collec',
+        mangaupdates: 'Manga Updates',
+        mariadbfoundation: 'MariaDB Foundation',
+        materialdesign: 'Material Design',
+        materialdesignicons: 'Material Design Icons',
+        materialformkdocs: 'Material for MkDocs',
+        maxplanckgesellschaft: 'Max Planck Gesellschaft',
+        mcdonalds: "McDonald's",
         mdnwebdocs: 'MDN Web Docs',
+        mediafire: 'MediaFire',
+        mediamarkt: 'MediaMarkt',
+        mediapipe: 'MediaPipe',
+        medibangpaint: 'MediBang Paint',
+        meilisearch: 'Meilisearch',
+        mentorcruise: 'MentorCruise',
+        mercadopago: 'Mercado Pago',
+        metrodelaciudaddemexico: 'Metro de la Ciudad de México',
+        metrodemadrid: 'Metro de Madrid',
+        metrodeparis: 'Métro de Paris',
+        microdotblog: 'Micro.blog',
+        microeditor: 'micro editor',
+        micropython: 'MicroPython',
+        microstation: 'MicroStation',
+        microstrategy: 'MicroStrategy',
+        mingww64: 'MinGW-w64',
+        mockserviceworker: 'Mock Service Worker',
+        modelcontextprotocol: 'Model Context Protocol',
+        mongoosedotws: 'Mongoose.ws',
+        monkeytype: 'Monkeytype',
+        moonrepo: 'moonrepo',
+        moscowmetro: 'Moscow Metro',
+        myanimelist: 'MyAnimeList',
+        natsdotio: 'NATS.io',
+        nederlandsespoorwegen: 'Nederlandse Spoorwegen',
+        neteasecloudmusic: 'NetEase Cloud Music',
+        neutralinojs: 'Neutralinojs',
+        newbalance: 'New Balance',
+        newgrounds: 'Newgrounds',
+        newjapanprowrestling: 'New Japan Pro-Wrestling',
+        newpipe: 'NewPipe',
+        newrelic: 'New Relic',
+        newyorktimes: 'New York Times',
+        nextbilliondotai: 'NextBillion.ai',
+        nextdns: 'NextDNS',
         nextdotjs: 'Next.js',
+        nextcloud: 'Nextcloud',
+        nginxproxymanager: 'Nginx Proxy Manager',
+        nicehash: 'NiceHash',
+        nixos: 'NixOS',
+        nobaralinux: 'Nobara Linux',
         nodedotjs: 'Node.js',
+        nordicsemiconductor: 'Nordic Semiconductor',
+        normalizedotcss: 'Normalize.css',
+        notepadplusplus: 'Notepad++',
         o2: 'O2',
+        opencollective: 'Open Collective',
+        opencontainersinitiative: 'Open Containers Initiative',
+        opencritic: 'OpenCritic',
+        openfaas: 'OpenFaaS',
+        openjdk: 'OpenJDK',
+        openjsfoundation: 'OpenJS Foundation',
+        openlayers: 'OpenLayers',
+        openmediavault: 'OpenMediaVault',
+        openmined: 'OpenMined',
+        opennebula: 'OpenNebula',
+        openproject: 'OpenProject',
+        openrouter: 'OpenRouter',
+        opensearch: 'OpenSearch',
+        opensourcehardware: 'Open Source Hardware',
+        opensourceinitiative: 'Open Source Initiative',
+        openstack: 'OpenStack',
+        openstreetmap: 'OpenStreetMap',
+        opensuse: 'openSUSE',
+        opentelemetry: 'OpenTelemetry',
+        opentext: 'OpenText',
+        opentofu: 'OpenTofu',
+        openverse: 'OpenVerse',
+        openvpn: 'OpenVPN',
+        openwrt: 'OpenWrt',
+        openzeppelin: 'OpenZeppelin',
+        openzfs: 'OpenZFS',
+        operagx: 'Opera GX',
         p5dotjs: 'p5.js',
+        paddlepaddle: 'PaddlePaddle',
+        paddypower: 'Paddy Power',
+        pagespeedinsights: 'PageSpeed Insights',
+        paloaltonetworks: 'Palo Alto Networks',
+        paloaltosoftware: 'Palo Alto Software',
+        paperlessngx: 'Paperless-ngx',
+        paperswithcode: 'Papers with Code',
+        paradoxinteractive: 'Paradox Interactive',
+        paramountplus: 'Paramount+',
+        paritysubstrate: 'Parity Substrate',
+        parrotsecurity: 'Parrot Security',
+        parsedotly: 'Parse.ly',
+        payloadcms: 'Payload CMS',
+        pcgamingwiki: 'PCGamingWiki',
+        peakdesign: 'Peak Design',
+        philipshue: 'Philips Hue',
+        phoenixframework: 'Phoenix Framework',
+        phosphoricons: 'Phosphor Icons',
+        photobucket: 'PhotoBucket',
+        photocrowd: 'Photocrowd',
+        picardsurgeles: 'Picard Surgelés',
+        picartodottv: 'Picarto.tv',
+        pinetwork: 'Pi Network',
+        pioneerdj: 'Pioneer DJ',
+        pivotaltracker: 'Pivotal Tracker',
+        platformdotsh: 'Platform.sh',
+        plausibleanalytics: 'Plausible Analytics',
+        playcanvas: 'PlayCanvas',
+        playerdotme: 'Player.me',
+        playerfm: 'Player FM',
+        playstation: 'PlayStation',
+        playstation2: 'PlayStation 2',
+        playstation3: 'PlayStation 3',
+        playstation4: 'PlayStation 4',
+        playstation5: 'PlayStation 5',
+        playstationportable: 'PlayStation Portable',
+        playstationvita: 'PlayStation Vita',
+        pocketbase: 'PocketBase',
+        pocketcasts: 'Pocket Casts',
+        podcastaddict: 'Podcast Addict',
+        podcastindex: 'Podcast Index',
+        polymerproject: 'Polymer Project',
+        portableappsdotcom: 'PortableApps.com',
+        posthog: 'PostHog',
+        postcss: 'PostCSS',
+        premierleague: 'Premier League',
+        primereact: 'PrimeReact',
+        primevue: 'PrimeVue',
+        privateinternetaccess: 'Private Internet Access',
+        processingfoundation: 'Processing Foundation',
+        processwire: 'ProcessWire',
+        producthunt: 'Product Hunt',
+        pronounsdotpage: 'Pronouns.page',
+        protocolsdotio: 'Protocols.io',
+        protodotio: 'Proto.io',
+        protoncalendar: 'Proton Calendar',
+        protondrive: 'Proton Drive',
+        protonmail: 'Proton Mail',
+        protonvpn: 'Proton VPN',
         qt: 'Qt',
+        qatarairways: 'Qatar Airways',
+        qubesos: 'Qubes OS',
+        quickbooks: 'QuickBooks',
         r: 'R',
         r3: 'R3',
+        raspberrypi: 'Raspberry Pi',
+        reactbootstrap: 'React Bootstrap',
+        reacthookform: 'React Hook Form',
+        reactiveresume: 'Reactive Resume',
+        reactquery: 'React Query',
+        reactrouter: 'React Router',
+        reacttable: 'React Table',
+        readdotcv: 'Read.cv',
+        readthedocs: 'Read the Docs',
+        redbull: 'Red Bull',
+        redcandlegames: 'Red Candle Games',
+        redhatopenshift: 'Red Hat OpenShift',
+        redhat: 'Red Hat',
+        redwoodjs: 'RedwoodJS',
+        refinedgithub: 'Refined GitHub',
+        republicofgamers: 'Republic of Gamers',
+        removedotbg: 'remove.bg',
+        retroachievements: 'RetroAchievements',
+        retroarch: 'RetroArch',
+        retropie: 'RetroPie',
+        revealdotjs: 'reveal.js',
+        revoltdotchat: 'Revolt.chat',
+        roadmapdotsh: 'roadmap.sh',
+        roamresearch: 'Roam Research',
+        robloxstudio: 'Roblox Studio',
+        robotframework: 'Robot Framework',
+        rocketdotchat: 'Rocket.Chat',
+        rockstargames: 'Rockstar Games',
+        rockwellautomation: 'Rockwell Automation',
+        rockylinux: 'Rocky Linux',
+        rollupdotjs: 'Rollup.js',
+        rotaryinternational: 'Rotary International',
+        rottentomatoes: 'Rotten Tomatoes',
+        rubyonrails: 'Ruby on Rails',
+        rubysinatra: 'Ruby Sinatra',
+        runrundotit: 'Runrun.it',
+        s7airlines: 'S7 Airlines',
+        sahibinden: 'sahibinden',
+        sailfishos: 'Sailfish OS',
+        sailsdotjs: 'Sails.js',
+        saltproject: 'Salt Project',
+        samsclub: "Sam's Club",
+        samsungpay: 'Samsung Pay',
+        sanfranciscomunicipalrailway: 'San Francisco Municipal Railway',
+        saopaulometro: 'São Paulo Metrô',
+        schneiderelectric: 'Schneider Electric',
+        scikitlearn: 'scikit-learn',
+        scpfoundation: 'SCP Foundation',
+        scrollreveal: 'ScrollReveal',
+        scrumalliance: 'Scrum Alliance',
+        scrutinizerci: 'Scrutinizer CI',
+        securityscorecard: 'SecurityScorecard',
+        semanticrelease: 'semantic-release',
+        semanticscholar: 'Semantic Scholar',
+        semanticui: 'Semantic UI',
+        semanticuireact: 'Semantic UI React',
+        semanticweb: 'Semantic Web',
+        shanghaimetro: 'Shanghai Metro',
+        shenzhenmetro: 'Shenzhen Metro',
+        shieldsdotio: 'Shields.io',
+        silverairways: 'Silver Airways',
+        similarweb: 'SimilarWeb',
+        simpleanalytics: 'Simple Analytics',
+        simpleicons: 'Simple Icons',
+        simplelocalize: 'SimpleLocalize',
+        simplelogin: 'SimpleLogin',
+        simplenote: 'Simplenote',
+        sinaweibo: 'Sina Weibo',
+        singaporeairlines: 'Singapore Airlines',
+        singlestore: 'SingleStore',
+        sitepoint: 'SitePoint',
+        smartthings: 'SmartThings',
+        smashingmagazine: 'Smashing Magazine',
+        socialblade: 'Social Blade',
+        socketdotio: 'Socket.io',
+        soundcharts: 'Soundcharts',
+        soundcloud: 'SoundCloud',
+        sourceengine: 'Source Engine',
+        sourceforge: 'SourceForge',
+        sourcehut: 'SourceHut',
+        sourcetree: 'Sourcetree',
+        southwestairlines: 'Southwest Airlines',
+        spidermonkey: 'SpiderMonkey',
+        spigotmc: 'SpigotMC',
+        spring_creators: 'Spring Creators',
+        springboot: 'Spring Boot',
+        springsecurity: 'Spring Security',
+        spyderide: 'Spyder IDE',
+        sqlalchemy: 'SQLAlchemy',
+        squareenix: 'Square Enix',
+        squarespace: 'Squarespace',
+        stackblitz: 'StackBlitz',
+        stackedit: 'StackEdit',
+        stackexchange: 'Stack Exchange',
+        stackhawk: 'StackHawk',
+        stackoverflow: 'Stack Overflow',
+        stackshare: 'StackShare',
+        staffbase: 'Staffbase',
+        stagetimer: 'Stagetimer',
+        standardjs: 'StandardJS',
+        standardresume: 'Standard Resume',
+        starlingbank: 'Starling Bank',
+        startdotgg: 'start.gg',
+        startpage: 'Startpage',
+        startrek: 'Star Trek',
+        statuspage: 'Statuspage',
+        statuspal: 'StatusPal',
+        steamdeck: 'Steam Deck',
+        steamworks: 'Steamworks',
+        steelseries: 'SteelSeries',
+        stmicroelectronics: 'STMicroelectronics',
+        stopstalk: 'StopStalk',
+        storyblok: 'Storyblok',
+        storybook: 'Storybook',
+        streamlabs: 'Streamlabs',
+        streamlit: 'Streamlit',
+        streamrunners: 'StreamRunners',
+        strongswan: 'strongSwan',
+        styledcomponents: 'styled-components',
+        sublimetext: 'Sublime Text',
+        subtitleedit: 'Subtitle Edit',
+        superuser: 'Super User',
         svgdotjs: 'SVG.js',
+        svgtrace: 'SVGtrace',
+        tailwindcss: 'Tailwind CSS',
+        taketwointeractivesoftware: 'Take-Two Interactive',
+        tampermonkey: 'Tampermonkey',
+        testinglibrary: 'Testing Library',
+        threedotjs: 'Three.js',
+        ticktick: 'TickTick',
+        ticketmaster: 'Ticketmaster',
+        tildapublishing: 'Tilda Publishing',
+        timescale: 'Timescale',
+        tinkercad: 'Tinkercad',
+        tokyometro: 'Tokyo Metro',
+        topdotgg: 'top.gg',
+        torbrowser: 'Tor Browser',
+        torproject: 'Tor Project',
+        tradingview: 'TradingView',
+        traefikmesh: 'Traefik Mesh',
+        traefikproxy: 'Traefik Proxy',
+        trailforks: 'Trailforks',
+        trainerroad: 'TrainerRoad',
+        transportforireland: 'Transport for Ireland',
+        transportforlondon: 'Transport for London',
+        treehouse: 'Treehouse',
+        trendmicro: 'Trend Micro',
+        tripadvisor: 'Tripadvisor',
+        tripdotcom: 'Trip.com',
+        tryitonline: 'Try It Online',
+        tryhackme: 'TryHackMe',
+        turkishairlines: 'Turkish Airlines',
+        tuxedocomputers: 'TUXEDO Computers',
         tv4play: 'TV4 Play',
+        typescript: 'TypeScript',
+        ublockorigin: 'uBlock Origin',
+        ubuntumate: 'Ubuntu MATE',
+        udotsdotnews: 'U.S. News',
+        underarmour: 'Under Armour',
+        underscoredotjs: 'Underscore.js',
+        unitedairlines: 'United Airlines',
+        unitednations: 'United Nations',
+        unrealengine: 'Unreal Engine',
+        uptimekuma: 'Uptime Kuma',
+        uservoice: 'UserVoice',
         v0: 'v0',
         v8: 'V8',
+        vanillaextract: 'vanilla-extract',
+        vaultwarden: 'Vaultwarden',
+        vectorlogozone: 'Vector Logo Zone',
+        victoriametrics: 'VictoriaMetrics',
+        victronenergy: 'Victron Energy',
+        virginatlantic: 'Virgin Atlantic',
+        virginmedia: 'Virgin Media',
+        virtualbox: 'VirtualBox',
+        virustotal: 'VirusTotal',
+        visualparadigm: 'Visual Paradigm',
+        vlcmediaplayer: 'VLC Media Player',
+        voidlinux: 'Void Linux',
+        voipdotms: 'VoIP.ms',
+        vorondesign: 'Voron Design',
+        vowpalwabbit: 'Vowpal Wabbit',
         w3schools: 'W3Schools',
+        walletconnect: 'WalletConnect',
+        wappalyzer: 'Wappalyzer',
+        wasmcloud: 'wasmCloud',
+        watchtower: 'Watchtower',
+        weatherchannel: 'The Weather Channel',
         web3dotjs: 'Web3.js',
+        webassembly: 'WebAssembly',
+        webcomponentsdotorg: 'webcomponents.org',
+        webdotde: 'web.de',
+        webdriverio: 'WebdriverIO',
+        webmoney: 'WebMoney',
+        weightsandbiases: 'Weights & Biases',
+        welcometothejungle: 'Welcome to the Jungle',
+        wellsfargo: 'Wells Fargo',
+        westernunion: 'Western Union',
+        what3words: 'what3words',
+        wheniwork: 'When I Work',
+        wikidotgg: 'Wiki.gg',
+        wikidotjs: 'Wiki.js',
+        wikimediacommons: 'Wikimedia Commons',
+        wikimediafoundation: 'Wikimedia Foundation',
+        wolframlanguage: 'Wolfram Language',
+        wolframmathematica: 'Wolfram Mathematica',
+        wondersharefilmora: 'Wondershare Filmora',
+        woocommerce: 'WooCommerce',
+        worldhealthorganization: 'World Health Organization',
+        writedotas: 'Write.as',
         x: 'X',
-        xdotorg: 'X.Org'
+        xdadevelopers: 'XDA Developers',
+        xdotorg: 'X.Org',
+        xiaohongshu: 'Xiaohongshu',
+        yamahacorporation: 'Yamaha Corporation',
+        yamahamotorcorporation: 'Yamaha Motor Corporation',
+        yandexcloud: 'Yandex Cloud',
+        ycombinator: 'Y Combinator',
+        youtubegaming: 'YouTube Gaming',
+        youtubekids: 'YouTube Kids',
+        youtubemusic: 'YouTube Music',
+        youtubeshorts: 'YouTube Shorts',
+        youtubestudio: 'YouTube Studio',
+        youtubetv: 'YouTube TV',
+        zebratechnologies: 'Zebra Technologies',
+        zedindustries: 'Zed Industries',
+        zerotier: 'ZeroTier',
+        zigbee2mqtt: 'Zigbee2MQTT'
     },
 
     getPresetMarkup() {
@@ -443,6 +1313,8 @@ const QRCodeLogoControls = {
             .join(' ');
     },
 
+    knownTLDs: new Set(['com', 'org', 'net', 'io', 'dev', 'gg', 'fm', 'tv', 'me', 'sh', 'rs', 'sc', 'ly', 'at', 'de', 'ws', 'ai', 'ms', 'it', 'as', 'bg', 'js', 'ts', 'css', 'chat', 'page', 'fyi']),
+
     formatAssetPresetToken(token) {
         if (!token) {
             return '';
@@ -451,9 +1323,13 @@ const QRCodeLogoControls = {
         if (token.includes('.')) {
             return token
                 .split('.')
-                .map((segment, index) => {
+                .map((segment, index, arr) => {
                     if (!segment) {
                         return '';
+                    }
+
+                    if (index > 0 && this.knownTLDs.has(segment.toLowerCase())) {
+                        return segment.toLowerCase();
                     }
 
                     if (segment.length <= 3) {
@@ -499,7 +1375,7 @@ const QRCodeLogoControls = {
             </svg>
         `;
 
-        return { id, name, dataUrl: this.svgToDataUrl(svg) };
+        return { id, name, contained: true, dataUrl: this.svgToDataUrl(svg) };
     },
 
     createTextBadgePreset({
@@ -914,6 +1790,7 @@ const QRCodeLogoControls = {
     init(root = document) {
         const logoInput = root.querySelector('#qrLogoInput');
         const logoSizeRange = root.querySelector('#qrLogoSizeRange');
+        const logoPaddingRange = root.querySelector('#qrLogoPaddingRange');
         const logoBackgroundColorControl = FrameColorControl.getControl(root, 'logoBackgroundColor');
         const presetSearchInput = root.querySelector('#logoPresetSearchInput');
         const presetEmptyState = root.querySelector('#logoPresetSearchEmpty');
@@ -944,15 +1821,29 @@ const QRCodeLogoControls = {
             });
 
             logoSizeRange.addEventListener('input', () => {
-                this.sizePercent = parseInt(logoSizeRange.value, 10) || 22;
+                this.sizePercent = Math.min(44, Math.max(12, parseInt(logoSizeRange.value, 10) || 22));
                 this.syncUI(root);
                 if (this.hasLogo()) {
                     QRCodeFrameControls.triggerActiveFrameRefresh(root);
                 }
             });
 
+            if (logoPaddingRange) {
+                logoPaddingRange.addEventListener('input', () => {
+                    this.logoPadding = Math.min(80, Math.max(0, parseInt(logoPaddingRange.value, 10) || 20));
+                    this.syncUI(root);
+                    if (this.hasLogo()) {
+                        QRCodeFrameControls.triggerActiveFrameRefresh(root);
+                    }
+                });
+            }
+
             FrameColorControl.bindControl(logoBackgroundColorControl, control => {
                 this.logoBackgroundColor = FrameColorControl.getValue(control);
+                const hex = this.logoBackgroundColor.replace('#', '');
+                if (hex.length === 6 && this.selectedPresetId && !this.isContainedPreset()) {
+                    this.logoIconColor = this.isLightColor(hex) ? '#000000' : '#ffffff';
+                }
                 if (this.hasLogo()) {
                     QRCodeFrameControls.triggerActiveFrameRefresh(root);
                 }
@@ -964,6 +1855,23 @@ const QRCodeLogoControls = {
 
             logoInput.dataset.logoControlsInitialized = 'true';
         }
+
+        const shapeButtons = root.querySelectorAll('[data-logo-shape]');
+        shapeButtons.forEach(button => {
+            if (button.dataset.logoShapeInitialized === 'true') {
+                return;
+            }
+
+            button.addEventListener('click', () => {
+                this.logoShape = button.dataset.logoShape;
+                shapeButtons.forEach(b => b.classList.toggle('active', b.dataset.logoShape === this.logoShape));
+                if (this.hasLogo()) {
+                    QRCodeFrameControls.triggerActiveFrameRefresh(root);
+                }
+            });
+
+            button.dataset.logoShapeInitialized = 'true';
+        });
 
         actionButtons.forEach(button => {
             if (button.dataset.logoActionInitialized === 'true') {
@@ -1030,6 +1938,7 @@ const QRCodeLogoControls = {
         tile = document.createElement('button');
         tile.type = 'button';
         tile.className = 'logo-preset-button';
+        tile.style.gridRow = '1';
         tile.dataset.logoUploaded = 'true';
         tile.dataset.logoPresetName = 'uploaded custom';
         tile.setAttribute('aria-label', I18n.translateString('Uploaded logo'));
@@ -1103,6 +2012,8 @@ const QRCodeLogoControls = {
                 label: file.name,
                 selectedPresetId: ''
             });
+            this.logoIconColor = '';
+            this.logoBackgroundColor = '#ffffff';
             return true;
         } catch (error) {
             console.error('Unable to load logo image:', error);
@@ -1123,6 +2034,14 @@ const QRCodeLogoControls = {
                 label: `${preset.name} preset`,
                 selectedPresetId: preset.id
             });
+
+            if (preset.hex) {
+                this.logoBackgroundColor = `#${preset.hex}`;
+                this.logoIconColor = this.isLightColor(preset.hex) ? '#000000' : '#ffffff';
+            } else {
+                this.logoBackgroundColor = '#ffffff';
+                this.logoIconColor = '';
+            }
 
             const logoInput = root.querySelector('#qrLogoInput');
             if (logoInput) {
@@ -1155,6 +2074,10 @@ const QRCodeLogoControls = {
         this.logoImage = null;
         this.activeLogoLabel = '';
         this.selectedPresetId = '';
+        this.logoBackgroundColor = '#ffffff';
+        this.logoIconColor = '';
+        this.logoShape = 'rounded';
+        this.logoPadding = 20;
 
         const logoInput = root.querySelector('#qrLogoInput');
         if (logoInput) {
@@ -1173,10 +2096,18 @@ const QRCodeLogoControls = {
         return Boolean(this.logoImage);
     },
 
+    isContainedPreset() {
+        if (!this.selectedPresetId) return false;
+        const preset = this.getLogoPresets().find(p => p.id === this.selectedPresetId);
+        return Boolean(preset?.contained);
+    },
+
     syncUI(root = document, uploadedFileName = '') {
         const sizeRange = root.querySelector('#qrLogoSizeRange');
+        const paddingRange = root.querySelector('#qrLogoPaddingRange');
         const logoBackgroundColorControl = FrameColorControl.getControl(root, 'logoBackgroundColor');
         const sizeValueLabel = root.querySelector('#qrLogoSizeValue');
+        const paddingValueLabel = root.querySelector('#qrLogoPaddingValue');
         const presetButtons = root.querySelectorAll('[data-logo-preset]');
         const clearActionButton = root.querySelector('[data-logo-action="clear"]');
 
@@ -1193,9 +2124,25 @@ const QRCodeLogoControls = {
             }
         }
 
+        if (paddingRange) {
+            paddingRange.value = String(this.logoPadding);
+        }
+
+        if (paddingValueLabel) {
+            const newPaddingText = `${this.logoPadding}%`;
+            if (paddingValueLabel.textContent !== newPaddingText) {
+                paddingValueLabel.textContent = newPaddingText;
+            }
+        }
+
         if (logoBackgroundColorControl) {
             FrameColorControl.setValue(logoBackgroundColorControl, this.logoBackgroundColor);
         }
+
+        const shapeButtons = root.querySelectorAll('[data-logo-shape]');
+        shapeButtons.forEach(button => {
+            button.classList.toggle('active', button.dataset.logoShape === this.logoShape);
+        });
 
         if (clearActionButton) {
             clearActionButton.classList.toggle('active', !this.hasLogo());
@@ -1236,7 +2183,8 @@ const QRCodeLogoControls = {
         }
 
         const qrSize = Math.min(canvas.width, canvas.height);
-        const logoBoxSize = qrSize * (this.sizePercent / 100);
+        const safeSizePercent = Math.min(44, Math.max(12, this.sizePercent || 22));
+        const logoBoxSize = qrSize * (safeSizePercent / 100);
         const backgroundSize = logoBoxSize * 1.35;
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
@@ -1244,18 +2192,38 @@ const QRCodeLogoControls = {
         const backgroundY = centerY - (backgroundSize / 2);
         const backgroundRadius = Math.max(8, backgroundSize * 0.18);
 
+        const paddingFraction = Math.min(0.8, Math.max(0, this.logoPadding / 100));
+        const paddedLogoBoxSize = Math.max(8, logoBoxSize * (1 - paddingFraction));
         const imageAspectRatio = this.logoImage.naturalWidth / this.logoImage.naturalHeight || 1;
-        const imageWidth = imageAspectRatio >= 1 ? logoBoxSize : logoBoxSize * imageAspectRatio;
-        const imageHeight = imageAspectRatio >= 1 ? logoBoxSize / imageAspectRatio : logoBoxSize;
+        const imageWidth = imageAspectRatio >= 1 ? paddedLogoBoxSize : paddedLogoBoxSize * imageAspectRatio;
+        const imageHeight = imageAspectRatio >= 1 ? paddedLogoBoxSize / imageAspectRatio : paddedLogoBoxSize;
         const imageX = centerX - (imageWidth / 2);
         const imageY = centerY - (imageHeight / 2);
 
         ctx.save();
         ctx.imageSmoothingEnabled = true;
         ctx.fillStyle = this.logoBackgroundColor;
-        this.roundRect(ctx, backgroundX, backgroundY, backgroundSize, backgroundSize, backgroundRadius);
+
+        this.drawLogoShapePath(ctx, this.logoShape, centerX, centerY, backgroundSize, backgroundRadius);
         ctx.fill();
-        ctx.drawImage(this.logoImage, imageX, imageY, imageWidth, imageHeight);
+
+        this.drawLogoShapePath(ctx, this.logoShape, centerX, centerY, backgroundSize, backgroundRadius);
+        ctx.clip();
+
+        if (this.logoIconColor) {
+            const tintCanvas = document.createElement('canvas');
+            tintCanvas.width = Math.ceil(imageWidth);
+            tintCanvas.height = Math.ceil(imageHeight);
+            const tintCtx = tintCanvas.getContext('2d');
+            tintCtx.drawImage(this.logoImage, 0, 0, tintCanvas.width, tintCanvas.height);
+            tintCtx.globalCompositeOperation = 'source-in';
+            tintCtx.fillStyle = this.logoIconColor;
+            tintCtx.fillRect(0, 0, tintCanvas.width, tintCanvas.height);
+            ctx.drawImage(tintCanvas, imageX, imageY, imageWidth, imageHeight);
+        } else {
+            ctx.drawImage(this.logoImage, imageX, imageY, imageWidth, imageHeight);
+        }
+
         ctx.restore();
 
         return canvas;
@@ -1272,6 +2240,800 @@ const QRCodeLogoControls = {
         ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
         ctx.lineTo(x, y + radius);
         ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+    },
+
+    drawLogoShapePath(ctx, shape, cx, cy, size, radius) {
+        const half = size / 2;
+        const x = cx - half;
+        const y = cy - half;
+
+        ctx.beginPath();
+        switch (shape) {
+            case 'circle':
+                ctx.arc(cx, cy, half, 0, Math.PI * 2);
+                break;
+
+            case 'square':
+                ctx.rect(x, y, size, size);
+                break;
+
+            case 'hexagon': {
+                for (let i = 0; i < 6; i++) {
+                    const angle = (Math.PI / 3) * i - Math.PI / 2;
+                    const px = cx + half * Math.cos(angle);
+                    const py = cy + half * Math.sin(angle);
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                break;
+            }
+
+            case 'heart': {
+                const top = cy - half * 0.45;
+                const bottom = cy + half;
+                const cRadius = half * 0.52;
+                ctx.moveTo(cx, bottom);
+                ctx.bezierCurveTo(cx - half * 1.2, cy - half * 0.1, cx - half * 0.8, top - cRadius * 0.7, cx, top + cRadius * 0.3);
+                ctx.bezierCurveTo(cx + half * 0.8, top - cRadius * 0.7, cx + half * 1.2, cy - half * 0.1, cx, bottom);
+                break;
+            }
+
+            case 'diamond': {
+                // Gem-cut diamond (flat top with angled shoulders)
+                const topW = half * 0.55;
+                const shoulderY = y + half * 0.45;
+                ctx.moveTo(cx - topW, y);
+                ctx.lineTo(cx + topW, y);
+                ctx.lineTo(x + size, shoulderY);
+                ctx.lineTo(cx, y + size);
+                ctx.lineTo(x, shoulderY);
+                break;
+            }
+
+            case 'star': {
+                const outerR = half;
+                const innerR = half * 0.4;
+                for (let i = 0; i < 10; i++) {
+                    const r = i % 2 === 0 ? outerR : innerR;
+                    const angle = (Math.PI / 5) * i - Math.PI / 2;
+                    const px = cx + r * Math.cos(angle);
+                    const py = cy + r * Math.sin(angle);
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                break;
+            }
+
+            case 'shield':
+                ctx.moveTo(cx, y);
+                ctx.lineTo(cx + half, y + half * 0.35);
+                ctx.lineTo(cx + half, cy);
+                ctx.quadraticCurveTo(cx + half, y + size, cx, y + size);
+                ctx.quadraticCurveTo(cx - half, y + size, cx - half, cy);
+                ctx.lineTo(cx - half, y + half * 0.35);
+                break;
+
+            case 'octagon': {
+                for (let i = 0; i < 8; i++) {
+                    const angle = (Math.PI / 4) * i - Math.PI / 8;
+                    const px = cx + half * Math.cos(angle);
+                    const py = cy + half * Math.sin(angle);
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                break;
+            }
+
+            case 'pentagon': {
+                for (let i = 0; i < 5; i++) {
+                    const angle = (Math.PI * 2 / 5) * i - Math.PI / 2;
+                    const px = cx + half * Math.cos(angle);
+                    const py = cy + half * Math.sin(angle);
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                break;
+            }
+
+            case 'cross': {
+                const arm = half * 0.38;
+                ctx.moveTo(cx - arm, y);
+                ctx.lineTo(cx + arm, y);
+                ctx.lineTo(cx + arm, cy - arm);
+                ctx.lineTo(cx + half, cy - arm);
+                ctx.lineTo(cx + half, cy + arm);
+                ctx.lineTo(cx + arm, cy + arm);
+                ctx.lineTo(cx + arm, y + size);
+                ctx.lineTo(cx - arm, y + size);
+                ctx.lineTo(cx - arm, cy + arm);
+                ctx.lineTo(cx - half, cy + arm);
+                ctx.lineTo(cx - half, cy - arm);
+                ctx.lineTo(cx - arm, cy - arm);
+                break;
+            }
+
+            case 'teardrop':
+                ctx.moveTo(cx, y);
+                ctx.bezierCurveTo(cx + half * 0.2, y + half * 0.4, cx + half, y + half * 0.8, cx + half, cy + half * 0.15);
+                ctx.quadraticCurveTo(cx + half, y + size, cx, y + size);
+                ctx.quadraticCurveTo(cx - half, y + size, cx - half, cy + half * 0.15);
+                ctx.bezierCurveTo(cx - half, y + half * 0.8, cx - half * 0.2, y + half * 0.4, cx, y);
+                break;
+
+            case 'arch': {
+                // Narrow tall arch (horseshoe-like)
+                const archWidth = half * 0.75;
+                const archHeight = half * 0.85;
+                ctx.moveTo(cx - archWidth, y + size);
+                ctx.lineTo(cx - archWidth, cy - archHeight + archWidth);
+                ctx.arc(cx, cy - archHeight + archWidth, archWidth, Math.PI, 0, false);
+                ctx.lineTo(cx + archWidth, y + size);
+                break;
+            }
+
+            case 'leaf': {
+                // Pointed leaf with tip at top and bottom (lens/vesica piscis, rotated)
+                ctx.moveTo(cx, y);
+                ctx.bezierCurveTo(cx + half * 1.1, cy - half * 0.6, cx + half * 1.1, cy + half * 0.6, cx, y + size);
+                ctx.bezierCurveTo(cx - half * 1.1, cy + half * 0.6, cx - half * 1.1, cy - half * 0.6, cx, y);
+                break;
+            }
+
+            case 'squircle': {
+                const n = 4;
+                const steps = 200;
+                for (let i = 0; i <= steps; i++) {
+                    const t = (2 * Math.PI * i) / steps;
+                    const cosT = Math.cos(t);
+                    const sinT = Math.sin(t);
+                    const px = cx + half * Math.sign(cosT) * Math.pow(Math.abs(cosT), 2 / n);
+                    const py = cy + half * Math.sign(sinT) * Math.pow(Math.abs(sinT), 2 / n);
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                break;
+            }
+
+            case 'oval':
+                // Vertical (portrait) ellipse
+                ctx.ellipse(cx, cy, half * 0.72, half, 0, 0, Math.PI * 2);
+                break;
+
+            case 'triangle':
+                ctx.moveTo(cx, y);
+                ctx.lineTo(x + size, y + size);
+                ctx.lineTo(x, y + size);
+                break;
+
+            case 'egg': {
+                // Pointed-top oval (pointy apex, round base)
+                ctx.moveTo(cx, y);
+                ctx.bezierCurveTo(x + size, y + half * 0.2, x + size, y + size, cx, y + size);
+                ctx.bezierCurveTo(x, y + size, x, y + half * 0.2, cx, y);
+                break;
+            }
+
+            case 'cloud': {
+                ctx.arc(cx, cy + half * 0.15, half * 0.48, Math.PI * 0.9, Math.PI * 0.1);
+                ctx.arc(cx + half * 0.4, cy - half * 0.1, half * 0.38, Math.PI * 1.5, Math.PI * 0.5);
+                ctx.arc(cx, cy - half * 0.35, half * 0.4, 0, Math.PI, true);
+                ctx.arc(cx - half * 0.42, cy - half * 0.05, half * 0.35, Math.PI * 1.6, Math.PI * 0.7);
+                break;
+            }
+
+            case 'clover': {
+                const r = half * 0.42;
+                const d = half * 0.28;
+                ctx.arc(cx, cy - d, r, 0, Math.PI * 2);
+                ctx.moveTo(cx + d + r, cy);
+                ctx.arc(cx + d, cy, r, 0, Math.PI * 2);
+                ctx.moveTo(cx + r, cy + d);
+                ctx.arc(cx, cy + d, r, 0, Math.PI * 2);
+                ctx.moveTo(cx - d + r, cy);
+                ctx.arc(cx - d, cy, r, 0, Math.PI * 2);
+                break;
+            }
+
+            case 'badge': {
+                // Scalloped (rounded-point) medallion
+                const points = 12;
+                const outerR = half;
+                const innerR = half * 0.82;
+                for (let i = 0; i <= points * 2; i++) {
+                    const angle = (Math.PI / points) * i - Math.PI / 2;
+                    const r = i % 2 === 0 ? outerR : innerR;
+                    const px = cx + r * Math.cos(angle);
+                    const py = cy + r * Math.sin(angle);
+                    if (i === 0) {
+                        ctx.moveTo(px, py);
+                    } else if (i % 2 === 0) {
+                        // Arc outward between scallops
+                        const prevAngle = (Math.PI / points) * (i - 1) - Math.PI / 2;
+                        const midAngle = (angle + prevAngle) / 2;
+                        const cpR = (outerR + innerR) / 2 + half * 0.05;
+                        const cpx = cx + cpR * Math.cos(midAngle);
+                        const cpy = cy + cpR * Math.sin(midAngle);
+                        ctx.quadraticCurveTo(cpx, cpy, px, py);
+                    } else {
+                        ctx.lineTo(px, py);
+                    }
+                }
+                break;
+            }
+
+            case 'arrow': {
+                // Right-pointing arrow
+                const shaft = half * 0.35;
+                const headW = half * 0.45;
+                const headStart = cx + half - headW;
+                ctx.moveTo(x, cy - shaft);
+                ctx.lineTo(headStart, cy - shaft);
+                ctx.lineTo(headStart, cy - half * 0.75);
+                ctx.lineTo(x + size, cy);
+                ctx.lineTo(headStart, cy + half * 0.75);
+                ctx.lineTo(headStart, cy + shaft);
+                ctx.lineTo(x, cy + shaft);
+                break;
+            }
+
+            case 'trapezoid': {
+                const inset = half * 0.3;
+                ctx.moveTo(x + inset, y);
+                ctx.lineTo(x + size - inset, y);
+                ctx.lineTo(x + size, y + size);
+                ctx.lineTo(x, y + size);
+                break;
+            }
+
+            case 'semicircle':
+                ctx.arc(cx, cy, half, Math.PI, 0, false);
+                ctx.lineTo(x + size, cy + half * 0.35);
+                ctx.lineTo(x, cy + half * 0.35);
+                break;
+
+            case 'parallelogram': {
+                const skew = half * 0.3;
+                ctx.moveTo(x + skew, y);
+                ctx.lineTo(x + size, y);
+                ctx.lineTo(x + size - skew, y + size);
+                ctx.lineTo(x, y + size);
+                break;
+            }
+
+            case 'rhombus':
+                ctx.moveTo(cx, y);
+                ctx.lineTo(x + size, cy);
+                ctx.lineTo(cx, y + size);
+                ctx.lineTo(x, cy);
+                break;
+
+            case 'kite':
+                ctx.moveTo(cx, y);
+                ctx.lineTo(cx + half * 0.6, cy - half * 0.2);
+                ctx.lineTo(cx, y + size);
+                ctx.lineTo(cx - half * 0.6, cy - half * 0.2);
+                break;
+
+            case 'heptagon': {
+                for (let i = 0; i < 7; i++) {
+                    const angle = (Math.PI * 2 / 7) * i - Math.PI / 2;
+                    const px = cx + half * Math.cos(angle);
+                    const py = cy + half * Math.sin(angle);
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                break;
+            }
+
+            case 'nonagon': {
+                for (let i = 0; i < 9; i++) {
+                    const angle = (Math.PI * 2 / 9) * i - Math.PI / 2;
+                    const px = cx + half * Math.cos(angle);
+                    const py = cy + half * Math.sin(angle);
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                break;
+            }
+
+            case 'decagon': {
+                for (let i = 0; i < 10; i++) {
+                    const angle = (Math.PI * 2 / 10) * i - Math.PI / 2;
+                    const px = cx + half * Math.cos(angle);
+                    const py = cy + half * Math.sin(angle);
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                break;
+            }
+
+            case 'starburst': {
+                // 10-point bursting star with long spikes
+                const pts = 10;
+                const outerR = half;
+                const innerR = half * 0.45;
+                for (let i = 0; i < pts * 2; i++) {
+                    const r = i % 2 === 0 ? outerR : innerR;
+                    const angle = (Math.PI / pts) * i - Math.PI / 2;
+                    const px = cx + r * Math.cos(angle);
+                    const py = cy + r * Math.sin(angle);
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                break;
+            }
+
+            case 'ribbon': {
+                // Wider ribbon with forked swallow-tail bottom
+                const tailDepth = half * 0.4;
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + size, y);
+                ctx.lineTo(x + size, y + size);
+                ctx.lineTo(x + size - half * 0.3, y + size - tailDepth * 0.6);
+                ctx.lineTo(cx, y + size - tailDepth);
+                ctx.lineTo(x + half * 0.3, y + size - tailDepth * 0.6);
+                ctx.lineTo(x, y + size);
+                break;
+            }
+
+            case 'chevron': {
+                const depth = half * 0.35;
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + size, y);
+                ctx.lineTo(x + size, y + size - depth);
+                ctx.lineTo(cx, y + size);
+                ctx.lineTo(x, y + size - depth);
+                break;
+            }
+
+            case 'tab':
+                ctx.moveTo(x, cy);
+                ctx.arc(cx, cy, half, Math.PI, 0, true);
+                ctx.lineTo(x + size, y + size);
+                ctx.lineTo(x, y + size);
+                break;
+
+            case 'raindrop': {
+                // Classic raindrop: pointed top, round bottom
+                const topR = half * 0.15;
+                const bodyR = half * 0.8;
+                const bodyCY = cy + half * 0.18;
+                ctx.moveTo(cx, y);
+                ctx.bezierCurveTo(cx + topR, cy - half * 0.3, cx + bodyR, bodyCY - bodyR * 0.5, cx + bodyR, bodyCY);
+                ctx.arc(cx, bodyCY, bodyR, 0, Math.PI);
+                ctx.bezierCurveTo(cx - bodyR, bodyCY - bodyR * 0.5, cx - topR, cy - half * 0.3, cx, y);
+                break;
+            }
+
+            case 'flower': {
+                const petals = 6;
+                const petalR = half * 0.45;
+                const dist = half * 0.5;
+                for (let i = 0; i < petals; i++) {
+                    const angle = (Math.PI * 2 / petals) * i - Math.PI / 2;
+                    const px = cx + dist * Math.cos(angle);
+                    const py = cy + dist * Math.sin(angle);
+                    if (i > 0) ctx.moveTo(px + petalR, py);
+                    ctx.arc(px, py, petalR, 0, Math.PI * 2);
+                }
+                break;
+            }
+
+            case 'gear': {
+                const teeth = 8;
+                const outerR = half;
+                const innerR = half * 0.72;
+                const toothAngle = Math.PI / teeth;
+                for (let i = 0; i < teeth; i++) {
+                    const a1 = (Math.PI * 2 / teeth) * i - Math.PI / 2;
+                    const a2 = a1 + toothAngle * 0.4;
+                    const a3 = a1 + toothAngle * 0.6;
+                    const a4 = a1 + toothAngle;
+                    if (i === 0) {
+                        ctx.moveTo(cx + outerR * Math.cos(a1), cy + outerR * Math.sin(a1));
+                    }
+                    ctx.lineTo(cx + outerR * Math.cos(a2), cy + outerR * Math.sin(a2));
+                    ctx.lineTo(cx + innerR * Math.cos(a3), cy + innerR * Math.sin(a3));
+                    ctx.lineTo(cx + innerR * Math.cos(a4), cy + innerR * Math.sin(a4));
+                    const nextA = (Math.PI * 2 / teeth) * (i + 1) - Math.PI / 2;
+                    ctx.lineTo(cx + outerR * Math.cos(nextA), cy + outerR * Math.sin(nextA));
+                }
+                break;
+            }
+
+            case 'explosion': {
+                // Comic-book jagged explosion with rotation offset so it doesn't look like starburst
+                const spikes = 14;
+                const outerR = half;
+                const innerR = half * 0.62;
+                const rotOffset = Math.PI / spikes / 2;
+                for (let i = 0; i < spikes * 2; i++) {
+                    const r = i % 2 === 0 ? outerR : innerR * (0.85 + (i % 3) * 0.1);
+                    const angle = (Math.PI / spikes) * i - Math.PI / 2 + rotOffset;
+                    const px = cx + r * Math.cos(angle);
+                    const py = cy + r * Math.sin(angle);
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                break;
+            }
+
+            case 'bookmark':
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + size, y);
+                ctx.lineTo(x + size, y + size);
+                ctx.lineTo(cx, y + size - half * 0.4);
+                ctx.lineTo(x, y + size);
+                break;
+
+            case 'ticket': {
+                const notchR = half * 0.15;
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + size, y);
+                ctx.lineTo(x + size, cy - notchR);
+                ctx.arc(x + size, cy, notchR, -Math.PI / 2, Math.PI / 2, true);
+                ctx.lineTo(x + size, y + size);
+                ctx.lineTo(x, y + size);
+                ctx.lineTo(x, cy + notchR);
+                ctx.arc(x, cy, notchR, Math.PI / 2, -Math.PI / 2, true);
+                break;
+            }
+
+            case 'speech-bubble':
+                ctx.moveTo(x + half * 0.3, y);
+                ctx.lineTo(x + size - half * 0.3, y);
+                ctx.quadraticCurveTo(x + size, y, x + size, y + half * 0.3);
+                ctx.lineTo(x + size, y + size - half * 0.7);
+                ctx.quadraticCurveTo(x + size, y + size - half * 0.4, x + size - half * 0.3, y + size - half * 0.4);
+                ctx.lineTo(cx + half * 0.2, y + size - half * 0.4);
+                ctx.lineTo(cx - half * 0.1, y + size);
+                ctx.lineTo(cx - half * 0.05, y + size - half * 0.4);
+                ctx.lineTo(x + half * 0.3, y + size - half * 0.4);
+                ctx.quadraticCurveTo(x, y + size - half * 0.4, x, y + size - half * 0.7);
+                ctx.lineTo(x, y + half * 0.3);
+                ctx.quadraticCurveTo(x, y, x + half * 0.3, y);
+                break;
+
+            case 'tombstone': {
+                // Wide base with narrower rounded cap (shoulders)
+                const shoulderIn = half * 0.2;
+                const capR = half - shoulderIn;
+                const capCenterY = cy - half * 0.2;
+                ctx.moveTo(x, y + size);
+                ctx.lineTo(x, capCenterY);
+                ctx.quadraticCurveTo(x, capCenterY - capR * 0.4, x + shoulderIn, capCenterY - capR * 0.6);
+                ctx.arc(cx, capCenterY - capR * 0.6, capR, Math.PI, 0, false);
+                ctx.quadraticCurveTo(x + size, capCenterY - capR * 0.4, x + size, capCenterY);
+                ctx.lineTo(x + size, y + size);
+                break;
+            }
+
+            case 'pill':
+                ctx.ellipse(cx, cy, half, half * 0.5, 0, 0, Math.PI * 2);
+                break;
+
+            case 'wavy-circle': {
+                // Circle with pronounced scalloped / wavy edge
+                const waves = 10;
+                const amp = half * 0.18;
+                const steps = 240;
+                for (let i = 0; i <= steps; i++) {
+                    const t = (Math.PI * 2 * i) / steps;
+                    const r = (half - amp) + amp * Math.cos(waves * t);
+                    const px = cx + r * Math.cos(t);
+                    const py = cy + r * Math.sin(t);
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                break;
+            }
+
+            case 'arrow-up': {
+                const shaft = half * 0.35;
+                const headH = half * 0.45;
+                const headStart = cy - half + headH;
+                ctx.moveTo(cx - shaft, y + size);
+                ctx.lineTo(cx - shaft, headStart);
+                ctx.lineTo(cx - half * 0.75, headStart);
+                ctx.lineTo(cx, y);
+                ctx.lineTo(cx + half * 0.75, headStart);
+                ctx.lineTo(cx + shaft, headStart);
+                ctx.lineTo(cx + shaft, y + size);
+                break;
+            }
+
+            case 'arrow-down': {
+                const shaft = half * 0.35;
+                const headH = half * 0.45;
+                const headStart = cy + half - headH;
+                ctx.moveTo(cx - shaft, y);
+                ctx.lineTo(cx + shaft, y);
+                ctx.lineTo(cx + shaft, headStart);
+                ctx.lineTo(cx + half * 0.75, headStart);
+                ctx.lineTo(cx, y + size);
+                ctx.lineTo(cx - half * 0.75, headStart);
+                ctx.lineTo(cx - shaft, headStart);
+                break;
+            }
+
+            case 'arrow-left': {
+                const shaft = half * 0.35;
+                const headW = half * 0.45;
+                const headStart = cx - half + headW;
+                ctx.moveTo(x + size, cy - shaft);
+                ctx.lineTo(x + size, cy + shaft);
+                ctx.lineTo(headStart, cy + shaft);
+                ctx.lineTo(headStart, cy + half * 0.75);
+                ctx.lineTo(x, cy);
+                ctx.lineTo(headStart, cy - half * 0.75);
+                ctx.lineTo(headStart, cy - shaft);
+                break;
+            }
+
+            case 'chevron-up': {
+                const depth = half * 0.35;
+                ctx.moveTo(x, y + size);
+                ctx.lineTo(x, y + depth);
+                ctx.lineTo(cx, y);
+                ctx.lineTo(x + size, y + depth);
+                ctx.lineTo(x + size, y + size);
+                break;
+            }
+
+            case 'chevron-left': {
+                const depth = half * 0.35;
+                ctx.moveTo(x + size, y);
+                ctx.lineTo(x + depth, y);
+                ctx.lineTo(x, cy);
+                ctx.lineTo(x + depth, y + size);
+                ctx.lineTo(x + size, y + size);
+                break;
+            }
+
+            case 'chevron-right': {
+                const depth = half * 0.35;
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + size - depth, y);
+                ctx.lineTo(x + size, cy);
+                ctx.lineTo(x + size - depth, y + size);
+                ctx.lineTo(x, y + size);
+                break;
+            }
+
+            case 'plus-sign': {
+                // Thicker plus (cross) with narrower arms
+                const arm = half * 0.28;
+                ctx.moveTo(cx - arm, y);
+                ctx.lineTo(cx + arm, y);
+                ctx.lineTo(cx + arm, cy - arm);
+                ctx.lineTo(cx + half, cy - arm);
+                ctx.lineTo(cx + half, cy + arm);
+                ctx.lineTo(cx + arm, cy + arm);
+                ctx.lineTo(cx + arm, y + size);
+                ctx.lineTo(cx - arm, y + size);
+                ctx.lineTo(cx - arm, cy + arm);
+                ctx.lineTo(cx - half, cy + arm);
+                ctx.lineTo(cx - half, cy - arm);
+                ctx.lineTo(cx - arm, cy - arm);
+                break;
+            }
+
+            case 'x-mark': {
+                // X / cross-out mark with thick strokes
+                const t = half * 0.22;
+                const r = half;
+                const diag = Math.SQRT1_2;
+                // Build two crossed rectangles as one path
+                // Top-left tip
+                ctx.moveTo(cx - r * diag + t * diag, cy - r * diag - t * diag);
+                ctx.lineTo(cx - r * diag - t * diag, cy - r * diag + t * diag);
+                ctx.lineTo(cx - t * diag, cy + t * diag);
+                ctx.lineTo(cx - r * diag - t * diag, cy + r * diag - t * diag);
+                ctx.lineTo(cx - r * diag + t * diag, cy + r * diag + t * diag);
+                ctx.lineTo(cx, cy + 2 * t * diag);
+                ctx.lineTo(cx + r * diag - t * diag, cy + r * diag + t * diag);
+                ctx.lineTo(cx + r * diag + t * diag, cy + r * diag - t * diag);
+                ctx.lineTo(cx + t * diag, cy + t * diag);
+                ctx.lineTo(cx + r * diag + t * diag, cy - r * diag + t * diag);
+                ctx.lineTo(cx + r * diag - t * diag, cy - r * diag - t * diag);
+                ctx.lineTo(cx, cy - 2 * t * diag);
+                break;
+            }
+
+            case 'checkmark': {
+                // Filled thick checkmark polygon
+                const t = half * 0.22;
+                ctx.moveTo(x, cy + t * 0.2);
+                ctx.lineTo(x + half * 0.35, cy - t * 0.5);
+                ctx.lineTo(cx - half * 0.05, cy + half * 0.35);
+                ctx.lineTo(x + size - half * 0.1, y + half * 0.2);
+                ctx.lineTo(x + size, y + half * 0.55);
+                ctx.lineTo(cx - half * 0.05, y + size - half * 0.05);
+                ctx.lineTo(x + half * 0.1, cy + half * 0.4);
+                break;
+            }
+
+            case 'crescent': {
+                // Crescent moon: two arcs subtracting
+                ctx.arc(cx, cy, half, Math.PI * 0.25, Math.PI * 1.75, false);
+                ctx.arc(cx + half * 0.35, cy, half * 0.85, Math.PI * 1.75, Math.PI * 0.25, true);
+                break;
+            }
+
+            case 'sunburst': {
+                // Central disc with triangular rays outside it (spike star with wide base)
+                const rays = 12;
+                const innerR = half * 0.55;
+                const outerR = half;
+                const spread = (Math.PI * 2 / rays) * 0.35;
+                for (let i = 0; i < rays; i++) {
+                    const baseAngle = (Math.PI * 2 / rays) * i - Math.PI / 2;
+                    const a1 = baseAngle - spread;
+                    const a2 = baseAngle + spread;
+                    const p1x = cx + innerR * Math.cos(a1);
+                    const p1y = cy + innerR * Math.sin(a1);
+                    const tipX = cx + outerR * Math.cos(baseAngle);
+                    const tipY = cy + outerR * Math.sin(baseAngle);
+                    const p2x = cx + innerR * Math.cos(a2);
+                    const p2y = cy + innerR * Math.sin(a2);
+                    if (i === 0) ctx.moveTo(p1x, p1y);
+                    else ctx.lineTo(p1x, p1y);
+                    ctx.lineTo(tipX, tipY);
+                    ctx.lineTo(p2x, p2y);
+                }
+                break;
+            }
+
+            case 'lightning': {
+                // Lightning bolt (zigzag)
+                ctx.moveTo(cx + half * 0.2, y);
+                ctx.lineTo(x + half * 0.1, cy + half * 0.1);
+                ctx.lineTo(cx - half * 0.1, cy + half * 0.1);
+                ctx.lineTo(cx - half * 0.5, y + size);
+                ctx.lineTo(cx + half * 0.4, cy - half * 0.05);
+                ctx.lineTo(cx + half * 0.05, cy - half * 0.05);
+                ctx.lineTo(cx + half * 0.7, y);
+                break;
+            }
+
+            case 'play-triangle': {
+                // Play button equilateral triangle pointing right
+                const inset = half * 0.1;
+                ctx.moveTo(x + inset, y);
+                ctx.lineTo(x + size - inset, cy);
+                ctx.lineTo(x + inset, y + size);
+                break;
+            }
+
+            case 'location-pin': {
+                // Map pin: round top with pointed bottom
+                const topR = half * 0.7;
+                const topCY = cy - half * 0.2;
+                ctx.moveTo(cx, y + size);
+                ctx.bezierCurveTo(cx - topR * 0.4, topCY + topR * 0.6, cx - topR, topCY + topR * 0.5, cx - topR, topCY);
+                ctx.arc(cx, topCY, topR, Math.PI, 0, false);
+                ctx.bezierCurveTo(cx + topR, topCY + topR * 0.5, cx + topR * 0.4, topCY + topR * 0.6, cx, y + size);
+                break;
+            }
+
+            case 'house': {
+                // Pentagon-home shape
+                const roofY = y + half * 0.55;
+                ctx.moveTo(x, y + size);
+                ctx.lineTo(x, roofY);
+                ctx.lineTo(cx, y);
+                ctx.lineTo(x + size, roofY);
+                ctx.lineTo(x + size, y + size);
+                break;
+            }
+
+            case 'hendecagon': {
+                for (let i = 0; i < 11; i++) {
+                    const angle = (Math.PI * 2 / 11) * i - Math.PI / 2;
+                    const px = cx + half * Math.cos(angle);
+                    const py = cy + half * Math.sin(angle);
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                break;
+            }
+
+            case 'dodecagon': {
+                for (let i = 0; i < 12; i++) {
+                    const angle = (Math.PI * 2 / 12) * i - Math.PI / 2;
+                    const px = cx + half * Math.cos(angle);
+                    const py = cy + half * Math.sin(angle);
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                break;
+            }
+
+            case 'tag': {
+                // Price tag: rect with angled cut on left side
+                const cut = half * 0.4;
+                ctx.moveTo(x + cut, y);
+                ctx.lineTo(x + size, y);
+                ctx.lineTo(x + size, y + size);
+                ctx.lineTo(x + cut, y + size);
+                ctx.lineTo(x, cy);
+                break;
+            }
+
+            case 'blob': {
+                // Organic irregular blob (fixed deterministic shape)
+                const pts = [
+                    [0, -1], [0.6, -0.85], [0.95, -0.3], [0.85, 0.25],
+                    [1, 0.7], [0.45, 0.95], [-0.15, 0.8], [-0.75, 0.95],
+                    [-0.95, 0.35], [-0.8, -0.25], [-1, -0.7], [-0.45, -0.95]
+                ];
+                for (let i = 0; i < pts.length; i++) {
+                    const [dx, dy] = pts[i];
+                    const px = cx + half * dx;
+                    const py = cy + half * dy;
+                    const [ndx, ndy] = pts[(i + 1) % pts.length];
+                    const nx = cx + half * ndx;
+                    const ny = cy + half * ndy;
+                    if (i === 0) ctx.moveTo(px, py);
+                    const mx = (px + nx) / 2;
+                    const my = (py + ny) / 2;
+                    ctx.quadraticCurveTo(px, py, mx, my);
+                }
+                break;
+            }
+
+            case 'barrel': {
+                // Rectangle with bulging sides
+                const bulge = half * 0.15;
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + size, y);
+                ctx.quadraticCurveTo(x + size + bulge, cy, x + size, y + size);
+                ctx.lineTo(x, y + size);
+                ctx.quadraticCurveTo(x - bulge, cy, x, y);
+                break;
+            }
+
+            case 'flag': {
+                // Pennant flag with notched right edge
+                const notch = half * 0.35;
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + size, y);
+                ctx.lineTo(x + size - notch, cy);
+                ctx.lineTo(x + size, y + size);
+                ctx.lineTo(x, y + size);
+                break;
+            }
+
+            case 'lens': {
+                // Horizontal vesica piscis (pointed oval sideways)
+                ctx.moveTo(x, cy);
+                ctx.bezierCurveTo(cx - half * 0.6, cy - half * 1.1, cx + half * 0.6, cy - half * 1.1, x + size, cy);
+                ctx.bezierCurveTo(cx + half * 0.6, cy + half * 1.1, cx - half * 0.6, cy + half * 1.1, x, cy);
+                break;
+            }
+
+            case 'sun': {
+                // Circle with triangular rays
+                const rays = 8;
+                const innerR = half * 0.55;
+                const outerR = half;
+                for (let i = 0; i < rays * 2; i++) {
+                    const r = i % 2 === 0 ? outerR : innerR;
+                    const angle = (Math.PI / rays) * i - Math.PI / 2;
+                    const px = cx + r * Math.cos(angle);
+                    const py = cy + r * Math.sin(angle);
+                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                }
+                break;
+            }
+
+            case 'gemstone': {
+                // Top-down view of a gem cut
+                const topY = y + half * 0.3;
+                const w1 = half * 0.35;
+                const w2 = half * 0.75;
+                ctx.moveTo(cx - w1, y);
+                ctx.lineTo(cx + w1, y);
+                ctx.lineTo(cx + w2, topY);
+                ctx.lineTo(cx + half, topY);
+                ctx.lineTo(cx, y + size);
+                ctx.lineTo(cx - half, topY);
+                ctx.lineTo(cx - w2, topY);
+                break;
+            }
+
+            default:
+                this.roundRect(ctx, x, y, size, size, radius);
+                return;
+        }
         ctx.closePath();
     },
 
