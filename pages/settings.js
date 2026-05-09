@@ -1,3 +1,5 @@
+"use strict";
+
 const AppDisplaySettings = {
     FULLSCREEN_STORAGE_KEY: 'qr-fullscreen',
 
@@ -50,6 +52,37 @@ AppDisplaySettings.applyFullscreenLayout();
 const SettingsPage = {
     appInfo: null,
 
+    getThemeLabel(theme, resolvedTheme = themeManager.getResolvedTheme()) {
+        if (theme === 'system') {
+            const modeLabel = I18n.translateString(resolvedTheme === 'dark' ? 'Dark' : 'Light');
+            return I18n.translate('System ({mode})', {
+                mode: modeLabel
+            });
+        }
+
+        return I18n.translateString(theme === 'light' ? 'Light' : 'Dark');
+    },
+
+    syncThemeSelect(themeSelect) {
+        if (!themeSelect) {
+            return;
+        }
+
+        const currentTheme = themeManager.getTheme();
+        const resolvedTheme = themeManager.getResolvedTheme();
+
+        themeSelect.value = currentTheme;
+
+        Array.from(themeSelect.options).forEach(option => {
+            if (option.value === 'system') {
+                option.textContent = this.getThemeLabel('system', resolvedTheme);
+                return;
+            }
+
+            option.textContent = this.getThemeLabel(option.value, resolvedTheme);
+        });
+    },
+
     getVersionInfo() {
         if (!this.appInfo) {
             return I18n.translateString('Loading...');
@@ -63,6 +96,7 @@ const SettingsPage = {
     
     async render() {
         const currentTheme = themeManager.getTheme();
+        const resolvedTheme = themeManager.getResolvedTheme();
         const currentLanguage = I18n.getLanguage();
         const isFullscreenEnabled = AppDisplaySettings.getFullscreenPreference();
         
@@ -71,7 +105,7 @@ const SettingsPage = {
         const versionInfo = this.getVersionInfo();
         const languageOptions = I18n.getLanguages()
             .map(language => `
-                <option value="${language.code}" ${currentLanguage === language.code ? 'selected' : ''}>${language.nativeName}</option>
+                <option value="${language.code}" ${currentLanguage === language.code ? 'selected' : ''}>${I18n.getLanguageDisplayName(language.code)}</option>
             `)
             .join('');
         
@@ -94,8 +128,9 @@ const SettingsPage = {
                     </div>
                     <div class="setting-right">
                         <select class="setting-select" id="themeSelect">
-                            <option value="dark" ${currentTheme === 'dark' ? 'selected' : ''}>Dark</option>
-                            <option value="light" ${currentTheme === 'light' ? 'selected' : ''}>Light</option>
+                            <option value="system" ${currentTheme === 'system' ? 'selected' : ''}>${this.getThemeLabel('system', resolvedTheme)}</option>
+                            <option value="dark" ${currentTheme === 'dark' ? 'selected' : ''}>${this.getThemeLabel('dark', resolvedTheme)}</option>
+                            <option value="light" ${currentTheme === 'light' ? 'selected' : ''}>${this.getThemeLabel('light', resolvedTheme)}</option>
                         </select>
                     </div>
                 </div>
@@ -212,7 +247,7 @@ const SettingsPage = {
             platform: navigator.platform,
             language: I18n.getLanguage(),
             screenResolution: `${window.screen.width}x${window.screen.height}`,
-            theme: themeManager.getTheme(),
+            theme: this.getThemeLabel(themeManager.getTheme(), themeManager.getResolvedTheme()),
             timestamp: new Date().toISOString()
         };
 
@@ -224,9 +259,13 @@ const SettingsPage = {
         
         // Theme selector
         const themeSelect = document.getElementById('themeSelect');
+        const syncThemeSelect = () => this.syncThemeSelect(themeSelect);
+
+        syncThemeSelect();
         themeSelect.addEventListener('change', (e) => {
             themeManager.setTheme(e.target.value);
         });
+        document.addEventListener('app:theme-changed', syncThemeSelect);
 
         const languageSelect = document.getElementById('languageSelect');
         languageSelect.addEventListener('change', e => {

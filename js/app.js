@@ -56,13 +56,23 @@ function applyPageMetadata(meta = DEFAULT_PAGE_META) {
 }
 
 function applyShellMode(route) {
-    document.body.classList.toggle('public-route', route === '/public');
+    document.body.classList.toggle('public-route', route === '/public' || route === '/pricing' || route === '/compare');
 }
 
 function applyCurrentRouteMetadata() {
     const currentRoute = router.getCurrentRoute();
     if (currentRoute === '/public') {
         applyPageMetadata(PublicPage.meta);
+        return;
+    }
+
+    if (currentRoute === '/pricing') {
+        applyPageMetadata(PricingPage.meta);
+        return;
+    }
+
+    if (currentRoute === '/compare') {
+        applyPageMetadata(ComparePage.meta);
         return;
     }
 
@@ -92,6 +102,24 @@ router.register('/home', () => {
         route: '/home',
         render: () => HomePage.render(),
         init: () => HomePage.init()
+    });
+});
+
+router.register('/pricing', () => {
+    renderRoute({
+        route: '/pricing',
+        render: () => PricingPage.render(),
+        init: () => PricingPage.init(),
+        meta: PricingPage.meta
+    });
+});
+
+router.register('/compare', () => {
+    renderRoute({
+        route: '/compare',
+        render: () => ComparePage.render(),
+        init: () => ComparePage.init(),
+        meta: ComparePage.meta
     });
 });
 

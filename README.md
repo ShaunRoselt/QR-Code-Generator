@@ -81,9 +81,6 @@ You can also host the project with any simple static file server if you prefer w
 
 All QR code generation happens locally in the browser. The app does not require a backend and does not send QR payload data to a remote server.
 
-## License
-
-Licensed under GPL-3.0. See the LICENSE file for details.
 
 ## Links
 

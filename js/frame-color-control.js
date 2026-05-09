@@ -1,3 +1,5 @@
+"use strict";
+
 const FrameColorControl = {
     render({ id, label, value = '#000000' }) {
         const colorState = this.parseColorValue(value, '#000000');
@@ -34,13 +36,23 @@ const FrameColorControl = {
             return;
         }
 
+        let refreshRequest = null;
+
         const handleInput = () => {
             if (markUserModified) {
                 control.picker.dataset.userModified = 'true';
             }
 
             this.updateAlphaValueLabel(control);
-            onInput?.(control);
+
+            if (refreshRequest !== null) {
+                return;
+            }
+
+            refreshRequest = window.requestAnimationFrame(() => {
+                refreshRequest = null;
+                onInput?.(control);
+            });
         };
 
         control.picker.addEventListener('input', handleInput);

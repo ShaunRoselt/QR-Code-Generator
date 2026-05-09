@@ -1,3 +1,5 @@
+"use strict";
+
 I18n.registerLanguage('en', {
     name: 'English',
     nativeName: 'English',

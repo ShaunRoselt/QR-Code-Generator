@@ -1,3 +1,5 @@
+"use strict";
+
 const QRShareLink = {
     STATE_PARAM: 'state',
     KIOSK_PARAM: 'kiosk',
@@ -170,8 +172,20 @@ const QRShareLink = {
             payload.c = controls;
         }
 
+        if (window.QRFrames) {
+            const frameCustomizations = window.QRFrames.serializeFrameCustomizations();
+            if (Object.keys(frameCustomizations).length > 0) {
+                payload.fc = frameCustomizations;
+            }
+
+            const frameGeometry = window.QRFrames.serializeFrameQRRectOverrides();
+            if (Object.keys(frameGeometry).length > 0) {
+                payload.fq = frameGeometry;
+            }
+        }
+
         const frameType = pageRoot.querySelector('.frame-card.active')?.dataset.frame;
-        if (frameType && frameType !== 'none') {
+        if (frameType && frameType !== 'none' && frameType !== 'custom') {
             payload.f = frameType;
         }
 
@@ -270,6 +284,14 @@ const QRShareLink = {
 
             this.setControlValue(control, value);
         });
+
+        if (payload.fc && window.QRFrames) {
+            window.QRFrames.restoreFrameCustomizations(payload.fc);
+        }
+
+        if (payload.fq && window.QRFrames) {
+            window.QRFrames.restoreFrameQRRectOverrides(payload.fq);
+        }
 
         const exportSizeSelect = document.getElementById('exportSize');
         if (exportSizeSelect && payload.c?.exportSize) {

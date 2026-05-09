@@ -1,3 +1,5 @@
+"use strict";
+
 const I18n = {
     STORAGE_KEY: 'qr-language',
     DEFAULT_LANGUAGE: 'en',
@@ -13,14 +15,27 @@ const I18n = {
             code,
             name: definition.name || code,
             nativeName: definition.nativeName || definition.name || code,
+            direction: definition.direction || 'ltr',
             strings: definition.strings || {}
         };
+    },
+
+    applyDocumentLanguage(code) {
+        const language = this.languages[code] || this.languages[this.DEFAULT_LANGUAGE] || {};
+        const direction = language.direction || 'ltr';
+
+        document.documentElement.lang = code;
+        document.documentElement.setAttribute('dir', direction);
+
+        if (document.body) {
+            document.body.setAttribute('dir', direction);
+        }
     },
 
     init() {
         const storedLanguage = this.getStoredLanguage();
         this.currentLanguage = this.languages[storedLanguage] ? storedLanguage : this.DEFAULT_LANGUAGE;
-        document.documentElement.lang = this.currentLanguage;
+        this.applyDocumentLanguage(this.currentLanguage);
         document.addEventListener('app:route-rendered', () => {
             this.apply(document.body);
         });
@@ -43,13 +58,22 @@ const I18n = {
         return this.currentLanguage;
     },
 
+    getLanguageDisplayName(code) {
+        const language = this.languages[code];
+        if (!language) {
+            return code;
+        }
+
+        return this.translateString(language.name);
+    },
+
     setLanguage(code, { rerender = false } = {}) {
         if (!this.languages[code]) {
             code = this.DEFAULT_LANGUAGE;
         }
 
         this.currentLanguage = code;
-        document.documentElement.lang = code;
+        this.applyDocumentLanguage(code);
 
         try {
             localStorage.setItem(this.STORAGE_KEY, code);

@@ -1,19 +1,33 @@
+"use strict";
+
 /**
  * QR Code Frame Utilities
  * Provides visual card-based frame selection with multiple frame styles
  */
 
 const QRFrames = {
+    FRAME_CATALOG_INDEX_PATH: 'js/frames/index.js',
     FRAME_ARTBOARD_WIDTH: 64,
     DECORATIVE_FRAME_ARTBOARD_HEIGHT: 84,
+    MAX_FRAME_QR_SIZE_PCT: 2,
     BORDER_FRAME_WIDTH_RATIO: 8 / 300,
     BORDER_SEPARATOR_RATIO: 3 / 300,
     FRAME_BACKGROUND_COLOR: '#ffffff',
     QR_BACKGROUND_COLOR: '#ffffff',
     FRAME_FOREGROUND_COLOR: '#000000',
     FRAME_TEXT: 'Scan me!',
+    FRAME_TEXT_DEFAULT: 'Scan me!',
+    FRAME_TEXT_VARIANTS: new Set(['Scan me!', 'Skandeer my!', 'Scanne mich!', 'סרקו אותי!', 'امسحني!']),
     FRAME_TEXT_COLOR: null,
     TRANSPARENT_BACKGROUND: false,
+    frameCatalog: null,
+    frameCatalogPromise: null,
+    frameCatalogScriptPromises: {},
+    frameCustomizations: {},
+    customFrame: null,
+    customFrames: [],
+    activeCustomFrameId: '',
+    frameQRRectOverrides: {},
     FRAME_FONT_DEFAULT: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     FRAME_FONT_SCRIPT: '"Allison", "Caveat", cursive',
     RENDER_PHASES: {
@@ -34,6 +48,7 @@ const QRFrames = {
     BAG_HANDLE_SHADOW_PATH: 'M40.188 3H22.81v4.72h17.377z',
     MAILER_FRAME_BACKGROUND_PATH: 'M10.5 45.5v-39h43l.5 39L40.5 56 32 50l-8.5 6z',
     MAILER_FRAME_PATH: 'M54.96 7.636v25.508l7.227 5.594v36.166A4.104 4.104 0 0 1 58.09 79H6.096A4.104 4.104 0 0 1 2 74.904V38.738l7.246-5.594V7.636A2.63 2.63 0 0 1 11.883 5h40.44a2.63 2.63 0 0 1 2.637 2.636m5.064 62.223V42.21L42.156 56.034zm-7.7-62.887H11.882a.65.65 0 0 0-.664.664v37.266l12.576 9.766 5.71-4.418a4.24 4.24 0 0 1 5.177 0l5.71 4.418 12.595-9.747V7.636a.67.67 0 0 0-.664-.664M4.161 69.86 22.03 56.035 4.162 42.209zm1.935 6.979H58.09a1.93 1.93 0 0 0 1.934-1.934V72.57l-26.67-20.652a2.08 2.08 0 0 0-2.522 0L4.162 72.57v2.333c0 1.062.873 1.934 1.935 1.934',
+    DELIVERY_VAN_ARTBOARD_HEIGHT: 67,
     DELIVERY_VAN_PANEL_PATH: 'M1 11a2 2 0 0 1 2-2h28a2 2 0 0 1 2 2v42a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2z',
     DELIVERY_VAN_BODY_PATH: 'M30 24a2 2 0 0 1 2-2h9.819a4 4 0 0 1 2.829 1.171l8.181 8.182A4 4 0 0 0 55.657 33H61a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H30z',
     DELIVERY_VAN_CHASSIS_PATH: 'M30 43h34v7H30z',
@@ -109,10 +124,109 @@ const QRFrames = {
         NOTEBOOK: 'notebook',
         FOLDED_BANNER: 'folded-banner',
         RIBBON: 'ribbon',
-        GIFT_BOW: 'gift-bow'
+        GIFT_BOW: 'gift-bow',
+        CUSTOM: 'custom'
+    },
+
+    async loadFrameCatalog() {
+        if (this.frameCatalogPromise) {
+            return this.frameCatalogPromise;
+        }
+
+        this.frameCatalogPromise = this.loadFrameCatalogInternal();
+        return this.frameCatalogPromise;
+    },
+
+    async loadFrameCatalogInternal() {
+        await this.loadFrameCatalogScript(this.FRAME_CATALOG_INDEX_PATH);
+
+        const catalog = window.QRFrameCatalog;
+        const frameScriptPaths = Array.isArray(catalog?.frameScriptPaths)
+            ? catalog.frameScriptPaths
+            : [];
+
+        await Promise.all(frameScriptPaths.map(path => this.loadFrameCatalogScript(path)));
+
+        this.frameCatalog = window.QRFrameCatalog || null;
+        return this.frameCatalog;
+    },
+
+    loadFrameCatalogScript(path) {
+        if (this.frameCatalogScriptPromises[path]) {
+            return this.frameCatalogScriptPromises[path];
+        }
+
+        const existingScript = document.querySelector(`script[data-qr-frame-script="${path}"]`);
+        if (existingScript?.dataset.loaded === 'true') {
+            this.frameCatalogScriptPromises[path] = Promise.resolve();
+            return this.frameCatalogScriptPromises[path];
+        }
+
+        this.frameCatalogScriptPromises[path] = new Promise((resolve, reject) => {
+            const script = existingScript || document.createElement('script');
+
+            if (!existingScript) {
+                script.src = path;
+                script.async = false;
+                script.defer = false;
+                script.dataset.qrFrameScript = path;
+                document.head.appendChild(script);
+            }
+
+            const handleLoad = () => {
+                script.dataset.loaded = 'true';
+                script.removeEventListener('load', handleLoad);
+                script.removeEventListener('error', handleError);
+                resolve();
+            };
+
+            const handleError = () => {
+                script.removeEventListener('load', handleLoad);
+                script.removeEventListener('error', handleError);
+                reject(new Error(`Failed to load frame catalog script: ${path}`));
+            };
+
+            script.addEventListener('load', handleLoad);
+            script.addEventListener('error', handleError);
+        });
+
+        return this.frameCatalogScriptPromises[path];
+    },
+
+    getFrameCatalog() {
+        return this.frameCatalog || window.QRFrameCatalog || null;
+    },
+
+    getFrameDefinition(frameType) {
+        if (!frameType) {
+            return null;
+        }
+
+        if (frameType === this.FRAME_TYPES.CUSTOM) {
+            return this.getFrameCatalog()?.customFrameTemplate || null;
+        }
+
+        return this.getFrameCatalog()?.frames?.find(frame => frame.id === frameType) || null;
+    },
+
+    getFrameDefinitionQRRect(frameType, heightRatio = 1) {
+        const defaultQRRect = this.getFrameDefinition(frameType)?.defaultQRRect;
+        if (!defaultQRRect) {
+            return null;
+        }
+
+        return this.clampFrameQRRect(defaultQRRect, heightRatio);
     },
 
     getFrameOptions() {
+        const catalogFrames = this.getFrameCatalog()?.frames;
+        if (Array.isArray(catalogFrames) && catalogFrames.length) {
+            return catalogFrames.map(frame => ({
+                id: frame.id,
+                name: I18n.translateString(frame.name)
+            }));
+        }
+
         return [
             {
                 id: this.FRAME_TYPES.NONE,
@@ -230,35 +344,171 @@ const QRFrames = {
     },
 
     getResolvedFrameText() {
-        if (this.FRAME_TEXT === 'Scan me!' || this.FRAME_TEXT === 'Skandeer my!') {
-            return I18n.translateString('Scan me!');
+        if (this.isDefaultFrameText(this.FRAME_TEXT)) {
+            return this.FRAME_TEXT_DEFAULT;
         }
 
         return this.FRAME_TEXT;
     },
 
+    isDefaultFrameText(frameText) {
+        return typeof frameText === 'string' && this.FRAME_TEXT_VARIANTS.has(frameText);
+    },
+
+    getDefaultFrameText(frameType = this.FRAME_TYPES.NONE) {
+        const frameDefinition = this.getFrameDefinition(frameType);
+        if (frameDefinition && Object.prototype.hasOwnProperty.call(frameDefinition, 'supportsText') && !frameDefinition.supportsText) {
+            return '';
+        }
+
+        if (frameDefinition && Object.prototype.hasOwnProperty.call(frameDefinition, 'defaultText')) {
+            return frameDefinition.defaultText || '';
+        }
+
+        if (!this.supportsFrameText(frameType)) {
+            return '';
+        }
+
+        return this.FRAME_TEXT_DEFAULT;
+    },
+
+    getFrameCustomizationKey(frameType = this.FRAME_TYPES.NONE) {
+        return frameType || this.FRAME_TYPES.NONE;
+    },
+
+    supportsFrameText(frameType = this.FRAME_TYPES.NONE) {
+        const frameDefinition = this.getFrameDefinition(frameType);
+        if (frameDefinition && Object.prototype.hasOwnProperty.call(frameDefinition, 'supportsText')) {
+            return Boolean(frameDefinition.supportsText);
+        }
+
+        return ![this.FRAME_TYPES.NONE, this.FRAME_TYPES.CUSTOM].includes(frameType);
+    },
+
+    createFrameCustomization(frameType = this.FRAME_TYPES.NONE, overrides = {}) {
+        const frameDefinition = this.getFrameDefinition(frameType);
+        const defaultCustomization = frameDefinition?.defaultCustomization || {};
+        const frameColor = FrameColorControl.normalizeColorValue(overrides.frameColor, defaultCustomization.frameColor || '#000000');
+        const backgroundColor = FrameColorControl.normalizeColorValue(overrides.backgroundColor, defaultCustomization.backgroundColor || '#ffffff');
+        const backgroundColorState = FrameColorControl.parseColorValue(backgroundColor, '#ffffff');
+        const defaultFrameText = this.getDefaultFrameText(frameType);
+
+        return {
+            frameText: typeof overrides.frameText === 'string'
+                ? overrides.frameText || defaultFrameText
+                : defaultFrameText,
+            frameColor,
+            backgroundColor,
+            textColor: overrides.textColor == null
+                ? null
+                : FrameColorControl.normalizeColorValue(overrides.textColor, this.getDefaultTextColor(frameType, frameColor)),
+            transparentBackground: backgroundColorState.alpha <= 0
+        };
+    },
+
+    getFrameCustomization(frameType = this.FRAME_TYPES.NONE) {
+        const key = this.getFrameCustomizationKey(frameType);
+        if (!this.frameCustomizations[key]) {
+            this.frameCustomizations[key] = this.createFrameCustomization(frameType);
+        }
+
+        const normalizedCustomization = this.createFrameCustomization(frameType, this.frameCustomizations[key]);
+        this.frameCustomizations[key] = normalizedCustomization;
+        return normalizedCustomization;
+    },
+
+    isDefaultFrameCustomization(frameType, customization) {
+        const normalizedCustomization = this.createFrameCustomization(frameType, customization);
+        const defaultCustomization = this.createFrameCustomization(frameType);
+        return JSON.stringify(normalizedCustomization) === JSON.stringify(defaultCustomization);
+    },
+
+    serializeFrameCustomizations() {
+        const serialized = {};
+        Object.entries(this.frameCustomizations).forEach(([frameType, customization]) => {
+            if (this.isDefaultFrameCustomization(frameType, customization)) {
+                return;
+            }
+
+            serialized[frameType] = this.createFrameCustomization(frameType, customization);
+        });
+        return serialized;
+    },
+
+    restoreFrameCustomizations(customizations = {}) {
+        const restoredCustomizations = {};
+        Object.entries(customizations).forEach(([frameType, customization]) => {
+            restoredCustomizations[this.getFrameCustomizationKey(frameType)] = this.createFrameCustomization(frameType, customization || {});
+        });
+        this.frameCustomizations = restoredCustomizations;
+    },
+
+    applyFrameCustomization(frameType = this.FRAME_TYPES.NONE) {
+        const customization = this.getFrameCustomization(frameType);
+        this.FRAME_TEXT = customization.frameText;
+        this.FRAME_FOREGROUND_COLOR = customization.frameColor;
+        this.FRAME_BACKGROUND_COLOR = customization.backgroundColor;
+        this.QR_BACKGROUND_COLOR = customization.backgroundColor;
+        this.FRAME_TEXT_COLOR = customization.textColor;
+        this.TRANSPARENT_BACKGROUND = customization.transparentBackground;
+        return customization;
+    },
+
+    withFrameCustomization(frameType, render) {
+        if (!frameType) {
+            return render();
+        }
+
+        const previousState = {
+            frameText: this.FRAME_TEXT,
+            frameColor: this.FRAME_FOREGROUND_COLOR,
+            backgroundColor: this.FRAME_BACKGROUND_COLOR,
+            textColor: this.FRAME_TEXT_COLOR,
+            transparentBackground: this.TRANSPARENT_BACKGROUND
+        };
+
+        this.applyFrameCustomization(frameType);
+
+        try {
+            return render();
+        } finally {
+            this.FRAME_TEXT = previousState.frameText;
+            this.FRAME_FOREGROUND_COLOR = previousState.frameColor;
+            this.FRAME_BACKGROUND_COLOR = previousState.backgroundColor;
+            this.QR_BACKGROUND_COLOR = previousState.backgroundColor;
+            this.FRAME_TEXT_COLOR = previousState.textColor;
+            this.TRANSPARENT_BACKGROUND = previousState.transparentBackground;
+        }
+    },
+
     getFrameDisplayName(frameType) {
+        if (frameType === this.FRAME_TYPES.CUSTOM) {
+            return I18n.translateString('Custom');
+        }
         const match = this.getFrameOptions().find(frame => frame.id === frameType);
         return match ? match.name : this.getResolvedFrameText();
     },
 
     getFrameSettingsMarkup() {
+        const frameType = this.FRAME_TYPES.NONE;
+        const customization = this.getFrameCustomization(frameType);
         return `
             <div class="frame-settings-panel">
-                <div class="form-group">
+                <div class="form-group" data-frame-setting="text" hidden>
                     <label class="form-label" for="frameTextInput">${I18n.translateString('Frame Text')}</label>
-                    <input type="text" class="form-input" id="frameTextInput" value="${this.escapeAttribute(this.getResolvedFrameText())}" maxlength="40">
+                    <input type="text" class="form-input" id="frameTextInput" value="${this.escapeAttribute(customization.frameText)}" maxlength="40">
                 </div>
                 <div class="frame-settings-grid">
-                    ${FrameColorControl.render({ id: 'frameForegroundColor', label: 'Frame Color', value: this.FRAME_FOREGROUND_COLOR })}
-                    ${FrameColorControl.render({ id: 'frameBackgroundColor', label: 'Background Color', value: this.FRAME_BACKGROUND_COLOR })}
-                    ${FrameColorControl.render({ id: 'frameTextColor', label: 'Text Color', value: this.FRAME_TEXT_COLOR || this.getDefaultTextColor(this.FRAME_TYPES.NONE) })}
+                    <div data-frame-setting="frameColor">
+                        ${FrameColorControl.render({ id: 'frameForegroundColor', label: 'Frame Color', value: customization.frameColor })}
+                    </div>
+                    <div data-frame-setting="backgroundColor">
+                        ${FrameColorControl.render({ id: 'frameBackgroundColor', label: 'Background Color', value: customization.backgroundColor })}
+                    </div>
+                    <div data-frame-setting="textColor" hidden>
+                        ${FrameColorControl.render({ id: 'frameTextColor', label: 'Text Color', value: customization.textColor || this.getDefaultTextColor(frameType, customization.frameColor) })}
+                    </div>
                 </div>
-                <label class="toggle-switch frame-settings-toggle" for="frameTransparentBackground">
-                    <input type="checkbox" id="frameTransparentBackground">
-                    <span class="toggle-slider"></span>
-                    <span class="toggle-label">${I18n.translateString('Transparent background')}</span>
-                </label>
             </div>
         `;
     },
@@ -272,216 +522,13 @@ const QRFrames = {
                     <div class="form-group">
                         <label class="form-label" for="qrLogoSizeRange">${I18n.translateString('Logo Size')}</label>
                         <div class="form-hint">${I18n.translateString('Choose how large the selected logo appears inside the QR code.')}</div>
-                        <input type="range" class="logo-size-range" id="qrLogoSizeRange" min="12" max="44" step="1" value="${typeof QRCodeLogoControls !== 'undefined' ? QRCodeLogoControls.sizePercent : 22}">
-                        <div class="form-hint" id="qrLogoSizeValue">${I18n.translate('{size}% of QR width', { size: typeof QRCodeLogoControls !== 'undefined' ? QRCodeLogoControls.sizePercent : 22 })}</div>
+                        <input type="range" class="logo-size-range" id="qrLogoSizeRange" min="12" max="${typeof QRCodeLogoControls !== 'undefined' ? QRCodeLogoControls.getMaximumAllowedLogoSizePercent() : 34}" step="1" value="${typeof QRCodeLogoControls !== 'undefined' ? QRCodeLogoControls.sizePercent : 22}">
+                        <div class="form-hint" id="qrLogoSizeValue">${I18n.translate('{size}% of QR width (max {max}% for this QR code)', { size: typeof QRCodeLogoControls !== 'undefined' ? QRCodeLogoControls.sizePercent : 22, max: typeof QRCodeLogoControls !== 'undefined' ? QRCodeLogoControls.getMaximumAllowedLogoSizePercent() : 34 })}</div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">${I18n.translateString('Logo Shape')}</label>
                         <div class="logo-shape-toggle">
-                            <button type="button" class="logo-shape-button${currentShape === 'rounded' ? ' active' : ''}" data-logo-shape="rounded" title="${I18n.translateString('Rounded Square')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="1" width="18" height="18" rx="4" stroke="currentColor" stroke-width="2"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'square' ? ' active' : ''}" data-logo-shape="square" title="${I18n.translateString('Square')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="1" width="18" height="18" stroke="currentColor" stroke-width="2"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'circle' ? ' active' : ''}" data-logo-shape="circle" title="${I18n.translateString('Circle')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'hexagon' ? ' active' : ''}" data-logo-shape="hexagon" title="${I18n.translateString('Hexagon')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 18.66,5.5 18.66,14.5 10,19 1.34,14.5 1.34,5.5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'heart' ? ' active' : ''}" data-logo-shape="heart" title="${I18n.translateString('Heart')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 18 C10 18 1 12 1 6.5 C1 3.46 3.46 1 6.5 1 C8.24 1 9.73 1.81 10 3 C10.27 1.81 11.76 1 13.5 1 C16.54 1 19 3.46 19 6.5 C19 12 10 18 10 18Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'diamond' ? ' active' : ''}" data-logo-shape="diamond" title="${I18n.translateString('Diamond')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 19,10 10,19 1,10" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'star' ? ' active' : ''}" data-logo-shape="star" title="${I18n.translateString('Star')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 12.47,7.6 19.51,7.64 13.82,11.72 15.88,18.36 10,14.58 4.12,18.36 6.18,11.72 0.49,7.64 7.53,7.6" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'shield' ? ' active' : ''}" data-logo-shape="shield" title="${I18n.translateString('Shield')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 L18 4 L18 10 C18 14.42 14.42 17.5 10 19 C5.58 17.5 2 14.42 2 10 L2 4 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'octagon' ? ' active' : ''}" data-logo-shape="octagon" title="${I18n.translateString('Octagon')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="6.27,1 13.73,1 19,6.27 19,13.73 13.73,19 6.27,19 1,13.73 1,6.27" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'pentagon' ? ' active' : ''}" data-logo-shape="pentagon" title="${I18n.translateString('Pentagon')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 19,7.85 15.56,18.15 4.44,18.15 1,7.85" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'cross' ? ' active' : ''}" data-logo-shape="cross" title="${I18n.translateString('Cross')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="7,1 13,1 13,7 19,7 19,13 13,13 13,19 7,19 7,13 1,13 1,7 7,7" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'teardrop' ? ' active' : ''}" data-logo-shape="teardrop" title="${I18n.translateString('Teardrop')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 C10 1 18 8 18 12.5 C18 16.92 14.42 19 10 19 C5.58 19 2 16.92 2 12.5 C2 8 10 1 10 1Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'arch' ? ' active' : ''}" data-logo-shape="arch" title="${I18n.translateString('Arch')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 19 L1 10 C1 5.03 5.03 1 10 1 C14.97 1 19 5.03 19 10 L19 19 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'leaf' ? ' active' : ''}" data-logo-shape="leaf" title="${I18n.translateString('Leaf')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 C16 1 19 4 19 10 C19 16 16 19 10 19 C4 19 1 16 1 10 C1 4 4 1 10 1Z" stroke="currentColor" stroke-width="2"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'squircle' ? ' active' : ''}" data-logo-shape="squircle" title="${I18n.translateString('Squircle')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="1" width="18" height="18" rx="7" stroke="currentColor" stroke-width="2"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'oval' ? ' active' : ''}" data-logo-shape="oval" title="${I18n.translateString('Oval')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><ellipse cx="10" cy="10" rx="9" ry="6.5" stroke="currentColor" stroke-width="2"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'triangle' ? ' active' : ''}" data-logo-shape="triangle" title="${I18n.translateString('Triangle')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 19,19 1,19" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'egg' ? ' active' : ''}" data-logo-shape="egg" title="${I18n.translateString('Egg')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 C5 1 2 7 2 12 C2 16 5.5 19 10 19 C14.5 19 18 16 18 12 C18 7 15 1 10 1Z" stroke="currentColor" stroke-width="2"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'cloud' ? ' active' : ''}" data-logo-shape="cloud" title="${I18n.translateString('Cloud')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 16 C2.5 16 1 14.2 1 12 C1 10 2.5 8.5 4.5 8.2 C4.2 7.5 4 6.8 4 6 C4 3.2 6.2 1 9 1 C11.2 1 13 2.4 13.7 4.4 C14.2 4.1 14.8 4 15.5 4 C17.4 4 19 5.6 19 7.5 C19 7.8 18.9 8.1 18.8 8.4 C19.5 9 19 10.8 19 12 C19 14.2 17.2 16 15 16 Z" stroke="currentColor" stroke-width="1.5"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'clover' ? ' active' : ''}" data-logo-shape="clover" title="${I18n.translateString('Clover')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5.5" r="4" stroke="currentColor" stroke-width="1.5"/><circle cx="14.5" cy="10" r="4" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="14.5" r="4" stroke="currentColor" stroke-width="1.5"/><circle cx="5.5" cy="10" r="4" stroke="currentColor" stroke-width="1.5"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'badge' ? ' active' : ''}" data-logo-shape="badge" title="${I18n.translateString('Badge')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 12,4.5 16,3.5 14.5,7.5 18,10 14.5,12.5 16,16.5 12,15.5 10,19 8,15.5 4,16.5 5.5,12.5 2,10 5.5,7.5 4,3.5 8,4.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'arrow' ? ' active' : ''}" data-logo-shape="arrow" title="${I18n.translateString('Arrow')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="19,10 10,1 10,6.5 1,6.5 1,13.5 10,13.5 10,19" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'trapezoid' ? ' active' : ''}" data-logo-shape="trapezoid" title="${I18n.translateString('Trapezoid')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="4,3 16,3 19,17 1,17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'semicircle' ? ' active' : ''}" data-logo-shape="semicircle" title="${I18n.translateString('Semicircle')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 13 A9 9 0 0 1 19 13 L19 13 L1 13Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'parallelogram' ? ' active' : ''}" data-logo-shape="parallelogram" title="${I18n.translateString('Parallelogram')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="5,2 19,2 15,18 1,18" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'rhombus' ? ' active' : ''}" data-logo-shape="rhombus" title="${I18n.translateString('Rhombus')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 19,10 10,19 1,10" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'kite' ? ' active' : ''}" data-logo-shape="kite" title="${I18n.translateString('Kite')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 15.5,8 10,19 4.5,8" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'heptagon' ? ' active' : ''}" data-logo-shape="heptagon" title="${I18n.translateString('Heptagon')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 17.2,4.5 19,12 14.5,18 5.5,18 1,12 2.8,4.5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'nonagon' ? ' active' : ''}" data-logo-shape="nonagon" title="${I18n.translateString('Nonagon')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 15.8,2.8 19,7.5 18.5,13 14.7,17.5 10,19 5.3,17.5 1.5,13 1,7.5 4.2,2.8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'decagon' ? ' active' : ''}" data-logo-shape="decagon" title="${I18n.translateString('Decagon')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 15,2.2 18.5,6 19.5,11 17.5,15.5 13.5,18.5 10,19 6.5,18.5 2.5,15.5 0.5,11 1.5,6 5,2.2" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'starburst' ? ' active' : ''}" data-logo-shape="starburst" title="${I18n.translateString('Starburst')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 11.5,5 15,2.5 13.5,6.5 18,6 14.5,8.5 18,11 14,10.5 15,14.5 12,12 11.5,16 10,13 8.5,16 8,12 5,14.5 6,10.5 2,11 5.5,8.5 2,6 6.5,6.5 5,2.5 8.5,5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'ribbon' ? ' active' : ''}" data-logo-shape="ribbon" title="${I18n.translateString('Ribbon')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="1,1 19,1 19,19 10,15 1,19" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'chevron' ? ' active' : ''}" data-logo-shape="chevron" title="${I18n.translateString('Chevron')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="1,1 19,1 19,14 10,19 1,14" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'tab' ? ' active' : ''}" data-logo-shape="tab" title="${I18n.translateString('Tab')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 10 A9 9 0 0 1 19 10 L19 19 L1 19 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'raindrop' ? ' active' : ''}" data-logo-shape="raindrop" title="${I18n.translateString('Raindrop')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 Q12 7 15 10 A6 6 0 0 1 5 10 Q8 7 10 1Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'flower' ? ' active' : ''}" data-logo-shape="flower" title="${I18n.translateString('Flower')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="3.5" stroke="currentColor" stroke-width="1.5"/><circle cx="14.5" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"/><circle cx="13" cy="13.5" r="3.5" stroke="currentColor" stroke-width="1.5"/><circle cx="7" cy="13.5" r="3.5" stroke="currentColor" stroke-width="1.5"/><circle cx="5.5" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'gear' ? ' active' : ''}" data-logo-shape="gear" title="${I18n.translateString('Gear')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M8.5 1H11.5L12 4L15 5L17.5 3L19 5L17 7.5L18 10L19 10.5V12.5L16 13L15 16L17 18.5L15 19.5L12.5 17L10 18L9 19H7.5L7 16L4 15L2 17.5L0.5 15.5L3 13L2 10L1 9.5V7.5L4 7L5 4L3 2L5 0.5L7 3L8.5 1Z" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'explosion' ? ' active' : ''}" data-logo-shape="explosion" title="${I18n.translateString('Explosion')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,0.5 12,5 17,2 14,7 19.5,8 15,10.5 19,14 14,13 13,18.5 10,14 7,18.5 6,13 1,14 5,10.5 0.5,8 6,7 3,2 8,5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'bookmark' ? ' active' : ''}" data-logo-shape="bookmark" title="${I18n.translateString('Bookmark')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="3,1 17,1 17,19 10,14.5 3,19" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'ticket' ? ' active' : ''}" data-logo-shape="ticket" title="${I18n.translateString('Ticket')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 3 H19 V8 A2 2 0 0 0 19 12 V17 H1 V12 A2 2 0 0 0 1 8 Z" stroke="currentColor" stroke-width="2"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'speech-bubble' ? ' active' : ''}" data-logo-shape="speech-bubble" title="${I18n.translateString('Speech Bubble')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 1 H17 Q19 1 19 3 V11 Q19 13 17 13 H11 L7 17 L8 13 H3 Q1 13 1 11 V3 Q1 1 3 1Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'tombstone' ? ' active' : ''}" data-logo-shape="tombstone" title="${I18n.translateString('Tombstone')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 19 V9 A8 8 0 0 1 18 9 V19 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'pill' ? ' active' : ''}" data-logo-shape="pill" title="${I18n.translateString('Pill')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><ellipse cx="10" cy="10" rx="9" ry="5" stroke="currentColor" stroke-width="2"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'wavy-circle' ? ' active' : ''}" data-logo-shape="wavy-circle" title="${I18n.translateString('Wavy Circle')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1.5 Q12.5 3 13.5 2 Q15 3.5 14 5 Q16 5.5 16 7.5 Q17.5 8.5 17 10 Q18 11.5 16.5 13 Q16.5 15 15 15.5 Q14.5 17 13 17 Q12 18.5 10 18 Q8 18.5 7 17 Q5.5 17 5 15.5 Q3.5 15 3.5 13 Q2 11.5 3 10 Q2.5 8.5 4 7.5 Q4 5.5 6 5 Q5 3.5 6.5 2 Q7.5 3 10 1.5Z" stroke="currentColor" stroke-width="1.5"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'arrow-up' ? ' active' : ''}" data-logo-shape="arrow-up" title="${I18n.translateString('Arrow Up')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2 L17 9 H13 V18 H7 V9 H3 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'arrow-down' ? ' active' : ''}" data-logo-shape="arrow-down" title="${I18n.translateString('Arrow Down')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 18 L17 11 H13 V2 H7 V11 H3 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'arrow-left' ? ' active' : ''}" data-logo-shape="arrow-left" title="${I18n.translateString('Arrow Left')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 10 L9 3 V7 H18 V13 H9 V17 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'chevron-up' ? ' active' : ''}" data-logo-shape="chevron-up" title="${I18n.translateString('Chevron Up')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 18 V13 L10 5 L18 13 V18 H13 L10 15 L7 18 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'chevron-left' ? ' active' : ''}" data-logo-shape="chevron-left" title="${I18n.translateString('Chevron Left')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M18 2 H13 L5 10 L13 18 H18" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'chevron-right' ? ' active' : ''}" data-logo-shape="chevron-right" title="${I18n.translateString('Chevron Right')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 2 H7 L15 10 L7 18 H2" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'plus-sign' ? ' active' : ''}" data-logo-shape="plus-sign" title="${I18n.translateString('Plus')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M8 2 H12 V8 H18 V12 H12 V18 H8 V12 H2 V8 H8 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'x-mark' ? ' active' : ''}" data-logo-shape="x-mark" title="${I18n.translateString('Cross')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 2 L10 7 L16 2 L18 4 L13 10 L18 16 L16 18 L10 13 L4 18 L2 16 L7 10 L2 4 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'checkmark' ? ' active' : ''}" data-logo-shape="checkmark" title="${I18n.translateString('Checkmark')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 11 L4 8 L8 12 L16 3 L18 6 L8 18 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'crescent' ? ' active' : ''}" data-logo-shape="crescent" title="${I18n.translateString('Crescent')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15 3 A8 8 0 1 0 15 17 A6 6 0 1 1 15 3 Z" stroke="currentColor" stroke-width="1.5"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'sunburst' ? ' active' : ''}" data-logo-shape="sunburst" title="${I18n.translateString('Sunburst')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="4" stroke="currentColor" stroke-width="1.5"/><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="10" y1="1" x2="10" y2="4"/><line x1="10" y1="16" x2="10" y2="19"/><line x1="1" y1="10" x2="4" y2="10"/><line x1="16" y1="10" x2="19" y2="10"/><line x1="3.5" y1="3.5" x2="5.5" y2="5.5"/><line x1="14.5" y1="14.5" x2="16.5" y2="16.5"/><line x1="3.5" y1="16.5" x2="5.5" y2="14.5"/><line x1="14.5" y1="5.5" x2="16.5" y2="3.5"/></g></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'lightning' ? ' active' : ''}" data-logo-shape="lightning" title="${I18n.translateString('Lightning')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 1 L4 11 H9 L7 19 L16 8 H11 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'play-triangle' ? ' active' : ''}" data-logo-shape="play-triangle" title="${I18n.translateString('Play')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 2 L18 10 L4 18 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'location-pin' ? ' active' : ''}" data-logo-shape="location-pin" title="${I18n.translateString('Location Pin')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 19 C10 19 3 12 3 8 A7 7 0 0 1 17 8 C17 12 10 19 10 19 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="10" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'house' ? ' active' : ''}" data-logo-shape="house" title="${I18n.translateString('House')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 10 L10 2 L18 10 V18 H2 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'hendecagon' ? ' active' : ''}" data-logo-shape="hendecagon" title="${I18n.translateString('11-sided')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 L15.1 3 L18.3 7.4 L18.3 12.6 L15.1 17 L10 19 L4.9 17 L1.7 12.6 L1.7 7.4 L4.9 3 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'dodecagon' ? ' active' : ''}" data-logo-shape="dodecagon" title="${I18n.translateString('12-sided')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 L14.5 2.2 L17.8 5.5 L19 10 L17.8 14.5 L14.5 17.8 L10 19 L5.5 17.8 L2.2 14.5 L1 10 L2.2 5.5 L5.5 2.2 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'tag' ? ' active' : ''}" data-logo-shape="tag" title="${I18n.translateString('Tag')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 6 L7 2 H17 V17 H7 L2 13 L5 9.5 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="13" cy="6" r="1.2" stroke="currentColor" stroke-width="1.2"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'blob' ? ' active' : ''}" data-logo-shape="blob" title="${I18n.translateString('Blob')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2 C14 2 18 5 17 10 C19 14 14 18 10 17 C5 19 1 14 3 10 C1 5 6 2 10 2 Z" stroke="currentColor" stroke-width="1.5"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'barrel' ? ' active' : ''}" data-logo-shape="barrel" title="${I18n.translateString('Barrel')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 4 Q10 2 17 4 V16 Q10 18 3 16 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'flag' ? ' active' : ''}" data-logo-shape="flag" title="${I18n.translateString('Flag')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 2 V18 M3 3 H17 L14 7 L17 11 H3" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'lens' ? ' active' : ''}" data-logo-shape="lens" title="${I18n.translateString('Lens')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 10 Q10 1 19 10 Q10 19 1 10 Z" stroke="currentColor" stroke-width="1.5"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'sun' ? ' active' : ''}" data-logo-shape="sun" title="${I18n.translateString('Sun')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 L11.5 4 L14.5 2.5 L14 6 L17.5 5.5 L16 9 L19 10 L16 11 L17.5 14.5 L14 14 L14.5 17.5 L11.5 16 L10 19 L8.5 16 L5.5 17.5 L6 14 L2.5 14.5 L4 11 L1 10 L4 9 L2.5 5.5 L6 6 L5.5 2.5 L8.5 4 Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" class="logo-shape-button${currentShape === 'gemstone' ? ' active' : ''}" data-logo-shape="gemstone" title="${I18n.translateString('Gemstone')}">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 2 H15 L19 8 L10 19 L1 8 Z M1 8 H19 M5 2 L10 19 M15 2 L10 19 M5 2 L10 8 M15 2 L10 8" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
-                            </button>
+                            ${typeof QRCodeLogoControls !== 'undefined' ? QRCodeLogoControls.getLogoShapeButtonsMarkup(currentShape) : ''}
                         </div>
                     </div>
                     <div class="form-group">
@@ -500,39 +547,76 @@ const QRFrames = {
         `;
     },
 
-    setFrameCustomization({
-        frameText,
-        frameColor,
-        backgroundColor,
-        textColor,
-        transparentBackground
-    } = {}) {
+    setFrameCustomization(frameTypeOrSettings, settingsOverride) {
+        const frameType = typeof frameTypeOrSettings === 'string'
+            ? frameTypeOrSettings
+            : this.FRAME_TYPES.NONE;
+        const settings = typeof frameTypeOrSettings === 'string'
+            ? (settingsOverride || {})
+            : (frameTypeOrSettings || {});
+        const customization = {
+            ...this.getFrameCustomization(frameType)
+        };
+        const {
+            frameText,
+            frameColor,
+            backgroundColor,
+            textColor
+        } = settings;
+        const defaultFrameText = this.getDefaultFrameText(frameType);
+
         if (typeof frameText === 'string') {
-            this.FRAME_TEXT = frameText || I18n.translateString('Scan me!');
+            customization.frameText = this.isDefaultFrameText(frameText)
+                ? (defaultFrameText || this.FRAME_TEXT_DEFAULT)
+                : (frameText || defaultFrameText);
+        } else if (!customization.frameText) {
+            customization.frameText = defaultFrameText;
         }
 
         if (typeof frameColor === 'string') {
-            this.FRAME_FOREGROUND_COLOR = FrameColorControl.normalizeColorValue(frameColor, this.FRAME_FOREGROUND_COLOR);
+            customization.frameColor = FrameColorControl.normalizeColorValue(frameColor, customization.frameColor);
         }
 
         if (typeof backgroundColor === 'string') {
-            const normalizedBackgroundColor = FrameColorControl.normalizeColorValue(backgroundColor, this.FRAME_BACKGROUND_COLOR);
-            this.FRAME_BACKGROUND_COLOR = normalizedBackgroundColor;
-            this.QR_BACKGROUND_COLOR = normalizedBackgroundColor;
+            customization.backgroundColor = FrameColorControl.normalizeColorValue(backgroundColor, customization.backgroundColor);
         }
 
         if (textColor === null) {
-            this.FRAME_TEXT_COLOR = null;
+            customization.textColor = null;
         } else if (typeof textColor === 'string') {
-            this.FRAME_TEXT_COLOR = FrameColorControl.normalizeColorValue(textColor, this.getDefaultTextColor(this.FRAME_TYPES.NONE));
+            customization.textColor = FrameColorControl.normalizeColorValue(textColor, this.getDefaultTextColor(frameType, customization.frameColor));
         }
 
-        if (typeof transparentBackground === 'boolean') {
-            this.TRANSPARENT_BACKGROUND = transparentBackground;
-        }
+        this.frameCustomizations[this.getFrameCustomizationKey(frameType)] = customization;
+        this.applyFrameCustomization(frameType);
     },
 
-    getDefaultTextColor(frameType) {
+    resetFrameToDefaults(frameType = this.FRAME_TYPES.NONE) {
+        const key = this.getFrameCustomizationKey(frameType);
+
+        if (frameType === this.FRAME_TYPES.CUSTOM) {
+            const frame = this.getActiveCustomFrame();
+            if (!frame) {
+                return null;
+            }
+
+            frame.qrRect = this.getDefaultCustomFrameQRRect(frame);
+            this.customFrame = frame;
+            return frame;
+        }
+
+        delete this.frameCustomizations[key];
+        return this.applyFrameCustomization(frameType);
+    },
+
+    getDefaultTextColor(frameType, frameColor = this.FRAME_FOREGROUND_COLOR) {
+        const defaultTextColor = this.getFrameDefinition(frameType)?.defaultTextColor;
+        if (typeof defaultTextColor === 'string') {
+            return defaultTextColor === 'frameColor'
+                ? frameColor
+                : FrameColorControl.normalizeColorValue(defaultTextColor, frameColor);
+        }
+
         switch (frameType) {
             case this.FRAME_TYPES.ROUNDED_BANNER:
             case this.FRAME_TYPES.FOOTER_PANEL:
@@ -552,7 +636,7 @@ const QRFrames = {
             case this.FRAME_TYPES.GIFT_BOW:
                 return '#ffffff';
             default:
-                return this.FRAME_FOREGROUND_COLOR;
+                return frameColor;
         }
     },
 
@@ -577,6 +661,11 @@ const QRFrames = {
     },
 
     isDecorativeFrame(frameType) {
+        const frameDefinition = this.getFrameDefinition(frameType);
+        if (frameDefinition && Object.prototype.hasOwnProperty.call(frameDefinition, 'decorative')) {
+            return Boolean(frameDefinition.decorative);
+        }
+
         return [
             this.FRAME_TYPES.ROUNDED_BANNER,
             this.FRAME_TYPES.OUTLINED_LABEL,
@@ -614,24 +703,89 @@ const QRFrames = {
             ...frame,
             preview: this.getFramePreviewMarkup(frame.id)
         }));
+        const noneFrame = frames.find(frame => frame.id === this.FRAME_TYPES.NONE);
+        const presetFrames = frames.filter(frame => frame.id !== this.FRAME_TYPES.NONE);
+        const customCardMarkup = this.getCustomFrameCardsMarkup();
+        const positionPanelHidden = true;
 
         return `
             <div class="form-group qr-customization-panel">
                 <div class="qr-config-type-block">
-                    <div class="form-hint qr-section-hint">Choose the frame that wraps the generated QR code.</div>
-                    <div class="frame-selector-grid" id="frameSelector">
-                        ${frames.map(frame => `
-                            <div class="frame-card ${frame.id === 'none' ? 'active' : ''}" data-frame="${frame.id}">
-                                <div class="frame-preview">
-                                    ${frame.preview}
-                                </div>
-                                <div class="frame-name">${frame.name}</div>
-                            </div>
-                        `).join('')}
+                    <div class="form-hint qr-section-hint">${I18n.translateString('Choose the frame that wraps the generated QR code.')}</div>
+                    <div class="frame-presets-panel">
+                        <input type="file" class="logo-upload-input" id="customFrameInput" accept="image/png,image/jpeg,image/svg+xml,image/webp">
+                        <div class="frame-presets-header">
+                            <div class="frame-presets-title">${I18n.translateString('Frame Types')}</div>
+                        </div>
+                        <div class="frame-presets-search">
+                            <input type="search" class="form-input frame-presets-search-input" id="framePresetSearchInput" placeholder="${I18n.translateString('Search frame types')}" aria-label="${I18n.translateString('Filter frame types by name')}">
+                        </div>
+                        <div class="frame-selector-grid" id="frameSelector">
+                            ${noneFrame ? `
+                                <button type="button" class="frame-card frame-card-button active" data-frame="${noneFrame.id}" data-frame-name="${`${noneFrame.name} ${noneFrame.id}`.toLowerCase()}" aria-label="${noneFrame.name} frame preset">
+                                    <span class="frame-preview">
+                                        ${noneFrame.preview}
+                                    </span>
+                                    <span class="frame-name">${noneFrame.name}</span>
+                                </button>
+                            ` : ''}
+                            <button type="button" class="frame-card frame-card-button frame-card-action" data-frame-action="upload-custom" data-frame-name="upload custom frame file" aria-label="${I18n.translateString('Upload custom frame')}">
+                                <span class="frame-preview frame-preview-action frame-preview-upload">
+                                    <i class="bi bi-upload"></i>
+                                </span>
+                                <span class="frame-name">${I18n.translateString('Upload frame')}</span>
+                            </button>
+                            ${customCardMarkup}
+                            ${presetFrames.map(frame => `
+                                <button type="button" class="frame-card frame-card-button" data-frame="${frame.id}" data-frame-name="${`${frame.name} ${frame.id}`.toLowerCase()}" aria-label="${frame.name} frame preset">
+                                    <span class="frame-preview">
+                                        ${frame.preview}
+                                    </span>
+                                    <span class="frame-name">${frame.name}</span>
+                                </button>
+                            `).join('')}
+                        </div>
+                        <div class="form-hint frame-presets-empty-state" id="framePresetSearchEmpty" hidden>${I18n.translateString('No frame types match your search.')}</div>
                     </div>
-                </div>
-                <div class="qr-config-styling-block">
-                    ${this.getFrameSettingsMarkup()}
+                    <div class="custom-frame-position-panel frame-edit-panel" id="customFramePositionPanel" ${positionPanelHidden ? 'hidden' : ''}>
+                        <div class="frame-edit-header">
+                            <div class="frame-edit-title" id="customFramePositionTitle">${I18n.translateString('Frame edit')}</div>
+                            <div class="form-hint frame-edit-intro">${I18n.translateString('Position the QR code inside the selected frame and adjust its colors.')}</div>
+                        </div>
+                        <div class="frame-edit-section frame-edit-section-position">
+                            <div class="frame-edit-section-title">${I18n.translateString('Position & size')}</div>
+                            <div class="form-hint" id="customFramePositionHint">${I18n.translateString('Drag the QR box on the preview and resize it from any corner or side.')}</div>
+                            <div class="custom-frame-stage" id="customFrameStage">
+                                <img id="customFrameStageImage" alt="${I18n.translateString('Frame placement preview')}">
+                                <div class="custom-frame-qr-box" id="customFrameQRBox" tabindex="0" role="slider" aria-label="${I18n.translateString('QR code placement')}">
+                                    <span>QR</span>
+                                    <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-top-left" data-placement-resize-handle="top-left" aria-hidden="true"></span>
+                                    <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-top-right" data-placement-resize-handle="top-right" aria-hidden="true"></span>
+                                    <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-bottom-left" data-placement-resize-handle="bottom-left" aria-hidden="true"></span>
+                                    <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-bottom-right" data-placement-resize-handle="bottom-right" aria-hidden="true"></span>
+                                    <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-top" data-placement-resize-handle="top" aria-hidden="true"></span>
+                                    <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-right" data-placement-resize-handle="right" aria-hidden="true"></span>
+                                    <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-bottom" data-placement-resize-handle="bottom" aria-hidden="true"></span>
+                                    <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-left" data-placement-resize-handle="left" aria-hidden="true"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="frame-edit-section frame-edit-section-style">
+                            <div class="frame-edit-section-title">${I18n.translateString('Style')}</div>
+                            ${this.getFrameSettingsMarkup()}
+                        </div>
+                        <div class="custom-frame-position-actions frame-edit-actions">
+                            <button type="button" class="btn btn-secondary" id="customFrameCenterButton">
+                                <i class="bi bi-bullseye"></i> ${I18n.translateString('Center')}
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="customFrameResetButton">
+                                <i class="bi bi-arrow-counterclockwise"></i> ${I18n.translateString('Reset')}
+                            </button>
+                            <button type="button" class="btn btn-secondary custom-frame-remove-button" id="customFrameRemoveButton" hidden>
+                                <i class="bi bi-trash"></i> ${I18n.translateString('Remove frame')}
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div class="qr-config-logo-block">
                     ${this.getLogoControlsMarkup()}
@@ -640,14 +794,55 @@ const QRFrames = {
         `;
     },
 
+    getCustomFrameCardsMarkup() {
+        if (!this.customFrames.length) {
+            return '';
+        }
+        return this.customFrames.map(frame => this.getCustomFrameCardMarkup(frame)).join('');
+    },
+
+    getCustomFrameCardMarkup(frame = this.getActiveCustomFrame()) {
+        if (!frame) {
+            return '';
+        }
+        const frameName = this.escapeHTML(frame.name || I18n.translateString('Custom'));
+        const preview = this.getFramePreviewMarkup(this.FRAME_TYPES.CUSTOM, frame.id);
+        return `
+            <button type="button" class="frame-card frame-card-button" style="grid-row: 1;" data-frame="${this.FRAME_TYPES.CUSTOM}" data-frame-name="custom uploaded frame ${frameName.toLowerCase()}" data-custom-frame="true" data-custom-frame-id="${frame.id}" aria-label="${frameName} ${I18n.translateString('frame preset')}">
+                <span class="frame-preview">
+                    ${preview}
+                </span>
+                <span class="frame-name">${frameName}</span>
+            </button>
+        `;
+    },
+
     /**
      * Get preview image markup for a frame type
      */
-    getFramePreviewMarkup(frameType) {
-        const previewCanvas = this.applyFrame(this.createSampleQRCodeCanvas(100), frameType, 100);
+    getFramePreviewMarkup(frameType, customFrameId = '') {
+        const previousCustomFrameId = this.activeCustomFrameId;
+        if (frameType === this.FRAME_TYPES.CUSTOM && customFrameId) {
+            this.setActiveCustomFrame(customFrameId);
+        }
+        const previewCanvas = this.withFrameCustomization(frameType, () => this.applyFrame(this.createSampleQRCodeCanvas(100), frameType, 100));
+        if (frameType === this.FRAME_TYPES.CUSTOM && customFrameId) {
+            this.setActiveCustomFrame(previousCustomFrameId);
+        }
         const previewName = this.getFrameDisplayName(frameType);
 
         return `<img src="${previewCanvas.toDataURL('image/png')}" alt="${previewName} frame preview">`;
+    },
+
+    getPlacementStageImageDataUrl(frameType, size = 300) {
+        if (frameType === this.FRAME_TYPES.CUSTOM) {
+            return this.getActiveCustomFrame()?.dataUrl || '';
+        }
+        if (!frameType) {
+            return '';
+        }
+        const canvas = this.withFrameCustomization(frameType, () => this.applyFrame(this.createBlankQRCodeCanvas(size), frameType, size));
+        return canvas.toDataURL('image/png');
     },
 
     /**
@@ -664,8 +859,12 @@ const QRFrames = {
         frameCards.forEach(card => {
             const frameType = card.dataset.frame;
             const preview = card.querySelector('.frame-preview');
-            if (!preview) {
+            if (!preview || !frameType) {
                 return;
+            }
+            const previousCustomFrameId = this.activeCustomFrameId;
+            if (frameType === this.FRAME_TYPES.CUSTOM && card.dataset.customFrameId) {
+                this.setActiveCustomFrame(card.dataset.customFrameId);
             }
 
             const sourceCanvas = document.createElement('canvas');
@@ -680,6 +879,9 @@ const QRFrames = {
             const previewName = this.getFrameDisplayName(frameType);
 
             preview.innerHTML = `<img src="${framedPreview.toDataURL('image/png')}" alt="${previewName} frame preview">`;
+            if (frameType === this.FRAME_TYPES.CUSTOM && card.dataset.customFrameId) {
+                this.setActiveCustomFrame(previousCustomFrameId);
+            }
         });
     },
 
@@ -721,6 +923,16 @@ const QRFrames = {
         return canvas;
     },
 
+    createBlankQRCodeCanvas(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = this.TRANSPARENT_BACKGROUND ? 'rgba(255, 255, 255, 0)' : this.getQRBackgroundFill();
+        ctx.fillRect(0, 0, size, size);
+        return canvas;
+    },
+
     /**
      * Get shared frame metrics for preview and export rendering
      */
@@ -733,7 +945,7 @@ const QRFrames = {
         const textHeight = hasText ? Math.round(size * 0.15) : 0;
         const isBorderFrame = frameType === this.FRAME_TYPES.SCAN_ME_BORDER;
 
-        return {
+        const metrics = {
             size,
             hasText,
             totalHeight: size + textHeight,
@@ -742,9 +954,14 @@ const QRFrames = {
             separatorWidth: isBorderFrame ? Math.max(2, Math.round(size * this.BORDER_FRAME_WIDTH_RATIO)) : 0,
             qrInset: isBorderFrame ? Math.max(20, Math.round(size * 0.12)) : 0,
             borderRadius: Math.max(3, Math.round(size * 0.01)),
-            fontSize: hasText ? Math.max(6, Math.round(textHeight * 0.5)) : 0,
+            fontSize: hasText ? Math.max(6, Math.round(textHeight * 0.58)) : 0,
             textY: hasText ? size + (textHeight / 2) : size
         };
+        const defaultQRBounds = isBorderFrame
+            ? { x: metrics.qrInset, y: metrics.qrInset, size: size - (metrics.qrInset * 2) }
+            : { x: 0, y: 0, size };
+        metrics.qrBounds = this.applyQRRectOverride(frameType, size, metrics.totalHeight, defaultQRBounds);
+        return metrics;
     },
 
     getDecorativeFrameConfig(frameType) {
@@ -822,6 +1039,7 @@ const QRFrames = {
             case this.FRAME_TYPES.ARROW_NOTE:
                 return {
                     artboardHeight: this.DECORATIVE_FRAME_ARTBOARD_HEIGHT,
+                    interiorBackground: { x: 7, y: 9, width: 50, height: 60, radius: 2 },
                     qrBackground: null,
                     qrBounds: { x: 12, y: 10, size: 40 }
                 };
@@ -835,7 +1053,7 @@ const QRFrames = {
             case this.FRAME_TYPES.BAG_TAG:
                 return {
                     artboardHeight: this.DECORATIVE_FRAME_ARTBOARD_HEIGHT,
-                    interiorBackground: { x: 6.5, y: 15.5, width: 50, height: 47, radius: 2 },
+                    interiorBackground: { x: 6.5, y: 15.5, width: 50, height: 50.75, radius: 2 },
                     qrBackground: null,
                     qrBounds: { x: 16.5, y: 26, size: 30 }
                 };
@@ -848,7 +1066,7 @@ const QRFrames = {
                 };
             case this.FRAME_TYPES.DELIVERY_VAN:
                 return {
-                    artboardHeight: this.DECORATIVE_FRAME_ARTBOARD_HEIGHT,
+                    artboardHeight: this.DELIVERY_VAN_ARTBOARD_HEIGHT,
                     interiorBackground: null,
                     qrBackground: null,
                     qrBounds: { x: 7.5, y: 17.5, size: 19 }
@@ -932,17 +1150,19 @@ const QRFrames = {
         } : null;
         const mappedInteriorBackground = mapRect(config.interiorBackground);
         const mappedQRBackground = mapRect(config.qrBackground);
-        const qrBounds = this.getNormalizedDecorativeQRBounds(
+        const defaultQRBounds = this.getNormalizedDecorativeQRBounds(
             size,
             mappedInteriorBackground || mappedQRBackground,
             mapQRBounds(config.qrBounds)
         );
+        const totalHeight = Math.ceil(scale * config.artboardHeight);
+        const qrBounds = this.applyQRRectOverride(frameType, size, totalHeight, defaultQRBounds);
 
         return {
             size,
             scale,
             artboardHeight: config.artboardHeight,
-            totalHeight: Math.ceil(scale * config.artboardHeight),
+            totalHeight,
             strokeWidth,
             outerRadius: Math.max(2, scale * 3),
             interiorBackground: mappedInteriorBackground,
@@ -973,6 +1193,148 @@ const QRFrames = {
             y: qrContainer.y + ((squareSize - qrSize) / 2),
             size: qrSize
         };
+    },
+
+    applyQRRectOverride(frameType, width, height, defaultBounds) {
+        const override = this.frameQRRectOverrides[frameType]
+            || this.getFrameDefinitionQRRect(frameType, height / width);
+        if (!override) {
+            return defaultBounds;
+        }
+        return this.normalizedRectToBounds(this.clampFrameQRRect(override, height / width), width, height);
+    },
+
+    boundsToNormalizedRect(bounds, width, height) {
+        return this.clampFrameQRRect({
+            xPct: bounds.x / width,
+            yPct: bounds.y / height,
+            widthPct: (bounds.width ?? bounds.size) / width,
+            heightPct: (bounds.height ?? bounds.size) / height
+        }, height / width);
+    },
+
+    normalizedRectToBounds(rect, width, height) {
+        const normalized = this.clampFrameQRRect(rect, height / width);
+        return {
+            x: normalized.xPct * width,
+            y: normalized.yPct * height,
+            width: normalized.widthPct * width,
+            height: normalized.heightPct * height,
+            size: normalized.widthPct * width
+        };
+    },
+
+    getFrameQRRectDimensions(rect = {}, heightRatio = 1) {
+        const normalizedHeightRatio = Math.max(0.1, Number(heightRatio) || 1);
+        const minWidthPct = 0.05;
+        const minHeightPct = minWidthPct / normalizedHeightRatio;
+        const maxWidthPct = this.MAX_FRAME_QR_SIZE_PCT;
+        const maxHeightPct = this.MAX_FRAME_QR_SIZE_PCT / normalizedHeightRatio;
+        const fallbackSizePct = Number(rect?.sizePct);
+        const rawWidthPct = Number(rect?.widthPct);
+        const rawHeightPct = Number(rect?.heightPct);
+        const widthPct = Math.min(maxWidthPct, Math.max(minWidthPct, Number.isFinite(rawWidthPct) ? rawWidthPct : (Number.isFinite(fallbackSizePct) ? fallbackSizePct : 0.5)));
+        const heightPct = Math.min(maxHeightPct, Math.max(minHeightPct, Number.isFinite(rawHeightPct) ? rawHeightPct : (Number.isFinite(fallbackSizePct) ? (fallbackSizePct / normalizedHeightRatio) : (0.5 / normalizedHeightRatio))));
+
+        return { widthPct, heightPct };
+    },
+
+    getFrameQRRectBounds(rect = {}, heightRatio = 1) {
+        const { widthPct, heightPct } = this.getFrameQRRectDimensions(rect, heightRatio);
+        const minVisibleXPct = Math.min(widthPct * 0.35, 0.12);
+        const minVisibleYPct = Math.min(heightPct * 0.35, 0.12);
+
+        return {
+            minXPct: minVisibleXPct - widthPct,
+            maxXPct: 1 - minVisibleXPct,
+            minYPct: minVisibleYPct - heightPct,
+            maxYPct: 1 - minVisibleYPct
+        };
+    },
+
+    clampFrameQRRect(rect, heightRatio = 1) {
+        const { widthPct, heightPct } = this.getFrameQRRectDimensions(rect, heightRatio);
+        const bounds = this.getFrameQRRectBounds({ widthPct, heightPct }, heightRatio);
+        const xPct = Math.min(bounds.maxXPct, Math.max(bounds.minXPct, Number(rect.xPct) || 0));
+        const yPct = Math.min(bounds.maxYPct, Math.max(bounds.minYPct, Number(rect.yPct) || 0));
+        return {
+            xPct,
+            yPct,
+            widthPct,
+            heightPct,
+            sizePct: widthPct
+        };
+    },
+
+    getDefaultFrameQRRect(frameType, width = 300) {
+        if (frameType === this.FRAME_TYPES.CUSTOM) {
+            const frame = this.getActiveCustomFrame();
+            if (!frame) {
+                return { xPct: 0.25, yPct: 0.25, sizePct: 0.5 };
+            }
+            return this.getDefaultCustomFrameQRRect(frame);
+        }
+        const previousOverride = this.frameQRRectOverrides[frameType];
+        delete this.frameQRRectOverrides[frameType];
+        const metrics = this.getFrameMetrics(frameType, width);
+        if (previousOverride) {
+            this.frameQRRectOverrides[frameType] = previousOverride;
+        }
+        return this.boundsToNormalizedRect(metrics.qrBounds || { x: 0, y: 0, size: width }, width, metrics.totalHeight || width);
+    },
+
+    getFrameQRRect(frameType) {
+        if (frameType === this.FRAME_TYPES.CUSTOM) {
+            const frame = this.getActiveCustomFrame();
+            return frame
+                ? this.clampFrameQRRect(frame.qrRect || this.getDefaultFrameQRRect(frameType), this.getFrameHeightRatio(frameType))
+                : this.getDefaultFrameQRRect(frameType);
+        }
+        return this.clampFrameQRRect(this.frameQRRectOverrides[frameType] || this.getDefaultFrameQRRect(frameType), this.getFrameHeightRatio(frameType));
+    },
+
+    getFrameHeightRatio(frameType) {
+        if (frameType === this.FRAME_TYPES.CUSTOM) {
+            const frame = this.getActiveCustomFrame();
+            return frame ? frame.naturalHeight / frame.naturalWidth : 1;
+        }
+        const metrics = this.getFrameMetrics(frameType, 300);
+        return (metrics.totalHeight || 300) / 300;
+    },
+
+    getFrameQRRectRange(frameType, rectOverride = null) {
+        const rect = rectOverride == null
+            ? this.getFrameQRRect(frameType)
+            : (typeof rectOverride === 'number' ? { sizePct: rectOverride } : rectOverride);
+        return this.getFrameQRRectBounds(rect, this.getFrameHeightRatio(frameType));
+    },
+
+    setFrameQRRect(frameType, partial) {
+        if (frameType === this.FRAME_TYPES.CUSTOM) {
+            return this.setCustomQRRect(partial);
+        }
+        if (!frameType) {
+            return null;
+        }
+        const nextRect = this.clampFrameQRRect({
+            ...this.getFrameQRRect(frameType),
+            ...partial
+        }, this.getFrameHeightRatio(frameType));
+        this.frameQRRectOverrides[frameType] = nextRect;
+        return nextRect;
+    },
+
+    resetFrameQRRect(frameType) {
+        if (frameType === this.FRAME_TYPES.CUSTOM) {
+            const frame = this.getActiveCustomFrame();
+            if (frame) {
+                frame.qrRect = this.getDefaultCustomFrameQRRect(frame);
+                this.customFrame = frame;
+            }
+            return frame?.qrRect || null;
+        }
+        delete this.frameQRRectOverrides[frameType];
+        return this.getFrameQRRect(frameType);
     },
 
     /**
@@ -1012,17 +1374,52 @@ const QRFrames = {
     },
 
     normalizeQRCodeSVGContent(content, width, height) {
-        const backgroundPattern = new RegExp(
-            `<rect\\b[^>]*width="(?:100%|${width})"[^>]*height="(?:100%|${height})"[^>]*fill="[^"]*"[^>]*>\\s*<\\/rect>|<rect\\b[^>]*width="(?:100%|${width})"[^>]*height="(?:100%|${height})"[^>]*fill="[^"]*"\s*\\/>`,
-            'i'
-        );
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg">${content}</svg>`;
+        const svgElement = wrapper.firstElementChild;
+        if (!svgElement) {
+            return content.trim();
+        }
 
-        const backgroundMarkup = this.TRANSPARENT_BACKGROUND
-            ? ''
-            : `<rect width="${this.formatMetric(width)}" height="${this.formatMetric(height)}" fill="${this.getQRBackgroundFill()}"></rect>`;
+        svgElement.querySelectorAll('rect').forEach(rect => {
+            const rectWidth = rect.getAttribute('width');
+            const rectHeight = rect.getAttribute('height');
+            const rectX = rect.getAttribute('x') || '0';
+            const rectY = rect.getAttribute('y') || '0';
+            if (!this.isQRCodeBackgroundRect(rectWidth, rectHeight, rectX, rectY, width, height)) {
+                return;
+            }
+            rect.remove();
+        });
 
-        const contentWithoutBackground = content.replace(backgroundPattern, '').trim();
-        return `${backgroundMarkup}${contentWithoutBackground}`;
+        return Array.from(svgElement.childNodes)
+            .map(node => node.outerHTML || node.textContent || '')
+            .join('')
+            .trim();
+    },
+
+    isQRCodeBackgroundRect(rectWidth, rectHeight, rectX, rectY, width, height) {
+        const matchesDimension = (value, target) => {
+            if (!value) {
+                return false;
+            }
+            const normalizedValue = String(value).trim();
+            if (normalizedValue === '100%') {
+                return true;
+            }
+            const numericValue = Number.parseFloat(normalizedValue);
+            return Number.isFinite(numericValue) && Math.abs(numericValue - target) < 0.01;
+        };
+
+        const matchesOrigin = value => {
+            const numericValue = Number.parseFloat(String(value).trim());
+            return !Number.isFinite(numericValue) || Math.abs(numericValue) < 0.01;
+        };
+
+        return matchesDimension(rectWidth, width)
+            && matchesDimension(rectHeight, height)
+            && matchesOrigin(rectX)
+            && matchesOrigin(rectY);
     },
 
     /**
@@ -1034,21 +1431,30 @@ const QRFrames = {
         }
 
         const metrics = this.getFrameMetrics(frameType, size);
-        const qrRenderSize = frameType === this.FRAME_TYPES.SCAN_ME_BORDER
-            ? size - (metrics.qrInset * 2)
-            : size;
-        const qrOffset = frameType === this.FRAME_TYPES.SCAN_ME_BORDER ? metrics.qrInset : 0;
-        const scaleX = qrRenderSize / sourceViewBox.width;
-        const scaleY = qrRenderSize / sourceViewBox.height;
-        const translateX = qrOffset - (sourceViewBox.minX * scaleX);
-        const translateY = qrOffset - (sourceViewBox.minY * scaleY);
+        const qrBounds = metrics.qrBounds || { x: 0, y: 0, width: size, height: size, size };
+        const qrWidth = qrBounds.width ?? qrBounds.size ?? size;
+        const qrHeight = qrBounds.height ?? qrBounds.size ?? size;
+        const scaleX = qrWidth / sourceViewBox.width;
+        const scaleY = qrHeight / sourceViewBox.height;
+        const translateX = qrBounds.x - (sourceViewBox.minX * scaleX);
+        const translateY = qrBounds.y - (sourceViewBox.minY * scaleY);
         const borderInset = metrics.borderWidth / 2;
+        const noneFrameBackground = frameType === this.FRAME_TYPES.NONE && !this.TRANSPARENT_BACKGROUND ? `
+            <rect x="0" y="0" width="${size}" height="${metrics.totalHeight}" fill="${this.getQRBackgroundFill()}"></rect>
+        ` : '';
+        const qrAreaBackground = frameType !== this.FRAME_TYPES.NONE
+            && frameType !== this.FRAME_TYPES.SCAN_ME_BORDER
+            && !this.TRANSPARENT_BACKGROUND ? `
+            <rect x="0" y="0" width="${size}" height="${size}" fill="${this.getQRBackgroundFill()}"></rect>
+        ` : '';
         const scanMeBorderBackground = frameType === this.FRAME_TYPES.SCAN_ME_BORDER ? `
             <rect x="${this.formatMetric(borderInset)}" y="${this.formatMetric(borderInset)}" width="${this.formatMetric(size - metrics.borderWidth)}" height="${this.formatMetric(metrics.totalHeight - metrics.borderWidth)}" rx="${metrics.borderRadius}" fill="${this.getFrameBackgroundFill()}"></rect>
         ` : '';
 
         return `
             <svg viewBox="0 0 ${size} ${metrics.totalHeight}" fill="none" xmlns="http://www.w3.org/2000/svg">
+                ${noneFrameBackground}
+                ${qrAreaBackground}
                 ${scanMeBorderBackground}
                 <g transform="translate(${this.formatMetric(translateX)} ${this.formatMetric(translateY)}) scale(${this.formatMetric(scaleX)} ${this.formatMetric(scaleY)})">
                     ${qrContent}
@@ -1069,8 +1475,10 @@ const QRFrames = {
 
     buildDecorativeFrameSVG(frameType, size, qrContent, sourceViewBox) {
         const metrics = this.getDecorativeFrameMetrics(frameType, size);
-        const qrScaleX = metrics.qrBounds.size / sourceViewBox.width;
-        const qrScaleY = metrics.qrBounds.size / sourceViewBox.height;
+        const qrWidth = metrics.qrBounds.width ?? metrics.qrBounds.size;
+        const qrHeight = metrics.qrBounds.height ?? metrics.qrBounds.size;
+        const qrScaleX = qrWidth / sourceViewBox.width;
+        const qrScaleY = qrHeight / sourceViewBox.height;
         const qrTranslateX = metrics.qrBounds.x - (sourceViewBox.minX * qrScaleX);
         const qrTranslateY = metrics.qrBounds.y - (sourceViewBox.minY * qrScaleY);
         const frameMarkup = this.getDecorativeFrameSVGMarkup(frameType, metrics);
@@ -1254,7 +1662,6 @@ const QRFrames = {
                 return {
                     beforeQR: `
                         <rect x="0" y="0" width="${this.formatMetric(metrics.size)}" height="${this.formatMetric(metrics.totalHeight)}" rx="${this.scaleArtboardY(4, metrics)}" fill="${this.getFrameBackgroundFill()}"></rect>
-                        <line x1="${this.scaleArtboardX(4, metrics)}" y1="${this.scaleArtboardY(60.5, metrics)}" x2="${this.scaleArtboardX(60, metrics)}" y2="${this.scaleArtboardY(60.5, metrics)}" stroke="#D9D9D9" stroke-width="${this.formatMetric(Math.max(1, metrics.scale))}" stroke-linecap="round"></line>
                         ${qrBackground}
                     `,
                     afterQR: `
@@ -1477,8 +1884,30 @@ const QRFrames = {
      * @returns {HTMLCanvasElement} - New canvas with frame applied
      */
     applyFrame(canvas, frameType, targetSize = 300) {
-        if (frameType === this.FRAME_TYPES.NONE || !frameType) {
+        if (!frameType) {
             return canvas;
+        }
+
+        return this.withFrameCustomization(frameType, () => this.applyFrameWithActiveCustomization(canvas, frameType, targetSize));
+    },
+
+    applyFrameWithActiveCustomization(canvas, frameType, targetSize = 300) {
+        if (!frameType) {
+            return canvas;
+        }
+
+        if (frameType === this.FRAME_TYPES.CUSTOM) {
+            if (!this.hasCustomFrame()) {
+                return canvas;
+            }
+            const sourceCanvas = this.getSquareQRSourceCanvas(canvas);
+            const metrics = this.getCustomFrameMetrics(targetSize);
+            const framedCanvas = document.createElement('canvas');
+            framedCanvas.width = metrics.size;
+            framedCanvas.height = metrics.totalHeight;
+            const ctx = framedCanvas.getContext('2d');
+            this.drawCustomFrame(ctx, sourceCanvas, metrics);
+            return framedCanvas;
         }
 
         const sourceCanvas = this.getSquareQRSourceCanvas(canvas);
@@ -1509,10 +1938,18 @@ const QRFrames = {
             );
             ctx.fill();
 
-            const qrRenderSize = targetSize - (metrics.qrInset * 2);
-            ctx.drawImage(sourceCanvas, metrics.qrInset, metrics.qrInset, qrRenderSize, qrRenderSize);
+            const qrBounds = metrics.qrBounds;
+            ctx.drawImage(sourceCanvas, qrBounds.x, qrBounds.y, qrBounds.width ?? qrBounds.size, qrBounds.height ?? qrBounds.size);
         } else {
-            ctx.drawImage(sourceCanvas, 0, 0, targetSize, targetSize);
+            if (!this.TRANSPARENT_BACKGROUND) {
+                ctx.fillStyle = this.getQRBackgroundFill();
+                ctx.fillRect(0, 0, targetSize, metrics.size);
+                if (frameType === this.FRAME_TYPES.NONE && metrics.totalHeight > metrics.size) {
+                    ctx.fillRect(0, metrics.size, targetSize, metrics.totalHeight - metrics.size);
+                }
+            }
+            const qrBounds = metrics.qrBounds;
+            ctx.drawImage(sourceCanvas, qrBounds.x, qrBounds.y, qrBounds.width ?? qrBounds.size, qrBounds.height ?? qrBounds.size);
         }
 
         // Apply frame based on type
@@ -1592,8 +2029,8 @@ const QRFrames = {
                 canvas,
                 metrics.qrBounds.x,
                 metrics.qrBounds.y,
-                metrics.qrBounds.size,
-                metrics.qrBounds.size
+                metrics.qrBounds.width ?? metrics.qrBounds.size,
+                metrics.qrBounds.height ?? metrics.qrBounds.size
             );
         }
 
@@ -2002,12 +2439,6 @@ const QRFrames = {
             ctx.fillStyle = this.getFrameBackgroundFill();
             this.roundRect(ctx, 0, 0, metrics.size, metrics.totalHeight, this.scaleArtboardY(4, metrics));
             ctx.fill();
-
-            this.drawArtboardPath(ctx, metrics, 'M4 60.5h56', {
-                stroke: '#D9D9D9',
-                lineWidth: Math.max(1, metrics.scale),
-                lineCap: 'round'
-            });
             return;
         }
 
@@ -2669,11 +3100,211 @@ const QRFrames = {
      * @returns {string} - Framed SVG string
      */
     wrapSVGWithFrame(qrSVG, frameType, size) {
-        if (frameType === this.FRAME_TYPES.NONE || !frameType) {
+        if (!frameType) {
+            return qrSVG;
+        }
+        return this.withFrameCustomization(frameType, () => this.wrapSVGWithFrameWithActiveCustomization(qrSVG, frameType, size));
+    },
+
+    wrapSVGWithFrameWithActiveCustomization(qrSVG, frameType, size) {
+        if (!frameType) {
             return qrSVG;
         }
         const { content, viewBox } = this.extractSVGSource(qrSVG, size);
+        if (frameType === this.FRAME_TYPES.CUSTOM) {
+            if (!this.hasCustomFrame()) {
+                return qrSVG;
+            }
+            return this.buildCustomFrameSVG(size, content, viewBox);
+        }
         return this.buildFrameSVG(frameType, size, content, viewBox);
+    },
+
+    /* ============================================================
+     * Custom (user-uploaded) frame support
+     * ============================================================ */
+
+    escapeHTML(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    },
+
+    hasCustomFrame() {
+        return Boolean(this.getActiveCustomFrame());
+    },
+
+    getActiveCustomFrame() {
+        if (!this.customFrames.length) {
+            this.customFrame = null;
+            this.activeCustomFrameId = '';
+            return null;
+        }
+        const activeFrame = this.customFrames.find(frame => frame.id === this.activeCustomFrameId) || this.customFrames[0];
+        this.activeCustomFrameId = activeFrame.id;
+        this.customFrame = activeFrame;
+        return activeFrame;
+    },
+
+    setActiveCustomFrame(frameId) {
+        const frame = this.customFrames.find(candidate => candidate.id === frameId);
+        if (!frame) {
+            this.customFrame = null;
+            return null;
+        }
+        this.activeCustomFrameId = frame.id;
+        this.customFrame = frame;
+        return frame;
+    },
+
+    clampCustomQRRect(rect) {
+        const frame = this.getActiveCustomFrame();
+        const heightRatio = frame ? frame.naturalHeight / frame.naturalWidth : 1;
+        return this.clampFrameQRRect(rect, heightRatio);
+    },
+
+    getDefaultCustomFrameQRRect(frame) {
+        const aspect = frame.naturalHeight / frame.naturalWidth || 1;
+        const defaultSizePct = 0.5;
+        const defaultYPct = Math.max(0, 0.5 - (defaultSizePct / (2 * aspect)));
+        return this.clampFrameQRRect({
+            xPct: 0.5 - (defaultSizePct / 2),
+            yPct: defaultYPct,
+            sizePct: defaultSizePct
+        }, aspect);
+    },
+
+    loadCustomFrameFromDataUrl(dataUrl, options = {}) {
+        return new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => {
+                const naturalWidth = image.naturalWidth || image.width;
+                const naturalHeight = image.naturalHeight || image.height;
+                if (!naturalWidth || !naturalHeight) {
+                    reject(new Error('Invalid image dimensions'));
+                    return;
+                }
+                const frame = {
+                    id: `custom-frame-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                    name: options.name || I18n.translateString('Custom'),
+                    dataUrl,
+                    image,
+                    naturalWidth,
+                    naturalHeight,
+                    qrRect: null
+                };
+                frame.qrRect = this.getDefaultCustomFrameQRRect(frame);
+                this.customFrames.unshift(frame);
+                this.setActiveCustomFrame(frame.id);
+                resolve(frame);
+            };
+            image.onerror = () => reject(new Error('Failed to load custom frame image'));
+            image.src = dataUrl;
+        });
+    },
+
+    async loadCustomFrameFile(file) {
+        if (!file) {
+            return false;
+        }
+        const dataUrl = await this.readFileAsDataUrl(file);
+        try {
+            await this.loadCustomFrameFromDataUrl(dataUrl, { name: file.name || I18n.translateString('Custom') });
+            return true;
+        } catch (err) {
+            return false;
+        }
+    },
+
+    readFileAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(file);
+        });
+    },
+
+    clearCustomFrame() {
+        const activeId = this.activeCustomFrameId;
+        this.customFrames = this.customFrames.filter(frame => frame.id !== activeId);
+        this.customFrame = null;
+        this.activeCustomFrameId = this.customFrames[0]?.id || '';
+        this.getActiveCustomFrame();
+    },
+
+    setCustomQRRect(partial) {
+        const frame = this.getActiveCustomFrame();
+        if (!frame) {
+            return null;
+        }
+        frame.qrRect = this.clampFrameQRRect({
+            ...frame.qrRect,
+            ...partial
+        }, frame.naturalHeight / frame.naturalWidth);
+        this.customFrame = frame;
+        return frame.qrRect;
+    },
+
+    getCustomFrameMetrics(size) {
+        const frame = this.getActiveCustomFrame();
+        const aspect = frame.naturalHeight / frame.naturalWidth;
+        const totalHeight = Math.round(size * aspect);
+        const qrRect = this.clampFrameQRRect(frame.qrRect, aspect);
+        const qrPxWidth = qrRect.widthPct * size;
+        const qrPxHeight = qrRect.heightPct * totalHeight;
+        return {
+            size,
+            totalHeight,
+            qrBounds: {
+                x: qrRect.xPct * size,
+                y: qrRect.yPct * totalHeight,
+                width: qrPxWidth,
+                height: qrPxHeight,
+                size: qrPxWidth
+            }
+        };
+    },
+
+    drawCustomFrame(ctx, sourceCanvas, metrics) {
+        const frame = this.getActiveCustomFrame();
+        ctx.drawImage(frame.image, 0, 0, metrics.size, metrics.totalHeight);
+        const { x, y } = metrics.qrBounds;
+        const qrWidth = metrics.qrBounds.width ?? metrics.qrBounds.size;
+        const qrHeight = metrics.qrBounds.height ?? metrics.qrBounds.size;
+        // Optional white square behind QR for contrast (only when not transparent)
+        if (!this.TRANSPARENT_BACKGROUND) {
+            ctx.fillStyle = this.getQRBackgroundFill();
+            ctx.fillRect(x, y, qrWidth, qrHeight);
+        }
+        ctx.drawImage(sourceCanvas, x, y, qrWidth, qrHeight);
+    },
+
+    buildCustomFrameSVG(size, qrContent, sourceViewBox) {
+        const frame = this.getActiveCustomFrame();
+        const metrics = this.getCustomFrameMetrics(size);
+        const { x, y } = metrics.qrBounds;
+        const qrWidth = metrics.qrBounds.width ?? metrics.qrBounds.size;
+        const qrHeight = metrics.qrBounds.height ?? metrics.qrBounds.size;
+        const scaleX = qrWidth / sourceViewBox.width;
+        const scaleY = qrHeight / sourceViewBox.height;
+        const translateX = x - (sourceViewBox.minX * scaleX);
+        const translateY = y - (sourceViewBox.minY * scaleY);
+        const qrBackground = this.TRANSPARENT_BACKGROUND
+            ? ''
+            : `<rect x="${this.formatMetric(x)}" y="${this.formatMetric(y)}" width="${this.formatMetric(qrWidth)}" height="${this.formatMetric(qrHeight)}" fill="${this.getQRBackgroundFill()}"></rect>`;
+        return `
+            <svg viewBox="0 0 ${size} ${metrics.totalHeight}" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <image href="${frame.dataUrl}" x="0" y="0" width="${size}" height="${metrics.totalHeight}" preserveAspectRatio="none"></image>
+                ${qrBackground}
+                <g transform="translate(${this.formatMetric(translateX)} ${this.formatMetric(translateY)}) scale(${this.formatMetric(scaleX)} ${this.formatMetric(scaleY)})">
+                    ${qrContent}
+                </g>
+            </svg>
+        `;
     }
 };
 

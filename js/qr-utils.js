@@ -1,12 +1,43 @@
+"use strict";
+
 // QR Code generation utilities
 let currentQRCode = null;
+
+const QRCodeErrorCorrectionOptions = {
+    FALLBACK_LEVELS: Object.freeze({
+        L: Object.freeze({ key: 'L', label: 'Very Low', recoveryPercent: 7 }),
+        M: Object.freeze({ key: 'M', label: 'Low', recoveryPercent: 15 }),
+        Q: Object.freeze({ key: 'Q', label: 'Medium', recoveryPercent: 25 }),
+        H: Object.freeze({ key: 'H', label: 'High', recoveryPercent: 30 })
+    }),
+
+    getLevels() {
+        return QRCode?.CorrectLevelInfo ?? this.FALLBACK_LEVELS;
+    },
+
+    renderOptions(selectedLevel = 'Q') {
+        const normalizedSelectedLevel = String(selectedLevel).toUpperCase();
+
+        return Object.values(this.getLevels())
+            .map(level => {
+                const selectedAttribute = level.key === normalizedSelectedLevel ? ' selected' : '';
+                return `<option value="${level.key}"${selectedAttribute}>${level.label} (${level.recoveryPercent}%)</option>`;
+            })
+            .join('');
+    }
+};
+
+const QR_CODE_VERSION_AUTOMATIC = 0;
+const QR_LOGO_SIZE_MIN_PERCENT = 12;
+const QR_LOGO_SIZE_MAX_PERCENT = 44;
 
 function generateQRCode(content, elementId, options = {}) {
     const {
         size = 256,
         foreground = '#000000',
         background = '#ffffff',
-        errorCorrection = 'M'
+        errorCorrection = 'M',
+        margin
     } = options;
     
     const element = document.getElementById(elementId);
@@ -20,6 +51,7 @@ function generateQRCode(content, elementId, options = {}) {
             text: content,
             width: size,
             height: size,
+            ...(margin == null ? {} : { margin }),
             colorDark: foreground,
             colorLight: background,
             correctLevel: QRCode.CorrectLevel[errorCorrection]
@@ -113,138 +145,24 @@ function downloadQRAsSVG(size = 3840) {
     URL.revokeObjectURL(url);
 }
 
-const QRCodeExportControls = {
-    CUSTOM_OPTION_VALUE: 'custom',
-    MIN_SIZE: 256,
-    MAX_SIZE: 16384,
-    DEFAULT_CUSTOM_SIZE: 3200,
-
-    init(root = document) {
-        const exportSizeSelect = root.querySelector('#exportSize');
-        if (!exportSizeSelect || exportSizeSelect.dataset.customExportInitialized === 'true') {
-            return;
-        }
-
-        const customOption = document.createElement('option');
-        customOption.value = this.CUSTOM_OPTION_VALUE;
-        customOption.textContent = I18n.translateString('Custom resolution');
-        exportSizeSelect.appendChild(customOption);
-
-        const customResolutionWrapper = document.createElement('div');
-        customResolutionWrapper.className = 'custom-export-size d-none';
-        customResolutionWrapper.innerHTML = `
-            <input
-                type="number"
-                class="form-input mt-2"
-                id="customExportSize"
-                min="${this.MIN_SIZE}"
-                max="${this.MAX_SIZE}"
-                step="1"
-                inputmode="numeric"
-                placeholder="${I18n.translateString('Custom size in pixels')}"
-                value="${this.DEFAULT_CUSTOM_SIZE}"
-            >
-            <div class="form-hint">${I18n.translate('Enter a square export size between 256px and 16384px.', { min: this.MIN_SIZE, max: this.MAX_SIZE })}</div>
-        `;
-        exportSizeSelect.insertAdjacentElement('afterend', customResolutionWrapper);
-
-        const customResolutionInput = customResolutionWrapper.querySelector('#customExportSize');
-        const syncCustomResolutionVisibility = () => {
-            const isCustom = exportSizeSelect.value === this.CUSTOM_OPTION_VALUE;
-            customResolutionWrapper.classList.toggle('d-none', !isCustom);
-
-            if (isCustom) {
-                customResolutionInput.focus();
-                customResolutionInput.select();
-            }
-        };
-
-        exportSizeSelect.addEventListener('change', syncCustomResolutionVisibility);
-        exportSizeSelect.dataset.customExportInitialized = 'true';
-        syncCustomResolutionVisibility();
-    },
-
-    getExportSize(root = document) {
-        this.init(root);
-
-        const exportSizeSelect = root.querySelector('#exportSize');
-        if (!exportSizeSelect) {
-            return null;
-        }
-
-        if (exportSizeSelect.value !== this.CUSTOM_OPTION_VALUE) {
-            return parseInt(exportSizeSelect.value, 10);
-        }
-
-        const customResolutionInput = root.querySelector('#customExportSize');
-        const customResolution = parseInt(customResolutionInput?.value || '', 10);
-        const isValid = Number.isInteger(customResolution)
-            && customResolution >= this.MIN_SIZE
-            && customResolution <= this.MAX_SIZE;
-
-        if (!isValid) {
-            alert(`Enter a custom export size between ${this.MIN_SIZE}px and ${this.MAX_SIZE}px.`.replace('Enter a custom export size between 256px and 16384px.', I18n.translateString('Enter a square export size between 256px and 16384px.')));
-            customResolutionInput?.focus();
-            return null;
-        }
-
-        return customResolution;
-    },
-
-    observe() {
-        const initializeControls = () => this.init(document);
-
-        initializeControls();
-
-        const observer = new MutationObserver(() => initializeControls());
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-    }
-};
-
-const QRCodePreviewRenderer = {
-    renderTokens: new WeakMap(),
-
-    finalize(qrContainer, frameType, displaySize, onComplete) {
-        if (!qrContainer) {
-            return;
-        }
-
-        const nextToken = (this.renderTokens.get(qrContainer) || 0) + 1;
-        this.renderTokens.set(qrContainer, nextToken);
-
-        window.setTimeout(() => {
-            if (this.renderTokens.get(qrContainer) !== nextToken) {
-                return;
-            }
-
-            const canvas = qrContainer.querySelector('canvas');
-            if (!canvas) {
-                return;
-            }
-
-            QRFrames.updateFramePreviews(canvas);
-
-            if (frameType !== 'none') {
-                const framedCanvas = QRFrames.applyFrame(canvas, frameType, displaySize);
-                qrContainer.innerHTML = '';
-                qrContainer.appendChild(framedCanvas);
-                onComplete?.(framedCanvas);
-                return;
-            }
-
-            onComplete?.(canvas);
-        }, 100);
-    }
-};
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
 
 const QRCodeLogoControls = {
-    MAX_FILE_SIZE_BYTES: 5 * 1024 * 1024,
     ICONS_ASSET_PATH: 'assets/icons',
     logoDataUrl: '',
+    logoSvgMarkup: '',
     logoImage: null,
+    uploadedLogos: [],
+    activeUploadedLogoId: '',
     logoBackgroundColor: '#ffffff',
     activeLogoLabel: '',
     selectedPresetId: '',
@@ -254,6 +172,45 @@ const QRCodeLogoControls = {
     logoPadding: 20,
     logoIconColor: '',
     logoShape: 'rounded',
+    logoShapeCatalog: Object.freeze([
+        { id: 'rounded', title: 'Rounded Square', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="1" width="18" height="18" rx="4" stroke="currentColor" stroke-width="2"></rect></svg>' },
+        { id: 'square', title: 'Square', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="1" width="18" height="18" stroke="currentColor" stroke-width="2"></rect></svg>' },
+        { id: 'circle', title: 'Circle', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"></circle></svg>' },
+        { id: 'hexagon', title: 'Hexagon', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 18.66,5.5 18.66,14.5 10,19 1.34,14.5 1.34,5.5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></polygon></svg>' },
+        { id: 'heart', title: 'Heart', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 18 C10 18 1 12 1 6.5 C1 3.46 3.46 1 6.5 1 C8.24 1 9.73 1.81 10 3 C10.27 1.81 11.76 1 13.5 1 C16.54 1 19 3.46 19 6.5 C19 12 10 18 10 18Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path></svg>' },
+        { id: 'diamond', title: 'Diamond', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 19,10 10,19 1,10" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></polygon></svg>' },
+        { id: 'star', title: 'Star', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 12.47,7.6 19.51,7.64 13.82,11.72 15.88,18.36 10,14.58 4.12,18.36 6.18,11.72 0.49,7.64 7.53,7.6" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></polygon></svg>' },
+        { id: 'shield', title: 'Shield', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 L18 4 L18 10 C18 14.42 14.42 17.5 10 19 C5.58 17.5 2 14.42 2 10 L2 4 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path></svg>' },
+        { id: 'teardrop', title: 'Teardrop', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1 C10 1 18 8 18 12.5 C18 16.92 14.42 19 10 19 C5.58 19 2 16.92 2 12.5 C2 8 10 1 10 1Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path></svg>' },
+        { id: 'triangle', title: 'Triangle', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="10,1 19,19 1,19" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></polygon></svg>' },
+        { id: 'cloud', title: 'Cloud', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 16 C2.5 16 1 14.2 1 12 C1 10 2.5 8.5 4.5 8.2 C4.2 7.5 4 6.8 4 6 C4 3.2 6.2 1 9 1 C11.2 1 13 2.4 13.7 4.4 C14.2 4.1 14.8 4 15.5 4 C17.4 4 19 5.6 19 7.5 C19 7.8 18.9 8.1 18.8 8.4 C19.5 9 19 10.8 19 12 C19 14.2 17.2 16 15 16 Z" stroke="currentColor" stroke-width="1.5"></path></svg>' },
+        { id: 'clover', title: 'Clover', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5.5" r="4" stroke="currentColor" stroke-width="1.5"></circle><circle cx="14.5" cy="10" r="4" stroke="currentColor" stroke-width="1.5"></circle><circle cx="10" cy="14.5" r="4" stroke="currentColor" stroke-width="1.5"></circle><circle cx="5.5" cy="10" r="4" stroke="currentColor" stroke-width="1.5"></circle></svg>' },
+        { id: 'ribbon', title: 'Ribbon', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="1,1 19,1 19,19 10,15 1,19" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></polygon></svg>' },
+        { id: 'speech-bubble', title: 'Speech Bubble', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 1 H17 Q19 1 19 3 V11 Q19 13 17 13 H11 L7 17 L8 13 H3 Q1 13 1 11 V3 Q1 1 3 1Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path></svg>' },
+        { id: 'ticket', title: 'Ticket', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 3 H19 V8 A2 2 0 0 0 19 12 V17 H1 V12 A2 2 0 0 0 1 8 Z" stroke="currentColor" stroke-width="2"></path></svg>' },
+        { id: 'crescent', title: 'Crescent', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15 3 A8 8 0 1 0 15 17 A6 6 0 1 1 15 3 Z" stroke="currentColor" stroke-width="1.5"></path></svg>' },
+        { id: 'wavy-circle', title: 'Wavy Circle', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1.5 Q12.5 3 13.5 2 Q15 3.5 14 5 Q16 5.5 16 7.5 Q17.5 8.5 17 10 Q18 11.5 16.5 13 Q16.5 15 15 15.5 Q14.5 17 13 17 Q12 18.5 10 18 Q8 18.5 7 17 Q5.5 17 5 15.5 Q3.5 15 3.5 13 Q2 11.5 3 10 Q2.5 8.5 4 7.5 Q4 5.5 6 5 Q5 3.5 6.5 2 Q7.5 3 10 1.5Z" stroke="currentColor" stroke-width="1.5"></path></svg>' },
+        { id: 'lightning', title: 'Lightning', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 1 L4 11 H9 L7 19 L16 8 H11 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path></svg>' },
+        { id: 'play-triangle', title: 'Play', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 2 L18 10 L4 18 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path></svg>' },
+        { id: 'location-pin', title: 'Location Pin', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 19 C10 19 3 12 3 8 A7 7 0 0 1 17 8 C17 12 10 19 10 19 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><circle cx="10" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"></circle></svg>' },
+        { id: 'house', title: 'House', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 10 L10 2 L18 10 V18 H2 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path></svg>' },
+        { id: 'tag', title: 'Tag', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 6 L7 2 H17 V17 H7 L2 13 L5 9.5 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><circle cx="13" cy="6" r="1.2" stroke="currentColor" stroke-width="1.2"></circle></svg>' },
+        { id: 'blob', title: 'Blob', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2 C14 2 18 5 17 10 C19 14 14 18 10 17 C5 19 1 14 3 10 C1 5 6 2 10 2 Z" stroke="currentColor" stroke-width="1.5"></path></svg>' },
+        { id: 'gemstone', title: 'Gemstone', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 2 H15 L19 8 L10 19 L1 8 Z M1 8 H19 M5 2 L10 19 M15 2 L10 19 M5 2 L10 8 M15 2 L10 8" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"></path></svg>' },
+        { id: 'arrow', title: 'Arrow', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="19,10 10,1 10,6.5 1,6.5 1,13.5 10,13.5 10,19" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></polygon></svg>' },
+        { id: 'arrow-up', title: 'Arrow Up', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2 L17 9 H13 V18 H7 V9 H3 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path></svg>' },
+        { id: 'arrow-down', title: 'Arrow Down', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 18 L17 11 H13 V2 H7 V11 H3 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path></svg>' },
+        { id: 'arrow-left', title: 'Arrow Left', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 10 L9 3 V7 H18 V13 H9 V17 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path></svg>' },
+        { id: 'chevron-up', title: 'Chevron Up', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 18 V13 L10 5 L18 13 V18 H13 L10 15 L7 18 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path></svg>' },
+        { id: 'chevron-left', title: 'Chevron Left', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M18 2 H13 L5 10 L13 18 H18" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"></path></svg>' },
+        { id: 'chevron-right', title: 'Chevron Right', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 2 H7 L15 10 L7 18 H2" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"></path></svg>' },
+        { id: 'plus-sign', title: 'Plus', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M8 2 H12 V8 H18 V12 H12 V18 H8 V12 H2 V8 H8 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path></svg>' },
+        { id: 'x-mark', title: 'Cross', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 2 L10 7 L16 2 L18 4 L13 10 L18 16 L16 18 L10 13 L4 18 L2 16 L7 10 L2 4 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path></svg>' },
+        { id: 'checkmark', title: 'Checkmark', icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 11 L4 8 L8 12 L16 3 L18 6 L8 18 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path></svg>' }
+    ]),
+    lastTypeNumber: 0,
+    lastCorrectLevelKey: 'Q',
+    lastAppliedSizePercent: 22,
     assetPresetNameOverrides: {
         '1and1': '1&1',
         '1dot1dot1dot1': '1.1.1.1',
@@ -1184,9 +1141,6 @@ const QRCodeLogoControls = {
         return `
             <div class="logo-presets-panel">
                 <input type="file" class="logo-upload-input" id="qrLogoInput" accept="image/png,image/jpeg,image/svg+xml">
-                <div class="logo-presets-header">
-                    <div class="logo-presets-title">${I18n.translateString('Logos')}</div>
-                </div>
                 <div class="logo-presets-search">
                     <input type="search" class="form-input logo-presets-search-input" id="logoPresetSearchInput" placeholder="${I18n.translateString('Search logos')}" aria-label="${I18n.translateString('Filter logos by name')}">
                 </div>
@@ -1201,6 +1155,7 @@ const QRCodeLogoControls = {
                         </span>
                         <span class="logo-preset-name">${I18n.translateString('Upload logo')}</span>
                     </button>
+                    ${this.getUploadedLogoTilesMarkup()}
                     ${presets.map(preset => `
                         <button type="button" class="logo-preset-button" data-logo-preset="${preset.id}" data-logo-preset-name="${`${preset.name} ${preset.slug || preset.id}`.toLowerCase()}" aria-label="${preset.name} logo preset">
                             <span class="logo-preset-thumb${preset.thumbCls}"${preset.thumbStyle}>
@@ -1787,6 +1742,29 @@ const QRCodeLogoControls = {
         return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg.replace(/\s{2,}/g, ' ').trim())}`;
     },
 
+    getAvailableLogoShapes() {
+        return this.logoShapeCatalog;
+    },
+
+    normalizeLogoShape(shape = this.logoShape) {
+        return this.getAvailableLogoShapes().some(option => option.id === shape)
+            ? shape
+            : 'rounded';
+    },
+
+    getLogoShapeButtonsMarkup(currentShape = this.logoShape) {
+        const activeShape = this.normalizeLogoShape(currentShape);
+
+        return this.getAvailableLogoShapes().map(option => {
+            const translatedTitle = I18n.translateString(option.title);
+            return `
+                <button type="button" class="logo-shape-button${activeShape === option.id ? ' active' : ''}" data-logo-shape="${option.id}" title="${this.escapeHTML(translatedTitle)}" aria-label="${this.escapeHTML(translatedTitle)}">
+                    ${option.icon}
+                </button>
+            `;
+        }).join('');
+    },
+
     init(root = document) {
         const logoInput = root.querySelector('#qrLogoInput');
         const logoSizeRange = root.querySelector('#qrLogoSizeRange');
@@ -1810,8 +1788,8 @@ const QRCodeLogoControls = {
                 }
 
                 const loaded = await this.loadLogoFile(file);
+                logoInput.value = '';
                 if (!loaded) {
-                    logoInput.value = '';
                     return;
                 }
 
@@ -1821,7 +1799,7 @@ const QRCodeLogoControls = {
             });
 
             logoSizeRange.addEventListener('input', () => {
-                this.sizePercent = Math.min(44, Math.max(12, parseInt(logoSizeRange.value, 10) || 22));
+                this.sizePercent = this.clampRequestedLogoSize(parseInt(logoSizeRange.value, 10) || 22);
                 this.syncUI(root);
                 if (this.hasLogo()) {
                     QRCodeFrameControls.triggerActiveFrameRefresh(root);
@@ -1850,7 +1828,7 @@ const QRCodeLogoControls = {
             });
 
             presetSearchInput?.addEventListener('input', () => {
-                this.applyPresetSearch(root, [...actionButtons, ...presetButtons], presetSearchInput, presetEmptyState);
+                this.applyPresetSearch(root, this.getLogoSearchButtons(root), presetSearchInput, presetEmptyState);
             });
 
             logoInput.dataset.logoControlsInitialized = 'true';
@@ -1863,7 +1841,7 @@ const QRCodeLogoControls = {
             }
 
             button.addEventListener('click', () => {
-                this.logoShape = button.dataset.logoShape;
+                this.logoShape = this.normalizeLogoShape(button.dataset.logoShape);
                 shapeButtons.forEach(b => b.classList.toggle('active', b.dataset.logoShape === this.logoShape));
                 if (this.hasLogo()) {
                     QRCodeFrameControls.triggerActiveFrameRefresh(root);
@@ -1914,8 +1892,14 @@ const QRCodeLogoControls = {
             button.dataset.logoPresetInitialized = 'true';
         });
 
+        root.querySelectorAll('[data-logo-uploaded]').forEach(button => this.bindUploadedLogoTile(button, root));
+
         this.syncUI(root);
-        this.applyPresetSearch(root, [...actionButtons, ...presetButtons], presetSearchInput, presetEmptyState);
+        this.applyPresetSearch(root, this.getLogoSearchButtons(root), presetSearchInput, presetEmptyState);
+    },
+
+    getLogoSearchButtons(root = document) {
+        return root.querySelectorAll('[data-logo-action], [data-logo-preset], [data-logo-uploaded]');
     },
 
     insertUploadedTile(root = document) {
@@ -1924,51 +1908,72 @@ const QRCodeLogoControls = {
             return;
         }
 
-        let tile = grid.querySelector('[data-logo-uploaded]');
-        if (tile) {
-            const thumb = tile.querySelector('img');
-            if (thumb) {
-                thumb.src = this.logoDataUrl;
-                thumb.alt = this.activeLogoLabel;
+        grid.querySelectorAll('[data-logo-uploaded]').forEach(tile => tile.remove());
+        const uploadButton = grid.querySelector('[data-logo-action="upload"]');
+        let insertAfter = uploadButton;
+
+        this.uploadedLogos.forEach(logo => {
+            const tile = document.createElement('button');
+            tile.type = 'button';
+            tile.className = 'logo-preset-button';
+            tile.style.gridRow = '1';
+            tile.dataset.logoUploaded = 'true';
+            tile.dataset.logoUploadId = logo.id;
+            tile.dataset.logoPresetName = `uploaded custom ${logo.label || ''}`.toLowerCase();
+            tile.setAttribute('aria-label', `${logo.label || I18n.translateString('Uploaded logo')} ${I18n.translateString('logo')}`);
+            tile.innerHTML = this.getUploadedLogoTileInnerMarkup(logo);
+            this.bindUploadedLogoTile(tile, root);
+
+            if (insertAfter?.nextSibling) {
+                grid.insertBefore(tile, insertAfter.nextSibling);
+            } else if (uploadButton) {
+                grid.appendChild(tile);
+            } else {
+                grid.appendChild(tile);
             }
+            insertAfter = tile;
+        });
+
+        this.applyPresetSearch(root, this.getLogoSearchButtons(root), root.querySelector('#logoPresetSearchInput'), root.querySelector('#logoPresetSearchEmpty'));
+    },
+
+    bindUploadedLogoTile(tile, root = document) {
+        if (!tile || tile.dataset.logoUploadedInitialized === 'true') {
             return;
         }
-
-        const uploadButton = grid.querySelector('[data-logo-action="upload"]');
-        tile = document.createElement('button');
-        tile.type = 'button';
-        tile.className = 'logo-preset-button';
-        tile.style.gridRow = '1';
-        tile.dataset.logoUploaded = 'true';
-        tile.dataset.logoPresetName = 'uploaded custom';
-        tile.setAttribute('aria-label', I18n.translateString('Uploaded logo'));
-        tile.innerHTML = `
-            <span class="logo-preset-thumb logo-preset-thumb-uploaded">
-                <img src="${this.logoDataUrl}" alt="${this.activeLogoLabel}">
-            </span>
-            <span class="logo-preset-name">${I18n.translateString('Uploaded')}</span>
-        `;
-
         tile.addEventListener('click', async () => {
-            if (this.logoDataUrl === tile.querySelector('img')?.src) {
-                return;
-            }
-            const dataUrl = tile.querySelector('img')?.src;
-            if (dataUrl) {
-                await this.setLogoSource(dataUrl, {
-                    label: 'Uploaded logo',
-                    selectedPresetId: ''
-                });
-                this.syncUI(root);
+            const loaded = await this.selectUploadedLogo(tile.dataset.logoUploadId, root);
+            if (loaded) {
                 QRCodeFrameControls.triggerActiveFrameRefresh(root);
             }
         });
+        tile.dataset.logoUploadedInitialized = 'true';
+    },
 
-        if (uploadButton && uploadButton.nextSibling) {
-            grid.insertBefore(tile, uploadButton.nextSibling);
-        } else if (uploadButton) {
-            grid.appendChild(tile);
-        }
+    getUploadedLogoTilesMarkup() {
+        return this.uploadedLogos.map(logo => `
+            <button type="button" class="logo-preset-button" style="grid-row: 1;" data-logo-uploaded="true" data-logo-upload-id="${logo.id}" data-logo-preset-name="uploaded custom ${(logo.label || '').toLowerCase()}" aria-label="${this.escapeHTML(logo.label || I18n.translateString('Uploaded logo'))} ${I18n.translateString('logo')}">
+                ${this.getUploadedLogoTileInnerMarkup(logo)}
+            </button>
+        `).join('');
+    },
+
+    getUploadedLogoTileInnerMarkup(logo) {
+        return `
+            <span class="logo-preset-thumb logo-preset-thumb-uploaded">
+                <img src="${logo.dataUrl}" alt="${this.escapeHTML(logo.label || I18n.translateString('Uploaded logo'))}">
+            </span>
+            <span class="logo-preset-name">${this.escapeHTML(logo.label || I18n.translateString('Uploaded'))}</span>
+        `;
+    },
+
+    escapeHTML(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     },
 
     applyPresetSearch(root, presetButtons, presetSearchInput, presetEmptyState) {
@@ -2001,16 +2006,17 @@ const QRCodeLogoControls = {
             return false;
         }
 
-        if (file.size > this.MAX_FILE_SIZE_BYTES) {
-            alert(I18n.translateString('Logo file must be 5MB or smaller.'));
-            return false;
-        }
-
         try {
             const dataUrl = await this.readFileAsDataUrl(file);
             await this.setLogoSource(dataUrl, {
                 label: file.name,
                 selectedPresetId: ''
+            });
+            this.addUploadedLogo({
+                dataUrl,
+                image: this.logoImage,
+                svgMarkup: this.logoSvgMarkup,
+                label: file.name || I18n.translateString('Uploaded')
             });
             this.logoIconColor = '';
             this.logoBackgroundColor = '#ffffff';
@@ -2034,6 +2040,7 @@ const QRCodeLogoControls = {
                 label: `${preset.name} preset`,
                 selectedPresetId: preset.id
             });
+            this.activeUploadedLogoId = '';
 
             if (preset.hex) {
                 this.logoBackgroundColor = `#${preset.hex}`;
@@ -2063,17 +2070,52 @@ const QRCodeLogoControls = {
 
     async setLogoSource(dataUrl, { label = '', selectedPresetId = '' } = {}) {
         const image = await this.loadImage(dataUrl);
+        const svgMarkup = await this.resolveLogoSVGMarkup(dataUrl);
         this.logoDataUrl = dataUrl;
+        this.logoSvgMarkup = svgMarkup;
         this.logoImage = image;
         this.activeLogoLabel = label;
         this.selectedPresetId = selectedPresetId;
     },
 
+    addUploadedLogo({ dataUrl, image, label, svgMarkup = '' }) {
+        const logo = {
+            id: `uploaded-logo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            dataUrl,
+            image,
+            svgMarkup,
+            label: label || I18n.translateString('Uploaded')
+        };
+        this.uploadedLogos.unshift(logo);
+        this.activeUploadedLogoId = logo.id;
+        return logo;
+    },
+
+    async selectUploadedLogo(uploadedLogoId, root = document) {
+        const logo = this.uploadedLogos.find(candidate => candidate.id === uploadedLogoId);
+        if (!logo) {
+            return false;
+        }
+        await this.setLogoSource(logo.dataUrl, {
+            label: logo.label,
+            selectedPresetId: ''
+        });
+        this.logoImage = logo.image || this.logoImage;
+        this.logoSvgMarkup = logo.svgMarkup || this.logoSvgMarkup;
+        this.activeUploadedLogoId = logo.id;
+        this.logoIconColor = '';
+        this.logoBackgroundColor = '#ffffff';
+        this.syncUI(root);
+        return true;
+    },
+
     clearLogo(root = document) {
         this.logoDataUrl = '';
+        this.logoSvgMarkup = '';
         this.logoImage = null;
         this.activeLogoLabel = '';
         this.selectedPresetId = '';
+        this.activeUploadedLogoId = '';
         this.logoBackgroundColor = '#ffffff';
         this.logoIconColor = '';
         this.logoShape = 'rounded';
@@ -2084,16 +2126,97 @@ const QRCodeLogoControls = {
             logoInput.value = '';
         }
 
-        const uploadedTile = root.querySelector('[data-logo-uploaded]');
-        if (uploadedTile) {
-            uploadedTile.remove();
-        }
-
         this.syncUI(root);
     },
 
     hasLogo() {
         return Boolean(this.logoImage);
+    },
+
+    getCorrectLevelKey(correctLevel = this.lastCorrectLevelKey) {
+        if (typeof correctLevel === 'string') {
+            const normalizedLevel = correctLevel.toUpperCase();
+
+            if (normalizedLevel in (QRCode?.CorrectLevelInfo ?? QRCodeErrorCorrectionOptions.getLevels())) {
+                return normalizedLevel;
+            }
+        }
+
+        const correctLevelEntries = Object.entries(QRCode?.CorrectLevel ?? {});
+        const matchedEntry = correctLevelEntries.find(([, value]) => value === correctLevel);
+        return matchedEntry?.[0] ?? 'Q';
+    },
+
+    getEffectiveTypeNumber(typeNumber = this.lastTypeNumber) {
+        const normalizedTypeNumber = Number(typeNumber);
+        return Number.isInteger(normalizedTypeNumber) && normalizedTypeNumber > 0
+            ? normalizedTypeNumber
+            : this.getRecommendedMinTypeNumber();
+    },
+
+    getLogoBackgroundScale() {
+        const paddingFraction = Math.min(0.8, Math.max(0, this.logoPadding / 100));
+        return 1 + Math.min(0.16, 0.06 + paddingFraction * 0.12);
+    },
+
+    getSafeBackgroundCoveragePercent(typeNumber = this.lastTypeNumber, correctLevel = this.lastCorrectLevelKey) {
+        const effectiveTypeNumber = this.getEffectiveTypeNumber(typeNumber);
+        const levelKey = this.getCorrectLevelKey(correctLevel);
+        const baseCoverageByLevel = {
+            L: 22,
+            M: 26,
+            Q: 30,
+            H: 34
+        };
+        const versionBoost = Math.min(8, Math.max(0, (effectiveTypeNumber - 4) * 0.45));
+        return Math.min(42, baseCoverageByLevel[levelKey] + versionBoost);
+    },
+
+    getMaximumAllowedLogoSizePercent(typeNumber = this.lastTypeNumber, correctLevel = this.lastCorrectLevelKey) {
+        const backgroundScale = this.getLogoBackgroundScale();
+        const maxBackgroundCoverage = this.getSafeBackgroundCoveragePercent(typeNumber, correctLevel);
+        return Math.max(
+            QR_LOGO_SIZE_MIN_PERCENT,
+            Math.min(QR_LOGO_SIZE_MAX_PERCENT, Math.floor(maxBackgroundCoverage / backgroundScale))
+        );
+    },
+
+    clampRequestedLogoSize(sizePercent, typeNumber = this.lastTypeNumber, correctLevel = this.lastCorrectLevelKey) {
+        const normalizedSize = Math.min(QR_LOGO_SIZE_MAX_PERCENT, Math.max(QR_LOGO_SIZE_MIN_PERCENT, Number(sizePercent) || 22));
+        return Math.min(normalizedSize, this.getMaximumAllowedLogoSizePercent(typeNumber, correctLevel));
+    },
+
+    updateGenerationContext(qrCodeInstance, options = {}) {
+        const instanceTypeNumber = typeof qrCodeInstance?.getTypeNumber === 'function' ? qrCodeInstance.getTypeNumber() : 0;
+        const nextTypeNumber = this.getEffectiveTypeNumber(instanceTypeNumber);
+        const nextCorrectLevelKey = this.getCorrectLevelKey(options.correctLevel);
+
+        this.lastTypeNumber = nextTypeNumber;
+        this.lastCorrectLevelKey = nextCorrectLevelKey;
+        this.sizePercent = this.clampRequestedLogoSize(this.sizePercent, nextTypeNumber, nextCorrectLevelKey);
+        this.lastAppliedSizePercent = this.sizePercent;
+    },
+
+    getRecommendedMinTypeNumber() {
+        if (!this.hasLogo()) {
+            return QR_CODE_VERSION_AUTOMATIC;
+        }
+
+        const safeSizePercent = Math.min(QR_LOGO_SIZE_MAX_PERCENT, Math.max(QR_LOGO_SIZE_MIN_PERCENT, this.sizePercent || 22));
+
+        if (safeSizePercent >= 38) {
+            return 14;
+        }
+
+        if (safeSizePercent >= 32) {
+            return 12;
+        }
+
+        if (safeSizePercent >= 26) {
+            return 10;
+        }
+
+        return 8;
     },
 
     isContainedPreset() {
@@ -2103,6 +2226,11 @@ const QRCodeLogoControls = {
     },
 
     syncUI(root = document, uploadedFileName = '') {
+        const activeShape = this.normalizeLogoShape(this.logoShape);
+        if (activeShape !== this.logoShape) {
+            this.logoShape = activeShape;
+        }
+
         const sizeRange = root.querySelector('#qrLogoSizeRange');
         const paddingRange = root.querySelector('#qrLogoPaddingRange');
         const logoBackgroundColorControl = FrameColorControl.getControl(root, 'logoBackgroundColor');
@@ -2112,12 +2240,15 @@ const QRCodeLogoControls = {
         const clearActionButton = root.querySelector('[data-logo-action="clear"]');
 
         if (sizeRange) {
+            sizeRange.max = String(this.getMaximumAllowedLogoSizePercent());
             sizeRange.value = String(this.sizePercent);
         }
 
         if (sizeValueLabel) {
-            const newSizeText = I18n.translate('{size}% of QR width', {
-                size: this.sizePercent
+            const maximumAllowedSize = this.getMaximumAllowedLogoSizePercent();
+            const newSizeText = I18n.translate('{size}% of QR width (max {max}% for this QR code)', {
+                size: this.sizePercent,
+                max: maximumAllowedSize
             });
             if (sizeValueLabel.textContent !== newSizeText) {
                 sizeValueLabel.textContent = newSizeText;
@@ -2141,41 +2272,47 @@ const QRCodeLogoControls = {
 
         const shapeButtons = root.querySelectorAll('[data-logo-shape]');
         shapeButtons.forEach(button => {
-            button.classList.toggle('active', button.dataset.logoShape === this.logoShape);
+            button.classList.toggle('active', button.dataset.logoShape === activeShape);
         });
 
         if (clearActionButton) {
             clearActionButton.classList.toggle('active', !this.hasLogo());
         }
 
-        const uploadedTile = root.querySelector('[data-logo-uploaded]');
-        if (uploadedTile) {
-            const isUploadedActive = this.hasLogo() && !this.selectedPresetId;
+        root.querySelectorAll('[data-logo-uploaded]').forEach(uploadedTile => {
+            const isUploadedActive = this.hasLogo()
+                && !this.selectedPresetId
+                && uploadedTile.dataset.logoUploadId === this.activeUploadedLogoId;
             uploadedTile.classList.toggle('active', isUploadedActive);
-        }
+        });
 
         presetButtons.forEach(button => {
             button.classList.toggle('active', button.dataset.logoPreset === this.selectedPresetId);
         });
     },
 
-    applyLogoToContainer(container) {
+    applyLogoToContainer(container, qrCodeInstance = null, options = {}) {
         if (!container || !this.hasLogo()) {
             return;
         }
+
+        this.updateGenerationContext(qrCodeInstance, options);
+        this.syncUI(document);
 
         const canvas = container.querySelector('canvas');
         if (!canvas) {
             return;
         }
 
-        this.applyLogoToCanvas(canvas);
+        this.applyLogoToCanvas(canvas, qrCodeInstance, options);
     },
 
-    applyLogoToCanvas(canvas) {
+    applyLogoToCanvas(canvas, qrCodeInstance = null, options = {}) {
         if (!canvas || !this.hasLogo()) {
             return canvas;
         }
+
+        this.updateGenerationContext(qrCodeInstance, options);
 
         const ctx = canvas.getContext('2d');
         if (!ctx) {
@@ -2183,13 +2320,11 @@ const QRCodeLogoControls = {
         }
 
         const qrSize = Math.min(canvas.width, canvas.height);
-        const safeSizePercent = Math.min(44, Math.max(12, this.sizePercent || 22));
+        const safeSizePercent = this.clampRequestedLogoSize(this.sizePercent, this.lastTypeNumber, this.lastCorrectLevelKey);
         const logoBoxSize = qrSize * (safeSizePercent / 100);
-        const backgroundSize = logoBoxSize * 1.35;
+        const backgroundSize = logoBoxSize * this.getLogoBackgroundScale();
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
-        const backgroundX = centerX - (backgroundSize / 2);
-        const backgroundY = centerY - (backgroundSize / 2);
         const backgroundRadius = Math.max(8, backgroundSize * 0.18);
 
         const paddingFraction = Math.min(0.8, Math.max(0, this.logoPadding / 100));
@@ -2199,6 +2334,8 @@ const QRCodeLogoControls = {
         const imageHeight = imageAspectRatio >= 1 ? paddedLogoBoxSize / imageAspectRatio : paddedLogoBoxSize;
         const imageX = centerX - (imageWidth / 2);
         const imageY = centerY - (imageHeight / 2);
+
+        this.lastAppliedSizePercent = safeSizePercent;
 
         ctx.save();
         ctx.imageSmoothingEnabled = true;
@@ -2229,6 +2366,442 @@ const QRCodeLogoControls = {
         return canvas;
     },
 
+    getSVGViewportSize(svgElement) {
+        const viewBox = svgElement?.getAttribute('viewBox')?.trim() ?? '';
+
+        if (viewBox) {
+            const [, , width, height] = viewBox.split(/\s+/).map(Number);
+
+            if (Number.isFinite(width) && Number.isFinite(height)) {
+                return Math.min(width, height);
+            }
+        }
+
+        const width = Number(svgElement?.getAttribute('width'));
+        const height = Number(svgElement?.getAttribute('height'));
+
+        if (Number.isFinite(width) && Number.isFinite(height)) {
+            return Math.min(width, height);
+        }
+
+        return 0;
+    },
+
+    getLogoOverlayGeometry(qrSize, typeNumber = this.lastTypeNumber, correctLevel = this.lastCorrectLevelKey) {
+        const safeSizePercent = this.clampRequestedLogoSize(this.sizePercent, typeNumber, correctLevel);
+        const logoBoxSize = qrSize * (safeSizePercent / 100);
+        const backgroundSize = logoBoxSize * this.getLogoBackgroundScale();
+        const centerX = qrSize / 2;
+        const centerY = qrSize / 2;
+        const backgroundX = centerX - (backgroundSize / 2);
+        const backgroundY = centerY - (backgroundSize / 2);
+        const backgroundRadius = Math.max(8, backgroundSize * 0.18);
+        const paddingFraction = Math.min(0.8, Math.max(0, this.logoPadding / 100));
+        const paddedLogoBoxSize = Math.max(8, logoBoxSize * (1 - paddingFraction));
+        const imageAspectRatio = this.logoImage.naturalWidth / this.logoImage.naturalHeight || 1;
+        const imageWidth = imageAspectRatio >= 1 ? paddedLogoBoxSize : paddedLogoBoxSize * imageAspectRatio;
+        const imageHeight = imageAspectRatio >= 1 ? paddedLogoBoxSize / imageAspectRatio : paddedLogoBoxSize;
+        const imageX = centerX - (imageWidth / 2);
+        const imageY = centerY - (imageHeight / 2);
+
+        return {
+            safeSizePercent,
+            backgroundSize,
+            backgroundX,
+            backgroundY,
+            backgroundRadius,
+            imageWidth,
+            imageHeight,
+            imageX,
+            imageY
+        };
+    },
+
+    buildLogoOverlayDataUrl(geometry) {
+        const overlayCanvas = document.createElement('canvas');
+        const overlaySize = Math.max(1, Math.ceil(geometry.backgroundSize));
+        const baseRasterScale = Math.max(4, Math.ceil((window.devicePixelRatio || 1) * 4));
+        const rasterPixels = Math.max(128, overlaySize * baseRasterScale);
+        const rasterScale = rasterPixels / overlaySize;
+        overlayCanvas.width = rasterPixels;
+        overlayCanvas.height = rasterPixels;
+
+        const context = overlayCanvas.getContext('2d');
+        if (!context) {
+            return '';
+        }
+
+        const localCenter = overlaySize / 2;
+        const imageX = geometry.imageX - geometry.backgroundX;
+        const imageY = geometry.imageY - geometry.backgroundY;
+
+        context.scale(rasterScale, rasterScale);
+
+        context.save();
+        context.imageSmoothingEnabled = true;
+        context.fillStyle = this.logoBackgroundColor;
+
+        this.drawLogoShapePath(context, this.logoShape, localCenter, localCenter, geometry.backgroundSize, geometry.backgroundRadius);
+        context.fill();
+
+        this.drawLogoShapePath(context, this.logoShape, localCenter, localCenter, geometry.backgroundSize, geometry.backgroundRadius);
+        context.clip();
+
+        if (this.logoIconColor) {
+            const tintCanvas = document.createElement('canvas');
+            tintCanvas.width = Math.max(1, Math.ceil(geometry.imageWidth));
+            tintCanvas.height = Math.max(1, Math.ceil(geometry.imageHeight));
+            const tintContext = tintCanvas.getContext('2d');
+
+            if (tintContext) {
+                tintContext.drawImage(this.logoImage, 0, 0, tintCanvas.width, tintCanvas.height);
+                tintContext.globalCompositeOperation = 'source-in';
+                tintContext.fillStyle = this.logoIconColor;
+                tintContext.fillRect(0, 0, tintCanvas.width, tintCanvas.height);
+                context.drawImage(tintCanvas, imageX, imageY, geometry.imageWidth, geometry.imageHeight);
+            }
+        } else {
+            context.drawImage(this.logoImage, imageX, imageY, geometry.imageWidth, geometry.imageHeight);
+        }
+
+        context.restore();
+
+        return overlayCanvas.toDataURL('image/png');
+    },
+
+    appendVectorLogoOverlay(svgElement, geometry) {
+        const parsedLogoSvg = this.getParsedLogoSVG();
+        if (!parsedLogoSvg) {
+            return false;
+        }
+
+        const viewBox = this.parseLogoSVGViewBox(parsedLogoSvg.viewBox);
+        if (!viewBox) {
+            return false;
+        }
+
+        const localCenter = geometry.backgroundSize / 2;
+        const shapePath = this.getLogoShapeSVGPath(this.logoShape, localCenter, localCenter, geometry.backgroundSize, geometry.backgroundRadius);
+
+        if (!shapePath) {
+            return false;
+        }
+
+        const svgNamespace = 'http://www.w3.org/2000/svg';
+        const clipPathId = `logo-clip-${Math.random().toString(36).slice(2, 10)}`;
+        const overlayGroup = document.createElementNS(svgNamespace, 'g');
+        overlayGroup.setAttribute('transform', `translate(${this.formatSvgNumber(geometry.backgroundX)} ${this.formatSvgNumber(geometry.backgroundY)})`);
+
+        const defsElement = document.createElementNS(svgNamespace, 'defs');
+        const clipPathElement = document.createElementNS(svgNamespace, 'clipPath');
+        clipPathElement.setAttribute('id', clipPathId);
+        const clipPathShape = document.createElementNS(svgNamespace, 'path');
+        clipPathShape.setAttribute('d', shapePath);
+        clipPathElement.appendChild(clipPathShape);
+        defsElement.appendChild(clipPathElement);
+        overlayGroup.appendChild(defsElement);
+
+        const backgroundPath = document.createElementNS(svgNamespace, 'path');
+        backgroundPath.setAttribute('d', shapePath);
+        backgroundPath.setAttribute('fill', this.logoBackgroundColor);
+        overlayGroup.appendChild(backgroundPath);
+
+        const clippedGroup = document.createElementNS(svgNamespace, 'g');
+        clippedGroup.setAttribute('clip-path', `url(#${clipPathId})`);
+
+        const contentGroup = document.createElementNS(svgNamespace, 'g');
+        const scale = Math.min(geometry.imageWidth / viewBox.width, geometry.imageHeight / viewBox.height);
+        const translateX = geometry.imageX - geometry.backgroundX + ((geometry.imageWidth - (viewBox.width * scale)) / 2) - (viewBox.minX * scale);
+        const translateY = geometry.imageY - geometry.backgroundY + ((geometry.imageHeight - (viewBox.height * scale)) / 2) - (viewBox.minY * scale);
+        contentGroup.setAttribute('transform', `translate(${this.formatSvgNumber(translateX)} ${this.formatSvgNumber(translateY)}) scale(${this.formatSvgNumber(scale)})`);
+
+        if (this.logoIconColor) {
+            const tintClassName = `qr-logo-tint-${Math.random().toString(36).slice(2, 10)}`;
+            const styleElement = document.createElementNS(svgNamespace, 'style');
+            styleElement.textContent = `.${tintClassName}, .${tintClassName} * { fill: ${this.logoIconColor} !important; stroke: ${this.logoIconColor} !important; color: ${this.logoIconColor} !important; }`;
+            overlayGroup.appendChild(styleElement);
+            contentGroup.setAttribute('class', tintClassName);
+        }
+
+        this.appendParsedLogoContent(contentGroup, parsedLogoSvg.content, svgElement.ownerDocument || document);
+        clippedGroup.appendChild(contentGroup);
+        overlayGroup.appendChild(clippedGroup);
+        svgElement.appendChild(overlayGroup);
+
+        return true;
+    },
+
+    applyLogoToSVG(svgElement, qrCodeInstance = null, options = {}) {
+        if (!svgElement || !this.hasLogo()) {
+            return svgElement;
+        }
+
+        this.updateGenerationContext(qrCodeInstance, options);
+
+        const qrSize = this.getSVGViewportSize(svgElement);
+        if (!qrSize) {
+            return svgElement;
+        }
+
+        const geometry = this.getLogoOverlayGeometry(qrSize, this.lastTypeNumber, this.lastCorrectLevelKey);
+        this.lastAppliedSizePercent = geometry.safeSizePercent;
+
+        if (this.appendVectorLogoOverlay(svgElement, geometry)) {
+            return svgElement;
+        }
+
+        const overlayHref = this.buildLogoOverlayDataUrl(geometry);
+        if (!overlayHref) {
+            return svgElement;
+        }
+
+        const imageElement = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+        imageElement.setAttribute('x', String(geometry.backgroundX));
+        imageElement.setAttribute('y', String(geometry.backgroundY));
+        imageElement.setAttribute('width', String(geometry.backgroundSize));
+        imageElement.setAttribute('height', String(geometry.backgroundSize));
+        imageElement.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        imageElement.setAttribute('href', overlayHref);
+        imageElement.setAttributeNS('http://www.w3.org/1999/xlink', 'href', overlayHref);
+        svgElement.appendChild(imageElement);
+
+        return svgElement;
+    },
+
+    isSvgLogoDataUrl(dataUrl = this.logoDataUrl) {
+        return typeof dataUrl === 'string' && dataUrl.startsWith('data:image/svg+xml');
+    },
+
+    getParsedLogoSVG() {
+        if (typeof this.logoSvgMarkup !== 'string' || !this.logoSvgMarkup.trim()) {
+            return null;
+        }
+
+        const parser = new DOMParser();
+        const svgDocument = parser.parseFromString(this.logoSvgMarkup, 'image/svg+xml');
+        const svgElement = svgDocument.documentElement;
+        if (!svgElement || svgElement.nodeName.toLowerCase() !== 'svg') {
+            return null;
+        }
+
+        const viewBox = svgElement.getAttribute('viewBox')
+            || `0 0 ${svgElement.getAttribute('width') || '100'} ${svgElement.getAttribute('height') || '100'}`;
+
+        return {
+            viewBox,
+            content: svgElement.innerHTML
+        };
+    },
+
+    parseLogoSVGViewBox(viewBox) {
+        if (typeof viewBox !== 'string') {
+            return null;
+        }
+
+        const parts = viewBox.trim().split(/\s+/).map(Number);
+        if (parts.length !== 4 || parts.some(value => !Number.isFinite(value))) {
+            return null;
+        }
+
+        const [minX, minY, width, height] = parts;
+        if (width <= 0 || height <= 0) {
+            return null;
+        }
+
+        return { minX, minY, width, height };
+    },
+
+    appendParsedLogoContent(targetElement, svgContent, targetDocument = document) {
+        if (!targetElement || typeof svgContent !== 'string' || !svgContent.trim()) {
+            return;
+        }
+
+        const parser = new DOMParser();
+        const parsedDocument = parser.parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${svgContent}</svg>`, 'image/svg+xml');
+        const parsedRoot = parsedDocument.documentElement;
+        Array.from(parsedRoot.childNodes).forEach(node => {
+            targetElement.appendChild(targetDocument.importNode(node, true));
+        });
+    },
+
+    async resolveLogoSVGMarkup(source) {
+        if (typeof source !== 'string' || !source) {
+            return '';
+        }
+
+        try {
+            if (source.startsWith('data:image/svg+xml')) {
+                const [, encodedSvg = ''] = source.split(',', 2);
+                return decodeURIComponent(encodedSvg);
+            }
+
+            if (/\.svg(?:[?#].*)?$/i.test(source)) {
+                const response = await fetch(source);
+                if (!response.ok) {
+                    return '';
+                }
+
+                return await response.text();
+            }
+        } catch (error) {
+            console.warn('Unable to resolve SVG logo markup:', error);
+        }
+
+        return '';
+    },
+
+    getLogoShapeSVGPath(shape, cx, cy, size, radius) {
+        const recorder = this.createSVGPathRecorder();
+        this.drawLogoShapePath(recorder, shape, cx, cy, size, radius);
+        return recorder.toString();
+    },
+
+    createSVGPathRecorder() {
+        const parts = [];
+        let currentX = 0;
+        let currentY = 0;
+        let subpathStartX = 0;
+        let subpathStartY = 0;
+        let hasCurrentPoint = false;
+
+        const moveTo = (x, y) => {
+            parts.push(`M ${this.formatSvgNumber(x)} ${this.formatSvgNumber(y)}`);
+            currentX = x;
+            currentY = y;
+            subpathStartX = x;
+            subpathStartY = y;
+            hasCurrentPoint = true;
+        };
+
+        const lineTo = (x, y) => {
+            if (!hasCurrentPoint) {
+                moveTo(x, y);
+                return;
+            }
+            parts.push(`L ${this.formatSvgNumber(x)} ${this.formatSvgNumber(y)}`);
+            currentX = x;
+            currentY = y;
+        };
+
+        const ensureArcStart = (x, y) => {
+            if (!hasCurrentPoint) {
+                moveTo(x, y);
+                return;
+            }
+            if (Math.abs(currentX - x) > 0.001 || Math.abs(currentY - y) > 0.001) {
+                lineTo(x, y);
+            }
+        };
+
+        const appendArc = (radiusX, radiusY, rotation, largeArcFlag, sweepFlag, x, y) => {
+            parts.push(`A ${this.formatSvgNumber(radiusX)} ${this.formatSvgNumber(radiusY)} ${this.formatSvgNumber(rotation)} ${largeArcFlag} ${sweepFlag} ${this.formatSvgNumber(x)} ${this.formatSvgNumber(y)}`);
+            currentX = x;
+            currentY = y;
+            hasCurrentPoint = true;
+        };
+
+        const describeArc = (centerX, centerY, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise = false) => {
+            const tau = Math.PI * 2;
+            let delta = endAngle - startAngle;
+            if (!anticlockwise && delta < 0) {
+                delta += tau;
+            }
+            if (anticlockwise && delta > 0) {
+                delta -= tau;
+            }
+
+            const isFullEllipse = Math.abs(Math.abs(delta) - tau) < 0.0001;
+            const sweepFlag = anticlockwise ? 0 : 1;
+            const pointAt = angle => ({
+                x: centerX + radiusX * Math.cos(angle),
+                y: centerY + radiusY * Math.sin(angle)
+            });
+
+            if (isFullEllipse) {
+                const startPoint = pointAt(startAngle);
+                const midAngle = startAngle + (delta / 2);
+                const midPoint = pointAt(midAngle);
+                ensureArcStart(startPoint.x, startPoint.y);
+                appendArc(radiusX, radiusY, rotation, 0, sweepFlag, midPoint.x, midPoint.y);
+                appendArc(radiusX, radiusY, rotation, 0, sweepFlag, startPoint.x, startPoint.y);
+                return;
+            }
+
+            const endPoint = pointAt(endAngle);
+            const largeArcFlag = Math.abs(delta) > Math.PI ? 1 : 0;
+            const startPoint = pointAt(startAngle);
+            ensureArcStart(startPoint.x, startPoint.y);
+            appendArc(radiusX, radiusY, rotation, largeArcFlag, sweepFlag, endPoint.x, endPoint.y);
+        };
+
+        return {
+            beginPath() {
+                parts.length = 0;
+                hasCurrentPoint = false;
+            },
+            moveTo,
+            lineTo,
+            bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y) {
+                if (!hasCurrentPoint) {
+                    moveTo(x, y);
+                    return;
+                }
+                parts.push(`C ${this.formatSvgNumber(cp1x)} ${this.formatSvgNumber(cp1y)} ${this.formatSvgNumber(cp2x)} ${this.formatSvgNumber(cp2y)} ${this.formatSvgNumber(x)} ${this.formatSvgNumber(y)}`);
+                currentX = x;
+                currentY = y;
+            },
+            quadraticCurveTo(cpx, cpy, x, y) {
+                if (!hasCurrentPoint) {
+                    moveTo(x, y);
+                    return;
+                }
+                parts.push(`Q ${this.formatSvgNumber(cpx)} ${this.formatSvgNumber(cpy)} ${this.formatSvgNumber(x)} ${this.formatSvgNumber(y)}`);
+                currentX = x;
+                currentY = y;
+            },
+            arc(centerX, centerY, radius, startAngle, endAngle, anticlockwise = false) {
+                describeArc(centerX, centerY, radius, radius, 0, startAngle, endAngle, anticlockwise);
+            },
+            ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise = false) {
+                describeArc(centerX, centerY, radiusX, radiusY, rotation * 180 / Math.PI, startAngle, endAngle, anticlockwise);
+            },
+            rect(x, y, width, height) {
+                moveTo(x, y);
+                lineTo(x + width, y);
+                lineTo(x + width, y + height);
+                lineTo(x, y + height);
+                this.closePath();
+            },
+            closePath() {
+                if (!hasCurrentPoint) {
+                    return;
+                }
+                parts.push('Z');
+                currentX = subpathStartX;
+                currentY = subpathStartY;
+            },
+            toString() {
+                return parts.join(' ');
+            },
+            formatSvgNumber: value => this.formatSvgNumber(value)
+        };
+    },
+
+    formatSvgNumber(value) {
+        if (!Number.isFinite(value)) {
+            return '0';
+        }
+        return Number(value.toFixed(3)).toString();
+    },
+
+    escapeSvgAttribute(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    },
+
     roundRect(ctx, x, y, width, height, radius) {
         ctx.beginPath();
         ctx.moveTo(x + radius, y);
@@ -2247,9 +2820,10 @@ const QRCodeLogoControls = {
         const half = size / 2;
         const x = cx - half;
         const y = cy - half;
+        const normalizedShape = this.normalizeLogoShape(shape);
 
         ctx.beginPath();
-        switch (shape) {
+        switch (normalizedShape) {
             case 'circle':
                 ctx.arc(cx, cy, half, 0, Math.PI * 2);
                 break;
@@ -3069,7 +3643,23 @@ const QRCodeLogoControls = {
 };
 
 const QRCodeFrameControls = {
+    activeFrameRefreshRequests: new WeakMap(),
+    framePreviewRefreshRequests: new WeakMap(),
+
     qrCodeWrapped: false,
+    activeFrameRefreshRequests: new WeakMap(),
+    framePreviewRefreshRequests: new WeakMap(),
+
+    updateStylingVisibility(root = document, frameType = this.getActiveFrameType(root)) {
+        if (!window.QRFrames) {
+            return;
+        }
+
+        const showTextSettings = window.QRFrames.supportsFrameText(frameType);
+        root.querySelectorAll('[data-frame-setting="text"], [data-frame-setting="textColor"]').forEach(section => {
+            section.hidden = !showTextSettings;
+        });
+    },
 
     init(root = document) {
         if (!window.QRFrames) {
@@ -3080,41 +3670,483 @@ const QRCodeFrameControls = {
         const frameForegroundColorControl = FrameColorControl.getControl(root, 'frameForegroundColor');
         const frameBackgroundColorControl = FrameColorControl.getControl(root, 'frameBackgroundColor');
         const frameTextColorControl = FrameColorControl.getControl(root, 'frameTextColor');
-        const frameTransparentBackgroundInput = root.querySelector('#frameTransparentBackground');
 
-        if (!frameTextInput || !frameForegroundColorControl || !frameBackgroundColorControl || !frameTextColorControl || !frameTransparentBackgroundInput) {
+        if (!frameTextInput || !frameForegroundColorControl || !frameBackgroundColorControl || !frameTextColorControl) {
             return;
         }
 
         if (frameTextInput.dataset.frameControlsInitialized !== 'true') {
             const rerender = () => {
                 this.applySettings(root);
-                this.updateFramePreviewSamples();
-                this.triggerActiveFrameRefresh(root);
+                this.scheduleFramePreviewSampleRefresh(root);
+                this.scheduleActiveFrameRefresh(root);
+                window.QRFrames.updateDeveloperJsonViewer?.();
             };
 
             frameTextInput.addEventListener('input', rerender);
             FrameColorControl.bindControl(frameForegroundColorControl, rerender);
             FrameColorControl.bindControl(frameBackgroundColorControl, rerender);
             FrameColorControl.bindControl(frameTextColorControl, rerender, { markUserModified: true });
-            frameTransparentBackgroundInput.addEventListener('change', rerender);
 
-            root.querySelectorAll('.frame-card').forEach(card => {
-                if (card.dataset.frameControlsBound === 'true') {
-                    return;
-                }
+            const frameSelector = root.querySelector('#frameSelector');
+            const frameSearchInput = root.querySelector('#framePresetSearchInput');
+            const frameSearchEmpty = root.querySelector('#framePresetSearchEmpty');
+            if (frameSelector && frameSelector.dataset.frameSyncBound !== 'true') {
+                frameSelector.addEventListener('click', (event) => {
+                    const deleteAction = event.target.closest('[data-frame-delete="true"]');
+                    if (deleteAction?.dataset.customFrameId) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        const removedFrameId = deleteAction.dataset.customFrameId;
+                        const wasActiveFrame = window.QRFrames.activeCustomFrameId === removedFrameId;
+                        const removed = window.QRFrames.deleteCustomFrame(removedFrameId);
+                        if (!removed) {
+                            return;
+                        }
+                        const shell = deleteAction.closest('.frame-card-shell-custom');
+                        shell?.remove();
+                        if (wasActiveFrame) {
+                            if (window.QRFrames.hasCustomFrame()) {
+                                this.activateFrameByType(root, 'custom');
+                            } else {
+                                this.activateFrameByType(root, 'none');
+                            }
+                        }
+                        this.updatePositionPanelVisibility(root, this.getActiveFrameType(root));
+                        this.applyFrameSearch(root, frameSearchInput, frameSearchEmpty);
+                        return;
+                    }
 
-                card.addEventListener('click', () => {
+                    const card = event.target.closest('.frame-card');
+                    if (!card || !card.dataset.frame) {
+                        return;
+                    }
+                    this.applySettings(root);
+                    if (card.dataset.frame === 'custom' && card.dataset.customFrameId) {
+                        window.QRFrames.setActiveCustomFrame(card.dataset.customFrameId);
+                    }
+                    window.QRFrames.applyFrameCustomization(card.dataset.frame);
                     this.syncControlValues(root, card.dataset.frame);
+                    this.updateStylingVisibility(root, card.dataset.frame);
+                    this.updatePositionPanelVisibility(root, card.dataset.frame);
+                    window.QRFrames.updateDeveloperJsonViewer?.();
+                }, true);
+                frameSelector.dataset.frameSyncBound = 'true';
+            }
+
+            if (frameSearchInput && frameSearchInput.dataset.frameSearchBound !== 'true') {
+                frameSearchInput.addEventListener('input', () => {
+                    this.applyFrameSearch(root, frameSearchInput, frameSearchEmpty);
                 });
-                card.dataset.frameControlsBound = 'true';
-            });
+                frameSearchInput.dataset.frameSearchBound = 'true';
+            }
+
+            this.initCustomFrameControls(root);
+            this.applyFrameSearch(root, frameSearchInput, frameSearchEmpty);
 
             frameTextInput.dataset.frameControlsInitialized = 'true';
         }
 
-        this.syncControlValues(root, this.getActiveFrameType(root));
+        const activeFrameType = this.getActiveFrameType(root);
+        window.QRFrames.applyFrameCustomization(activeFrameType);
+        this.syncControlValues(root, activeFrameType);
+        this.updateStylingVisibility(root, activeFrameType);
         this.applySettings(root);
+        this.updatePositionPanelVisibility(root, activeFrameType);
+    },
+
+    updatePositionPanelVisibility(root = document, frameType = this.getActiveFrameType(root)) {
+        const panel = root.querySelector('#customFramePositionPanel');
+        if (!panel) {
+            return;
+        }
+        const shouldShow = Boolean(frameType) && (frameType !== 'custom' || window.QRFrames.hasCustomFrame());
+        panel.hidden = !shouldShow;
+        if (shouldShow) {
+            this.updateCustomFrameStage(root, frameType);
+        }
+    },
+
+    initCustomFrameControls(root = document) {
+        const fileInput = root.querySelector('#customFrameInput');
+        const selector = root.querySelector('#frameSelector');
+        if (!fileInput || !selector) {
+            return;
+        }
+
+        // Upload action delegated through frame selector clicks
+        if (selector.dataset.customUploadBound !== 'true') {
+            selector.addEventListener('click', (event) => {
+                const action = event.target.closest('[data-frame-action="upload-custom"]');
+                if (!action) {
+                    return;
+                }
+                event.preventDefault();
+                event.stopPropagation();
+                fileInput.click();
+            });
+            selector.addEventListener('keydown', (event) => {
+                const action = event.target.closest('[data-frame-action="upload-custom"]');
+                if (!action) {
+                    return;
+                }
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    fileInput.click();
+                }
+            });
+            selector.dataset.customUploadBound = 'true';
+        }
+
+        if (fileInput.dataset.customFrameInitialized !== 'true') {
+            fileInput.addEventListener('change', async (event) => {
+                const [file] = event.target.files || [];
+                if (!file) {
+                    return;
+                }
+                const loaded = await window.QRFrames.loadCustomFrameFile(file);
+                fileInput.value = '';
+                if (!loaded) {
+                    return;
+                }
+                this.installCustomFrameCard(root);
+                this.activateFrameByType(root, 'custom');
+                this.updatePositionPanelVisibility(root, 'custom');
+                this.updateCustomFrameStage(root);
+            });
+            fileInput.dataset.customFrameInitialized = 'true';
+        }
+
+        this.bindPositionStage(root);
+
+        const centerBtn = root.querySelector('#customFrameCenterButton');
+        if (centerBtn && centerBtn.dataset.customFrameCenterBound !== 'true') {
+            centerBtn.addEventListener('click', () => {
+                const frameType = this.getActiveFrameType(root);
+                const rect = window.QRFrames.getFrameQRRect(frameType);
+                const range = window.QRFrames.getFrameQRRectRange(frameType, rect);
+                const centeredX = 0.5 - (rect.widthPct / 2);
+                const centeredY = 0.5 - (rect.heightPct / 2);
+                this.updateFramePlacementFromControls(root, {
+                    xPct: Math.min(range.maxXPct, Math.max(range.minXPct, centeredX)),
+                    yPct: Math.min(range.maxYPct, Math.max(range.minYPct, centeredY))
+                });
+            });
+            centerBtn.dataset.customFrameCenterBound = 'true';
+        }
+
+        const resetBtn = root.querySelector('#customFrameResetButton');
+        if (resetBtn && resetBtn.dataset.customFrameResetBound !== 'true') {
+            resetBtn.addEventListener('click', () => {
+                const frameType = this.getActiveFrameType(root);
+                window.QRFrames.resetFrameToDefaults(frameType);
+                window.QRFrames.resetFrameQRRect(frameType);
+                this.syncControlValues(root, frameType);
+                this.syncCustomFrameStageBox(root);
+                this.updateCustomFrameStage(root, frameType);
+                this.updateFramePreviewSamples();
+                this.triggerActiveFrameRefresh(root);
+                window.QRFrames.updateDeveloperJsonViewer?.();
+            });
+            resetBtn.dataset.customFrameResetBound = 'true';
+        }
+
+        // Apply visibility on initial render
+        this.updatePositionPanelVisibility(root, this.getActiveFrameType(root));
+    },
+
+    installCustomFrameCard(root = document) {
+        const grid = root.querySelector('#frameSelector');
+        if (!grid) {
+            return;
+        }
+        grid.querySelectorAll('.frame-card[data-custom-frame="true"]').forEach(card => card.closest('.frame-card-shell-custom')?.remove());
+        const uploadTile = grid.querySelector('[data-frame-action="upload-custom"]');
+        let insertAfter = uploadTile;
+        window.QRFrames.customFrames.forEach(frame => {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = window.QRFrames.getCustomFrameCardMarkup(frame).trim();
+            const card = wrapper.firstElementChild;
+            if (!card) {
+                return;
+            }
+            if (insertAfter?.nextSibling) {
+                grid.insertBefore(card, insertAfter.nextSibling);
+            } else if (uploadTile) {
+                grid.appendChild(card);
+            } else {
+                grid.appendChild(card);
+            }
+            insertAfter = card;
+        });
+        this.applyFrameSearch(root, root.querySelector('#framePresetSearchInput'), root.querySelector('#framePresetSearchEmpty'));
+    },
+
+    updateCustomFrameStage(root = document, frameType = this.getActiveFrameType(root)) {
+        const stage = root.querySelector('#customFrameStage');
+        const img = root.querySelector('#customFrameStageImage');
+        if (!stage || !img || !frameType) {
+            return;
+        }
+        const dataUrl = window.QRFrames.getPlacementStageImageDataUrl(frameType);
+        if (!dataUrl) {
+            return;
+        }
+        img.src = dataUrl;
+        img.alt = frameType === 'custom'
+            ? I18n.translateString('Custom frame placement preview')
+            : I18n.translateString('Frame placement preview');
+        if (img.complete) {
+            this.syncCustomFrameStageBox(root, frameType);
+        } else {
+            img.addEventListener('load', () => this.syncCustomFrameStageBox(root, frameType), { once: true });
+        }
+    },
+
+    getCustomFrameStageMetrics(stage) {
+        if (!stage) {
+            return null;
+        }
+
+        const stageRect = stage.getBoundingClientRect();
+        const width = stage.clientWidth;
+        const height = stage.clientHeight;
+
+        if (!width || !height) {
+            return null;
+        }
+
+        return {
+            width,
+            height,
+            left: stageRect.left + stage.clientLeft,
+            top: stageRect.top + stage.clientTop
+        };
+    },
+
+    syncCustomFrameStageBox(root = document, frameType = this.getActiveFrameType(root), remainingRetries = 2) {
+        const stage = root.querySelector('#customFrameStage');
+        const box = root.querySelector('#customFrameQRBox');
+        if (!stage || !box || !frameType) {
+            return;
+        }
+        const stageMetrics = this.getCustomFrameStageMetrics(stage);
+        if (!stageMetrics) {
+            if (remainingRetries > 0) {
+                window.requestAnimationFrame(() => this.syncCustomFrameStageBox(root, frameType, remainingRetries - 1));
+            }
+            return;
+        }
+        const qrRect = window.QRFrames.getFrameQRRect(frameType);
+        const widthPx = qrRect.widthPct * stageMetrics.width;
+        const heightPx = qrRect.heightPct * stageMetrics.height;
+        const leftPx = qrRect.xPct * stageMetrics.width;
+        const topPx = qrRect.yPct * stageMetrics.height;
+        box.style.width = `${widthPx}px`;
+        box.style.height = `${heightPx}px`;
+        box.style.left = `${leftPx}px`;
+        box.style.top = `${topPx}px`;
+
+    },
+
+    updateFramePlacementFromControls(root = document, partial = {}) {
+        const frameType = this.getActiveFrameType(root);
+        if (!frameType) {
+            return;
+        }
+        window.QRFrames.setFrameQRRect(frameType, partial);
+        this.syncCustomFrameStageBox(root);
+        this.scheduleActiveFrameRefresh(root);
+    },
+
+    scheduleActiveFrameRefresh(root = document) {
+        if (this.activeFrameRefreshRequests.has(root)) {
+            return;
+        }
+
+        const refreshRequest = window.requestAnimationFrame(() => {
+            this.activeFrameRefreshRequests.delete(root);
+            this.triggerActiveFrameRefresh(root);
+        });
+
+        this.activeFrameRefreshRequests.set(root, refreshRequest);
+    },
+
+    scheduleFramePreviewSampleRefresh(root = document) {
+        if (this.framePreviewRefreshRequests.has(root)) {
+            return;
+        }
+
+        const refreshRequest = window.requestAnimationFrame(() => {
+            this.framePreviewRefreshRequests.delete(root);
+            this.updateFramePreviewSamples(root);
+        });
+
+        this.framePreviewRefreshRequests.set(root, refreshRequest);
+    },
+
+    bindPositionStage(root = document) {
+        const stage = root.querySelector('#customFrameStage');
+        const box = root.querySelector('#customFrameQRBox');
+        if (!stage || !box || stage.dataset.customStageBound === 'true') {
+            return;
+        }
+        stage.dataset.customStageBound = 'true';
+
+        let interactionMode = '';
+        let pointerId = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        let resizeHandle = '';
+        let interactionRect = null;
+
+        const onPointerDown = (event) => {
+            const frameType = this.getActiveFrameType(root);
+            if (!frameType) {
+                return;
+            }
+            const resizeHandleElement = event.target.closest('[data-placement-resize-handle]');
+            resizeHandle = resizeHandleElement?.dataset.placementResizeHandle || '';
+            interactionMode = resizeHandle ? 'resize' : 'move';
+            interactionRect = window.QRFrames.getFrameQRRect(frameType);
+            pointerId = event.pointerId;
+            const boxRect = box.getBoundingClientRect();
+            dragOffsetX = event.clientX - boxRect.left;
+            dragOffsetY = event.clientY - boxRect.top;
+            box.setPointerCapture(pointerId);
+            event.preventDefault();
+        };
+
+        const onPointerMove = (event) => {
+            if (!interactionMode) {
+                return;
+            }
+            const stageMetrics = this.getCustomFrameStageMetrics(stage);
+            if (!stageMetrics) {
+                return;
+            }
+            const frameType = this.getActiveFrameType(root);
+            if (interactionMode === 'resize') {
+                if (!interactionRect) {
+                    return;
+                }
+                const minSidePx = 16;
+                const pointerX = event.clientX - stageMetrics.left;
+                const pointerY = event.clientY - stageMetrics.top;
+                const startLeft = interactionRect.xPct * stageMetrics.width;
+                const startTop = interactionRect.yPct * stageMetrics.height;
+                const startWidth = interactionRect.widthPct * stageMetrics.width;
+                const startHeight = interactionRect.heightPct * stageMetrics.height;
+                const startRight = startLeft + startWidth;
+                const startBottom = startTop + startHeight;
+                let nextLeft = startLeft;
+                let nextTop = startTop;
+                let nextWidthPx = startWidth;
+                let nextHeightPx = startHeight;
+
+                if (resizeHandle === 'top-left') {
+                    nextLeft = Math.min(startRight - minSidePx, pointerX);
+                    nextTop = Math.min(startBottom - minSidePx, pointerY);
+                    nextWidthPx = startRight - nextLeft;
+                    nextHeightPx = startBottom - nextTop;
+                } else if (resizeHandle === 'top-right') {
+                    nextTop = Math.min(startBottom - minSidePx, pointerY);
+                    nextWidthPx = Math.max(minSidePx, pointerX - startLeft);
+                    nextHeightPx = startBottom - nextTop;
+                } else if (resizeHandle === 'bottom-left') {
+                    nextLeft = Math.min(startRight - minSidePx, pointerX);
+                    nextWidthPx = startRight - nextLeft;
+                    nextHeightPx = Math.max(minSidePx, pointerY - startTop);
+                } else if (resizeHandle === 'bottom-right') {
+                    nextWidthPx = Math.max(minSidePx, pointerX - startLeft);
+                    nextHeightPx = Math.max(minSidePx, pointerY - startTop);
+                } else if (resizeHandle === 'top') {
+                    nextTop = Math.min(startBottom - minSidePx, pointerY);
+                    nextHeightPx = startBottom - nextTop;
+                } else if (resizeHandle === 'right') {
+                    nextWidthPx = Math.max(minSidePx, pointerX - startLeft);
+                } else if (resizeHandle === 'bottom') {
+                    nextHeightPx = Math.max(minSidePx, pointerY - startTop);
+                } else if (resizeHandle === 'left') {
+                    nextLeft = Math.min(startRight - minSidePx, pointerX);
+                    nextWidthPx = startRight - nextLeft;
+                } else {
+                    nextWidthPx = Math.max(minSidePx, pointerX - startLeft);
+                    nextHeightPx = Math.max(minSidePx, pointerY - startTop);
+                }
+
+                window.QRFrames.setFrameQRRect(frameType, {
+                    xPct: nextLeft / stageMetrics.width,
+                    yPct: nextTop / stageMetrics.height,
+                    widthPct: nextWidthPx / stageMetrics.width,
+                    heightPct: nextHeightPx / stageMetrics.height
+                });
+                this.syncCustomFrameStageBox(root);
+                this.scheduleActiveFrameRefresh(root);
+                return;
+            }
+            const newLeft = event.clientX - stageMetrics.left - dragOffsetX;
+            const newTop = event.clientY - stageMetrics.top - dragOffsetY;
+            const xPct = newLeft / stageMetrics.width;
+            const yPct = newTop / stageMetrics.height;
+            window.QRFrames.setFrameQRRect(frameType, { xPct, yPct });
+            this.syncCustomFrameStageBox(root);
+            this.scheduleActiveFrameRefresh(root);
+        };
+
+        const onPointerUp = (event) => {
+            if (!interactionMode) {
+                return;
+            }
+            const activePointerId = pointerId;
+            interactionMode = '';
+            resizeHandle = '';
+            interactionRect = null;
+            try {
+                if (activePointerId !== null) {
+                    box.releasePointerCapture(activePointerId);
+                }
+            } catch (_) { /* ignore */ }
+            pointerId = null;
+            this.triggerActiveFrameRefresh(root);
+        };
+
+        box.addEventListener('keydown', (event) => {
+            const frameType = this.getActiveFrameType(root);
+            if (!frameType) {
+                return;
+            }
+            const step = event.shiftKey ? 0.05 : 0.01;
+            const rect = window.QRFrames.getFrameQRRect(frameType);
+            const updates = {
+                ArrowLeft: { xPct: rect.xPct - step },
+                ArrowRight: { xPct: rect.xPct + step },
+                ArrowUp: { yPct: rect.yPct - step },
+                ArrowDown: { yPct: rect.yPct + step }
+            };
+            if (!updates[event.key]) {
+                return;
+            }
+            event.preventDefault();
+            this.updateFramePlacementFromControls(root, updates[event.key]);
+        });
+
+        box.addEventListener('pointerdown', onPointerDown);
+        box.addEventListener('pointermove', onPointerMove);
+        box.addEventListener('pointerup', onPointerUp);
+        box.addEventListener('pointercancel', onPointerUp);
+    },
+
+    activateFrameByType(root = document, frameType) {
+        const grid = root.querySelector('#frameSelector');
+        if (!grid) {
+            return;
+        }
+        const target = grid.querySelector(`.frame-card[data-frame="${frameType}"]`);
+        if (!target) {
+            return;
+        }
+        target.click();
     },
 
     syncControlValues(root = document, frameType = this.getActiveFrameType(root)) {
@@ -3126,20 +4158,21 @@ const QRCodeFrameControls = {
         const frameForegroundColorControl = FrameColorControl.getControl(root, 'frameForegroundColor');
         const frameBackgroundColorControl = FrameColorControl.getControl(root, 'frameBackgroundColor');
         const frameTextColorControl = FrameColorControl.getControl(root, 'frameTextColor');
-        const frameTransparentBackgroundInput = root.querySelector('#frameTransparentBackground');
 
-        if (!frameTextInput || !frameForegroundColorControl || !frameBackgroundColorControl || !frameTextColorControl || !frameTransparentBackgroundInput) {
+        if (!frameTextInput || !frameForegroundColorControl || !frameBackgroundColorControl || !frameTextColorControl) {
             return;
         }
 
-        frameTextInput.value = window.QRFrames.FRAME_TEXT;
-        FrameColorControl.setValue(frameForegroundColorControl, window.QRFrames.FRAME_FOREGROUND_COLOR);
-        FrameColorControl.setValue(frameBackgroundColorControl, window.QRFrames.FRAME_BACKGROUND_COLOR);
-        frameTransparentBackgroundInput.checked = Boolean(window.QRFrames.TRANSPARENT_BACKGROUND);
+        const customization = window.QRFrames.getFrameCustomization(frameType);
 
-        if (frameTextColorControl.picker.dataset.userModified !== 'true') {
-            FrameColorControl.setValue(frameTextColorControl, window.QRFrames.FRAME_TEXT_COLOR || window.QRFrames.getDefaultTextColor(frameType));
-        }
+        frameTextInput.value = customization.frameText;
+        FrameColorControl.setValue(frameForegroundColorControl, customization.frameColor);
+        FrameColorControl.setValue(frameBackgroundColorControl, customization.backgroundColor);
+        frameTextColorControl.picker.dataset.userModified = customization.textColor ? 'true' : 'false';
+        FrameColorControl.setValue(
+            frameTextColorControl,
+            customization.textColor || window.QRFrames.getDefaultTextColor(frameType, customization.frameColor)
+        );
     },
 
     applySettings(root = document) {
@@ -3151,39 +4184,77 @@ const QRCodeFrameControls = {
         const frameForegroundColorControl = FrameColorControl.getControl(root, 'frameForegroundColor');
         const frameBackgroundColorControl = FrameColorControl.getControl(root, 'frameBackgroundColor');
         const frameTextColorControl = FrameColorControl.getControl(root, 'frameTextColor');
-        const frameTransparentBackgroundInput = root.querySelector('#frameTransparentBackground');
 
-        if (!frameTextInput || !frameForegroundColorControl || !frameBackgroundColorControl || !frameTextColorControl || !frameTransparentBackgroundInput) {
+        if (!frameTextInput || !frameForegroundColorControl || !frameBackgroundColorControl || !frameTextColorControl) {
             return;
         }
 
-        window.QRFrames.setFrameCustomization({
+        window.QRFrames.setFrameCustomization(this.getActiveFrameType(root), {
             frameText: frameTextInput.value,
             frameColor: FrameColorControl.getValue(frameForegroundColorControl),
             backgroundColor: FrameColorControl.getValue(frameBackgroundColorControl),
-            textColor: frameTextColorControl.picker.dataset.userModified === 'true' ? FrameColorControl.getValue(frameTextColorControl) : null,
-            transparentBackground: frameTransparentBackgroundInput.checked
+            textColor: frameTextColorControl.picker.dataset.userModified === 'true' ? FrameColorControl.getValue(frameTextColorControl) : null
         });
     },
 
-    updateFramePreviewSamples() {
+    updateFramePreviewSamples(root = document) {
         if (!window.QRFrames) {
             return;
         }
 
-        const frameCards = document.querySelectorAll('.frame-card');
+        const frameCards = root.querySelectorAll('.frame-card');
         frameCards.forEach(card => {
+            if (!card.dataset.frame) {
+                return;
+            }
             const preview = card.querySelector('.frame-preview');
             if (!preview) {
                 return;
             }
 
-            const previewMarkup = window.QRFrames.getFramePreviewMarkup(card.dataset.frame);
+            const previewMarkup = window.QRFrames.getFramePreviewMarkup(card.dataset.frame, card.dataset.customFrameId || '');
             preview.innerHTML = previewMarkup;
         });
     },
 
+    applyFrameSearch(root = document, frameSearchInput = root.querySelector('#framePresetSearchInput'), frameSearchEmpty = root.querySelector('#framePresetSearchEmpty')) {
+        if (!frameSearchInput) {
+            return;
+        }
+
+        const searchTerm = frameSearchInput.value.trim().toLowerCase();
+        const cards = root.querySelectorAll('#frameSelector .frame-card');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const searchText = card.dataset.frameName || '';
+            const isVisible = !searchTerm || searchText.includes(searchTerm);
+            card.hidden = !isVisible;
+            card.classList.toggle('is-filtered-out', !isVisible);
+            const shell = card.closest('.frame-card-shell-custom');
+            if (shell) {
+                shell.hidden = !isVisible;
+            }
+            if (isVisible) {
+                visibleCount += 1;
+            }
+        });
+
+        if (frameSearchEmpty) {
+            frameSearchEmpty.hidden = visibleCount > 0;
+        }
+    },
+
     triggerActiveFrameRefresh(root = document) {
+        const qrContainer = root.querySelector('#qrcode');
+        const refreshed = typeof QRCodePreviewRenderer !== 'undefined'
+            ? QRCodePreviewRenderer.refreshContainerPreview(qrContainer)
+            : false;
+
+        if (refreshed) {
+            return;
+        }
+
         const activeFrame = root.querySelector('.frame-card.active');
         if (activeFrame) {
             activeFrame.click();
@@ -3196,6 +4267,14 @@ const QRCodeFrameControls = {
 
     getQRCodeAppearance() {
         this.applySettings(document);
+
+        const activeFrameType = window.QRFrames?.getActiveFrameType?.(document);
+        if (activeFrameType === window.QRFrames?.FRAME_TYPES?.NONE) {
+            return {
+                colorDark: '#000000',
+                colorLight: window.QRFrames.QR_BACKGROUND_COLOR
+            };
+        }
 
         if (!window.QRFrames) {
             return {
@@ -3212,8 +4291,19 @@ const QRCodeFrameControls = {
 
     decorateQRCodeOptions(options = {}) {
         const appearance = this.getQRCodeAppearance();
+        const logoMinimumTypeNumber = QRCodeLogoControls.getRecommendedMinTypeNumber();
+        const requestedTypeNumber = Number(options.typeNumber);
+        const hasExplicitTypeNumber = Number.isInteger(requestedTypeNumber) && requestedTypeNumber > 0;
+        const requestedMinTypeNumber = Number(options.minTypeNumber);
+        const normalizedRequestedMinTypeNumber = Number.isInteger(requestedMinTypeNumber) && requestedMinTypeNumber > 0
+            ? requestedMinTypeNumber
+            : QR_CODE_VERSION_AUTOMATIC;
+
         return {
             ...options,
+            minTypeNumber: hasExplicitTypeNumber
+                ? normalizedRequestedMinTypeNumber
+                : Math.max(normalizedRequestedMinTypeNumber, logoMinimumTypeNumber),
             colorDark: appearance.colorDark,
             colorLight: appearance.colorLight
         };
@@ -3227,8 +4317,9 @@ const QRCodeFrameControls = {
         const OriginalQRCode = window.QRCode;
         const controls = this;
         function WrappedQRCode(element, options) {
-            const instance = new OriginalQRCode(element, controls.decorateQRCodeOptions(options));
-            QRCodeLogoControls.applyLogoToContainer(element);
+            const decoratedOptions = controls.decorateQRCodeOptions(options);
+            const instance = new OriginalQRCode(element, decoratedOptions);
+            QRCodeLogoControls.applyLogoToContainer(element, instance, decoratedOptions);
             return instance;
         }
 
@@ -3255,8 +4346,88 @@ const QRCodeFrameControls = {
     }
 };
 
+const QRCodeDownloadButtonLayout = {
+    resizeObserver: null,
+
+    getResizeObserver() {
+        if (!this.resizeObserver && typeof ResizeObserver !== 'undefined') {
+            this.resizeObserver = new ResizeObserver(entries => {
+                entries.forEach(entry => {
+                    this.updateGroup(entry.target);
+                });
+            });
+        }
+
+        return this.resizeObserver;
+    },
+
+    init(root = document) {
+        root.querySelectorAll('.download-buttons').forEach(group => {
+            if (group.dataset.downloadLayoutBound !== 'true') {
+                this.getResizeObserver()?.observe(group);
+                group.dataset.downloadLayoutBound = 'true';
+            }
+
+            this.updateGroup(group);
+        });
+    },
+
+    measureButtonWidth(button) {
+        const clone = button.cloneNode(true);
+        clone.style.position = 'absolute';
+        clone.style.visibility = 'hidden';
+        clone.style.pointerEvents = 'none';
+        clone.style.width = 'auto';
+        clone.style.maxWidth = 'none';
+        clone.style.whiteSpace = 'nowrap';
+        clone.style.left = '-9999px';
+        clone.style.top = '0';
+        document.body.appendChild(clone);
+        const width = clone.getBoundingClientRect().width;
+        clone.remove();
+        return width;
+    },
+
+    updateGroup(group) {
+        const buttons = Array.from(group.querySelectorAll('.btn'));
+        if (buttons.length < 2) {
+            group.classList.remove('download-buttons-two-column');
+            return;
+        }
+
+        const groupWidth = group.clientWidth;
+        if (!groupWidth) {
+            group.classList.remove('download-buttons-two-column');
+            return;
+        }
+
+        const styles = window.getComputedStyle(group);
+        const columnGap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0;
+        const columnWidth = (groupWidth - columnGap) / 2;
+        const fitsTwoColumns = buttons.every(button => this.measureButtonWidth(button) <= columnWidth);
+
+        group.classList.toggle('download-buttons-two-column', fitsTwoColumns);
+    },
+
+    observe() {
+        const initialize = () => {
+            window.requestAnimationFrame(() => this.init(document));
+        };
+
+        initialize();
+        document.addEventListener('app:route-rendered', initialize);
+        window.addEventListener('resize', initialize);
+
+        const observer = new MutationObserver(() => initialize());
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    }
+};
+
 const QRCodeConfigurationAccordion = {
-    SECTION_ORDER: ['Content', 'Settings', 'Styling', 'Frame Type', 'Logo'],
+    SECTION_ORDER: ['Content', 'Frame', 'Logo', 'Settings'],
     SECTION_META: {
         Content: {
             icon: 'bi-card-text',
@@ -3266,13 +4437,9 @@ const QRCodeConfigurationAccordion = {
             icon: 'bi-sliders',
             description: 'Control scanning resilience and other shared QR generation settings.'
         },
-        Styling: {
-            icon: 'bi-palette',
-            description: 'Adjust frame text, colors, and visual presentation.'
-        },
-        'Frame Type': {
+        Frame: {
             icon: 'bi-grid-1x2',
-            description: 'Choose the QR frame style and presentation format.'
+            description: 'Choose the QR frame style and adjust styling for the selected frame.'
         },
         Logo: {
             icon: 'bi-image',
@@ -3315,75 +4482,206 @@ const QRCodeConfigurationAccordion = {
                 : contentNodes;
 
             const typeBlock = customizationPanel.querySelector('.qr-config-type-block');
-            const stylingBlock = customizationPanel.querySelector('.qr-config-styling-block');
             const logoBlock = customizationPanel.querySelector('.qr-config-logo-block');
-            if (!typeBlock || !stylingBlock || !logoBlock) {
+            if (!typeBlock || !logoBlock) {
                 return;
-            }
-
-            const accordion = document.createElement('div');
-            accordion.className = 'config-accordion';
-
-            accordion.appendChild(this.createSection('Content', contentSectionNodes, true));
-
-            if (stylingBlock) {
-                accordion.appendChild(this.createSection('Styling', Array.from(stylingBlock.childNodes), false));
             }
 
             const typeNodes = [];
             typeNodes.push(...Array.from(typeBlock.childNodes));
-            accordion.appendChild(this.createSection('Frame Type', typeNodes, false));
-
-            accordion.appendChild(this.createSection('Logo', Array.from(logoBlock.childNodes), false));
+            const sections = [
+                {
+                    label: 'Content',
+                    nodes: contentSectionNodes
+                },
+                {
+                    label: 'Frame',
+                    nodes: typeNodes
+                },
+                {
+                    label: 'Logo',
+                    nodes: Array.from(logoBlock.childNodes)
+                }
+            ];
 
             if (errorCorrectionGroup) {
-                const settingsNodes = [
-                    this.createSettingsHint(),
-                    errorCorrectionGroup
-                ];
-                accordion.appendChild(this.createSection('Settings', settingsNodes, false));
+                sections.push({
+                    label: 'Settings',
+                    nodes: [errorCorrectionGroup]
+                });
             }
 
             customizationPanel.remove();
-            formSection.appendChild(accordion);
 
-            accordion.querySelectorAll('.config-accordion-trigger').forEach(button => {
-                button.addEventListener('click', () => {
-                    const item = button.closest('.config-accordion-item');
-                    if (!item) {
-                        return;
-                    }
+            const shell = document.createElement('div');
+            shell.className = 'config-layout-shell';
+            shell.dataset.activeSection = sections[0]?.label.toLowerCase().replace(/\s+/g, '-') || 'content';
+            formSection.appendChild(shell);
 
-                    if (item.classList.contains('open')) {
-                        item.classList.remove('open');
-                        button.setAttribute('aria-expanded', 'false');
-                    } else {
-                        item.classList.add('open');
-                        button.setAttribute('aria-expanded', 'true');
-                    }
-                });
-            });
+            this.renderResponsiveLayout(shell, sections);
+            this.observeLayout(shell, sections);
 
             formSection.dataset.configurationAccordionInitialized = 'true';
         });
     },
 
-    createSection(label, nodes, isOpen) {
-        const item = document.createElement('section');
-        item.className = `config-accordion-item${isOpen ? ' open' : ''}`;
-        item.dataset.section = label.toLowerCase();
-        const meta = this.SECTION_META[label] || {
+    observeLayout(shell, sections) {
+        shell.dataset.layoutWidth = String(Math.round(shell.clientWidth || 0));
+        const resizeObserver = new ResizeObserver(() => {
+            const nextWidth = Math.round(shell.clientWidth || 0);
+            const previousWidth = Number(shell.dataset.layoutWidth || '0');
+            if (nextWidth === previousWidth) {
+                return;
+            }
+
+            shell.dataset.layoutWidth = String(nextWidth);
+            this.renderResponsiveLayout(shell, sections);
+        });
+
+        resizeObserver.observe(shell);
+    },
+
+    renderResponsiveLayout(shell, sections) {
+        const activeSection = shell.dataset.activeSection || '';
+        const defaultSection = sections[0] ? this.normalizeSectionName(sections[0].label) : '';
+        const tabs = this.createTabsLayout(sections, activeSection || defaultSection);
+
+        shell.replaceChildren(tabs);
+
+        const tabList = tabs.querySelector('.config-tabs-list');
+        if (tabList && this.tabsFit(tabList)) {
+            shell.dataset.layoutMode = 'tabs';
+            this.bindTabInteractions(tabs, shell);
+            return;
+        }
+
+        const accordion = this.createAccordionLayout(sections, activeSection);
+        shell.replaceChildren(accordion);
+        shell.dataset.layoutMode = 'accordion';
+        this.bindAccordionInteractions(accordion, shell);
+    },
+
+    tabsFit(tabList) {
+        const rowFits = tabList.scrollWidth <= Math.ceil(tabList.clientWidth + 1);
+        const triggersFit = Array.from(tabList.querySelectorAll('.config-tab-trigger')).every(trigger => {
+            const triggerFits = trigger.scrollWidth <= Math.ceil(trigger.clientWidth + 1);
+            const content = trigger.querySelector('.config-tab-trigger-main');
+            const contentFits = !content || content.scrollWidth <= Math.ceil(content.clientWidth + 1);
+            return triggerFits && contentFits;
+        });
+
+        return rowFits && triggersFit;
+    },
+
+    normalizeSectionName(label) {
+        return label.toLowerCase().replace(/\s+/g, '-');
+    },
+
+    getSectionMeta(label) {
+        return this.SECTION_META[label] || {
             icon: 'bi-folder2-open',
             description: ''
         };
+    },
+
+    createTabsLayout(sections, activeSection) {
+        const tabs = document.createElement('div');
+        tabs.className = 'config-tabs';
+
+        const tabList = document.createElement('div');
+        tabList.className = 'config-tabs-list';
+        tabList.setAttribute('role', 'tablist');
+        tabList.setAttribute('aria-label', 'QR code configuration sections');
+
+        const panelStack = document.createElement('div');
+        panelStack.className = 'config-tabs-panels';
+
+        sections.forEach(section => {
+            this.createTabSection(section, activeSection === this.normalizeSectionName(section.label), tabList, panelStack);
+        });
+
+        tabs.appendChild(tabList);
+        tabs.appendChild(panelStack);
+        return tabs;
+    },
+
+    createAccordionLayout(sections, activeSection) {
+        const accordion = document.createElement('div');
+        accordion.className = 'config-accordion';
+
+        sections.forEach(section => {
+            accordion.appendChild(this.createAccordionSection(
+                section,
+                activeSection === this.normalizeSectionName(section.label)
+            ));
+        });
+
+        return accordion;
+    },
+
+    createTabSection(section, isActive, tabList, panelStack) {
+        const { label, nodes } = section;
+        const meta = this.getSectionMeta(label);
+        const normalizedLabel = label.toLowerCase().replace(/\s+/g, '-');
+        const tabId = `config-tab-${normalizedLabel}`;
+        const panelId = `config-panel-${normalizedLabel}`;
 
         const trigger = document.createElement('button');
         trigger.type = 'button';
-        trigger.className = 'config-accordion-trigger';
+        trigger.className = `config-tab-trigger${isActive ? ' active' : ''}`;
+        trigger.id = tabId;
+        trigger.dataset.section = normalizedLabel;
+        trigger.setAttribute('role', 'tab');
+        trigger.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        trigger.setAttribute('aria-controls', panelId);
+        trigger.setAttribute('tabindex', isActive ? '0' : '-1');
+        trigger.setAttribute('aria-label', `${label}. ${meta.description}`);
+        if (meta.description) {
+            trigger.title = meta.description;
+        }
+        trigger.innerHTML = `
+            <span class="config-tab-trigger-main">
+                <span class="config-tab-icon" aria-hidden="true">
+                    <i class="bi ${meta.icon}"></i>
+                </span>
+                <span class="config-tab-label">${label}</span>
+            </span>
+        `;
+
+        const panel = document.createElement('div');
+        panel.className = `config-tab-panel${isActive ? ' active' : ''}`;
+        panel.id = panelId;
+        panel.dataset.section = normalizedLabel;
+        panel.setAttribute('role', 'tabpanel');
+        panel.setAttribute('aria-labelledby', tabId);
+        panel.hidden = !isActive;
+
+        nodes.forEach(node => {
+            if (node) {
+                panel.appendChild(node);
+            }
+        });
+
+        tabList.appendChild(trigger);
+        panelStack.appendChild(panel);
+    },
+
+    createAccordionSection(section, isOpen) {
+        const { label, nodes } = section;
+        const meta = this.getSectionMeta(label);
+        const normalizedLabel = this.normalizeSectionName(label);
+        const item = document.createElement('section');
+        item.className = `config-accordion-item${isOpen ? ' open' : ''}`;
+        item.dataset.section = normalizedLabel;
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = `config-accordion-trigger${isOpen ? ' active' : ''}`;
         trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        trigger.setAttribute('aria-controls', `config-accordion-panel-${normalizedLabel}`);
         trigger.innerHTML = `
             <span class="config-accordion-trigger-main">
-                <span class="config-accordion-icon" aria-hidden="true">
+                <span class="config-tab-icon" aria-hidden="true">
                     <i class="bi ${meta.icon}"></i>
                 </span>
                 <span class="config-accordion-copy">
@@ -3396,6 +4694,9 @@ const QRCodeConfigurationAccordion = {
 
         const panel = document.createElement('div');
         panel.className = 'config-accordion-panel';
+        panel.id = `config-accordion-panel-${normalizedLabel}`;
+        panel.hidden = !isOpen;
+
         nodes.forEach(node => {
             if (node) {
                 panel.appendChild(node);
@@ -3407,14 +4708,101 @@ const QRCodeConfigurationAccordion = {
         return item;
     },
 
-    createSettingsHint() {
-        const hint = document.createElement('div');
-        hint.className = 'config-settings-intro';
-        hint.innerHTML = `
-            <div class="config-settings-title">QR Settings</div>
-            <div class="form-hint">Choose how resilient the QR code should be when a logo or damage covers part of it.</div>
-        `;
-        return hint;
+    bindTabInteractions(tabs, shell) {
+        const triggers = Array.from(tabs.querySelectorAll('.config-tab-trigger'));
+        if (!triggers.length) {
+            return;
+        }
+
+        triggers.forEach((trigger, index) => {
+            trigger.addEventListener('click', () => this.activateTab(tabs, shell, trigger.dataset.section));
+            trigger.addEventListener('keydown', event => {
+                let nextIndex = index;
+
+                if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                    nextIndex = (index + 1) % triggers.length;
+                } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+                    nextIndex = (index - 1 + triggers.length) % triggers.length;
+                } else if (event.key === 'Home') {
+                    nextIndex = 0;
+                } else if (event.key === 'End') {
+                    nextIndex = triggers.length - 1;
+                } else {
+                    return;
+                }
+
+                event.preventDefault();
+                const nextTrigger = triggers[nextIndex];
+                this.activateTab(tabs, shell, nextTrigger.dataset.section);
+                nextTrigger.focus();
+            });
+        });
+    },
+
+    bindAccordionInteractions(accordion, shell) {
+        const triggers = Array.from(accordion.querySelectorAll('.config-accordion-trigger'));
+        triggers.forEach(trigger => {
+            trigger.onclick = () => {
+                const item = trigger.closest('.config-accordion-item');
+                if (!item) {
+                    return;
+                }
+
+                this.activateAccordionSection(accordion, shell, item.dataset.section);
+            };
+        });
+    },
+
+    activateTab(tabs, shell, sectionName) {
+        shell.dataset.activeSection = sectionName;
+        tabs.querySelectorAll('.config-tab-trigger').forEach(trigger => {
+            const isActive = trigger.dataset.section === sectionName;
+            trigger.classList.toggle('active', isActive);
+            trigger.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            trigger.setAttribute('tabindex', isActive ? '0' : '-1');
+        });
+
+        tabs.querySelectorAll('.config-tab-panel').forEach(panel => {
+            const isActive = panel.dataset.section === sectionName;
+            panel.classList.toggle('active', isActive);
+            panel.hidden = !isActive;
+        });
+
+        this.syncFramePlacementWhenVisible(shell, sectionName);
+    },
+
+    activateAccordionSection(accordion, shell, sectionName) {
+        const targetItem = accordion.querySelector(`.config-accordion-item[data-section="${sectionName}"]`);
+        const shouldCollapse = Boolean(targetItem) && targetItem.classList.contains('open');
+        shell.dataset.activeSection = shouldCollapse ? '' : sectionName;
+
+        accordion.querySelectorAll('.config-accordion-item').forEach(item => {
+            const isActive = !shouldCollapse && item.dataset.section === sectionName;
+            item.classList.toggle('open', isActive);
+
+            const trigger = item.querySelector('.config-accordion-trigger');
+            const panel = item.querySelector('.config-accordion-panel');
+            if (trigger) {
+                trigger.classList.toggle('active', isActive);
+                trigger.setAttribute('aria-expanded', isActive ? 'true' : 'false');
+            }
+
+            if (panel) {
+                panel.hidden = !isActive;
+            }
+        });
+
+        this.syncFramePlacementWhenVisible(shell, shouldCollapse ? '' : sectionName);
+    },
+
+    syncFramePlacementWhenVisible(root, sectionName) {
+        if (sectionName !== 'frame' || typeof QRCodeFrameControls === 'undefined') {
+            return;
+        }
+
+        window.requestAnimationFrame(() => {
+            QRCodeFrameControls.updatePositionPanelVisibility(root, QRCodeFrameControls.getActiveFrameType(root));
+        });
     },
 
     observe() {
@@ -3433,6 +4821,7 @@ const QRCodeConfigurationAccordion = {
 
 document.addEventListener('DOMContentLoaded', () => {
     QRCodeExportControls.observe();
+    QRCodeDownloadButtonLayout.observe();
     QRCodeLogoControls.observe();
     QRCodeFrameControls.observe();
     QRCodeConfigurationAccordion.observe();

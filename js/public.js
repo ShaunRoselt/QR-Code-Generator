@@ -1,3 +1,5 @@
+"use strict";
+
 const PublicPage = {
     heroQrUrl: 'https://qrcode.shaunroselt.com',
     meta: {
@@ -25,6 +27,8 @@ const PublicPage = {
                         </a>
 
                         <div class="topbar-actions">
+                            <a class="btn btn-secondary" href="?page=pricing" data-route="/pricing">Pricing</a>
+                            <a class="btn btn-secondary" href="?page=compare" data-route="/compare">Compare</a>
                             <button class="theme-switch" id="themeToggle" type="button" aria-label="Toggle theme">
                                 <i class="bi bi-moon-stars-fill theme-switch-icon" aria-hidden="true"></i>
                                 <span class="theme-switch-label">Dark</span>
@@ -222,6 +226,8 @@ const PublicPage = {
                     <footer class="marketing-footer">
                         <p>QR Code Generator is a client-side web app for high-resolution QR code creation.</p>
                         <div class="footer-links">
+                            <a href="?page=pricing" data-route="/pricing">Pricing</a>
+                            <a href="?page=compare" data-route="/compare">Compare</a>
                             <a href="?page=home" data-route="/home">Open app</a>
                             <a href="?page=release-notes" data-route="/release-notes">Release notes</a>
                             <a href="https://github.com/ShaunRoselt/QR-Code-Generator">GitHub</a>
@@ -253,7 +259,8 @@ const PublicPage = {
 
         const syncThemeToggle = () => {
             const theme = themeManager.getTheme();
-            const isDark = theme === 'dark';
+            const resolvedTheme = themeManager.getResolvedTheme();
+            const isDark = resolvedTheme === 'dark';
 
             if (themeIcon) {
                 themeIcon.className = isDark
@@ -262,7 +269,13 @@ const PublicPage = {
             }
 
             if (themeLabel) {
-                themeLabel.textContent = isDark ? 'Dark' : 'Light';
+                if (theme === 'system') {
+                    themeLabel.textContent = I18n.translate('System ({mode})', {
+                        mode: I18n.translateString(isDark ? 'Dark' : 'Light')
+                    });
+                } else {
+                    themeLabel.textContent = I18n.translateString(isDark ? 'Dark' : 'Light');
+                }
             }
 
             if (themeToggle) {
@@ -271,10 +284,10 @@ const PublicPage = {
         };
 
         syncThemeToggle();
+        document.addEventListener('app:theme-changed', syncThemeToggle);
 
         themeToggle?.addEventListener('click', () => {
             themeManager.toggleTheme();
-            syncThemeToggle();
         });
 
         document.querySelectorAll('.public-page [data-route]').forEach(link => {

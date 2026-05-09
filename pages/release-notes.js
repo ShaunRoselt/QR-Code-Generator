@@ -1,3 +1,5 @@
+"use strict";
+
 // Release Notes Page Module
 const ReleaseNotesPage = {
     render() {

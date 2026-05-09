@@ -87,7 +87,7 @@ The application is ready for deployment on GitHub Pages. Just enable Pages in yo
 
 ### 📄 License
 
-This project is licensed under the GNU General Public License v3.0 (GPL-3.0).
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
 
 ### 🙏 Credits
 

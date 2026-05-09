@@ -1,3 +1,5 @@
+"use strict";
+
 // SMS QR Code Module  
 const SmsMode = {
     render() {
@@ -29,10 +31,7 @@ const SmsMode = {
                         <div class="form-group">
                             <label class="form-label">Error Correction</label>
                             <select class="form-select" id="errorCorrection">
-                                <option value="L">Very Low (7%)</option>
-                                <option value="M">Low (15%)</option>
-                                <option value="Q" selected>Medium (25%)</option>
-                                <option value="H">High (30%)</option>
+                                ${QRCodeErrorCorrectionOptions.renderOptions('Q')}
                             </select>
                         </div>
                         
@@ -87,21 +86,20 @@ const SmsMode = {
         let currentQRCanvas = null;
         let selectedFrame = 'none';
         
-        // Frame card selector handler
-        const frameCards = document.querySelectorAll('.frame-card');
-        frameCards.forEach(card => {
-            card.addEventListener('click', () => {
-                // Update active state
-                frameCards.forEach(c => c.classList.remove('active'));
+        // Frame card selector handler (delegated to support dynamically added cards)
+        const frameSelector = document.getElementById('frameSelector');
+        if (frameSelector) {
+            frameSelector.addEventListener('click', (event) => {
+                const card = event.target.closest('.frame-card');
+                if (!card || !frameSelector.contains(card) || !card.dataset.frame) {
+                    return;
+                }
+                frameSelector.querySelectorAll('.frame-card').forEach(c => c.classList.remove('active'));
                 card.classList.add('active');
-                
-                // Get selected frame
                 selectedFrame = card.dataset.frame;
-                
-                // Auto-generate with new frame
                 autoGenerate();
             });
-        });
+        }
         
         // Auto-generate function
         const autoGenerate = () => {
@@ -138,8 +136,8 @@ const SmsMode = {
                 correctLevel: QRCode.CorrectLevel[errorCorrectionLevel]
             });
             
-            QRCodePreviewRenderer.finalize(qrContainer, frameType, DISPLAY_SIZE, canvas => {
-                currentQRCanvas = canvas;
+            QRCodePreviewRenderer.finalize(qrContainer, frameType, DISPLAY_SIZE, qrCode, previewNode => {
+                currentQRCanvas = previewNode;
             });
             
             // Show download options
@@ -183,7 +181,7 @@ const SmsMode = {
             setTimeout(() => {
                 const canvas = tempContainer.querySelector('canvas');
                 if (canvas) {
-                    if (frameType !== 'none') {
+                    if (window.QRFrames) {
                         QRFrames.exportWithFrame(canvas, frameType, exportSize, 'qrcode.png');
                     } else {
                         const link = document.createElement('a');
@@ -211,38 +209,17 @@ const SmsMode = {
                 smsUrl += `?body=${encodeURIComponent(message)}`;
             }
             
-            // Generate SVG QR code for export
-            const tempContainer = document.createElement('div');
-            const qrCode = new QRCode(tempContainer, {
+            exportQRCodeAsSVG({
                 text: smsUrl,
-                width: exportSize,
-                height: exportSize,
-                colorDark: '#000000',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel[errorCorrection.value]
-            });
-            
-            setTimeout(() => {
-                const canvas = tempContainer.querySelector('canvas');
-                if (canvas) {
-                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-                        <rect width="100" height="100" fill="#ffffff"/>
-                        <image href="${canvas.toDataURL()}" width="100" height="100"/>
-                    </svg>`;
-                    
-                    if (frameType !== 'none') {
-                        QRFrames.exportSVGWithFrame(svg, frameType, exportSize, 'qrcode.svg');
-                    } else {
-                        const blob = new Blob([svg], { type: 'image/svg+xml' });
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.download = 'qrcode.svg';
-                        link.href = url;
-                        link.click();
-                        URL.revokeObjectURL(url);
-                    }
+                size: exportSize,
+                filename: 'qrcode.svg',
+                frameType,
+                qrOptions: {
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel[errorCorrection.value]
                 }
-            }, 100);
+            });
         });
     }
 };

@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>qrcode.js Library Documentation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/base16/gruvbox-dark-hard.min.css">
+    <style>
+        :root {
+            --bg: #f3efe6;
+            --panel: rgba(255, 253, 247, 0.92);
+            --panel-strong: #f8f4eb;
+            --border: #d9d1c4;
+            --border-soft: #e6decf;
+            --text: #1f2937;
+            --muted: #5b6472;
+            --accent: #8b5e34;
+            --accent-soft: #efe3d0;
+            --code-bg: #2c241d;
+            --code-fg: #f9f4ec;
+            --success: #17603a;
+            --shadow: 0 18px 50px rgba(31, 41, 55, 0.09);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family: Georgia, "Times New Roman", serif;
+            background:
+                radial-gradient(circle at top right, rgba(139, 94, 52, 0.10), transparent 26%),
+                linear-gradient(180deg, #f8f4ed, var(--bg));
+            color: var(--text);
+        }
+
+        a {
+            color: var(--accent);
+        }
+
+        main {
+            width: min(1180px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 28px 0 64px;
+        }
+
+        .doc-nav {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 16px 0 18px;
+            backdrop-filter: blur(12px);
+        }
+
+        .doc-nav a {
+            text-decoration: none;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(255, 253, 247, 0.86);
+            border: 1px solid var(--border);
+            color: #6c4826;
+            font-size: 0.92rem;
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: 1.25fr 0.95fr;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .hero-copy,
+        .quickstart,
+        .section {
+            padding: 28px;
+        }
+
+        .eyebrow {
+            margin: 0 0 12px;
+            color: var(--accent);
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        h1, h2, h3, h4 {
+            margin: 0;
+            font-weight: 700;
+        }
+
+        h1 {
+            font-size: clamp(2.3rem, 3vw, 3.8rem);
+            line-height: 1;
+            margin-bottom: 16px;
+        }
+
+        h2 {
+            font-size: 1.9rem;
+            margin-bottom: 10px;
+        }
+
+        h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+        }
+
+        p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.65;
+            font-size: 1rem;
+        }
+
+        ul,
+        ol {
+            margin: 14px 0 0;
+            padding-left: 20px;
+        }
+
+        li + li {
+            margin-top: 8px;
+        }
+
+        code,
+        pre,
+        .mono {
+            font-family: "Cascadia Code", "Fira Code", monospace;
+        }
+
+        pre {
+            margin: 0;
+            overflow: auto;
+            padding: 16px;
+            border-radius: 18px;
+            background: var(--code-bg);
+            color: var(--code-fg);
+            font-size: 0.9rem;
+            line-height: 1.55;
+        }
+
+        pre.syntax-highlighted {
+            position: relative;
+        }
+
+        .code-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            white-space: normal;
+        }
+
+        .code-language {
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.10);
+            color: #d6c6b7;
+            font-size: 0.72rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .copy-code-button {
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #f9f4ec;
+            padding: 6px 12px;
+            font: inherit;
+            font-size: 0.78rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .copy-code-button:hover,
+        .copy-code-button:focus-visible {
+            background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(255, 255, 255, 0.24);
+            outline: none;
+        }
+
+        pre code.hljs {
+            display: block;
+            padding: 0;
+            background: transparent;
+            color: inherit;
+        }
+
+        .hljs-comment,
+        .hljs-quote {
+            color: #a8957f;
+        }
+
+        .hljs-keyword,
+        .hljs-selector-tag,
+        .hljs-subst {
+            color: #f3b86a;
+        }
+
+        .hljs-string,
+        .hljs-attr,
+        .hljs-template-tag,
+        .hljs-template-variable {
+            color: #9cd67a;
+        }
+
+        .hljs-number,
+        .hljs-literal {
+            color: #8fd4ff;
+        }
+
+        .hljs-title,
+        .hljs-title.class_,
+        .hljs-built_in,
+        .hljs-tag,
+        .hljs-name {
+            color: #7bc6ff;
+        }
+
+        .hljs-property,
+        .hljs-attribute,
+        .hljs-params {
+            color: #ffcf86;
+        }
+
+        .hljs-operator,
+        .hljs-punctuation {
+            color: #e4d8cc;
+        }
+
+        .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .badge {
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+            color: #6c4826;
+            font-size: 0.9rem;
+        }
+
+        .hero-list {
+            color: var(--text);
+        }
+
+        .callout {
+            margin-top: 18px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid var(--border-soft);
+            background: #faf5ec;
+        }
+
+        .section {
+            margin-top: 28px;
+        }
+
+        .section-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: end;
+            margin-bottom: 18px;
+        }
+
+        .section-head p {
+            max-width: 760px;
+        }
+
+        .grid-2,
+        .grid-3,
+        .gallery,
+        .levels,
+        .method-grid,
+        .example-grid {
+            display: grid;
+            gap: 18px;
+        }
+
+        .grid-2,
+        .example-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-3,
+        .gallery {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .levels {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .method-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .card,
+        .method-card,
+        .level-card,
+        .example-card {
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: linear-gradient(180deg, #fffdf8, var(--panel-strong));
+        }
+
+        .renderer-card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-frame {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            margin: 16px 0;
+            border-radius: 18px;
+            border: 1px solid #e3dbcf;
+            background: linear-gradient(180deg, #ffffff, #f6f0e6);
+            overflow: hidden;
+        }
+
+        .renderer-target {
+            width: 240px;
+            height: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .renderer-target img,
+        .renderer-target svg,
+        .renderer-target table {
+            display: block;
+            width: 240px;
+            height: 240px;
+            max-width: 240px;
+            max-height: 240px;
+        }
+
+        .preview-frame table {
+            background: #ffffff;
+            table-layout: fixed;
+        }
+
+        .inline-code,
+        .inline-note {
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: #f5ede1;
+            color: #5e4631;
+            font-size: 0.86rem;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .api-table-wrap {
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+        }
+
+        table.api-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fffdfa;
+        }
+
+        .api-table th,
+        .api-table td {
+            padding: 14px 16px;
+            text-align: left;
+            vertical-align: top;
+            border-bottom: 1px solid var(--border-soft);
+        }
+
+        .api-table th {
+            background: #f8f1e5;
+            color: #5d4734;
+            font-size: 0.95rem;
+        }
+
+        .api-table tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .demo-layout {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 20px;
+        }
+
+        .controls {
+            display: grid;
+            gap: 14px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+
+        textarea,
+        select {
+            width: 100%;
+            border: 1px solid #d7cebf;
+            border-radius: 14px;
+            padding: 12px 14px;
+            background: #fffdfa;
+            color: var(--text);
+            font: inherit;
+        }
+
+        textarea {
+            min-height: 180px;
+            resize: vertical;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        button {
+            border: 0;
+            border-radius: 999px;
+            padding: 11px 16px;
+            background: var(--accent);
+            color: #fffdf7;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        button.secondary {
+            background: #e6dac8;
+            color: #5d4734;
+        }
+
+        .status {
+            min-height: 24px;
+            color: var(--success);
+            font-size: 0.95rem;
+        }
+
+        .level-key {
+            display: inline-flex;
+            width: 42px;
+            height: 42px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #f0e0ca;
+            color: #73461d;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .gallery figure {
+            margin: 0;
+            padding: 14px;
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            background: #fffdf8;
+        }
+
+        .gallery img {
+            width: 100%;
+            display: block;
+            border-radius: 14px;
+            border: 1px solid #e3dbcf;
+            background: #ffffff;
+        }
+
+        figcaption {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 980px) {
+            .hero,
+            .grid-2,
+            .grid-3,
+            .gallery,
+            .levels,
+            .method-grid,
+            .demo-layout,
+            .example-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .doc-nav {
+                position: static;
+            }
+        }
+    </style>
+    <script src="../qrcode.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+</head>
+<body>
+    <main>
+        <nav class="doc-nav" aria-label="Section navigation">
+            <a href="#overview">Overview</a>
+            <a href="#quick-start">Quick Start</a>
+            <a href="#constructor">Constructor</a>
+            <a href="#methods">Methods</a>
+            <a href="#levels">Error Correction</a>
+            <a href="#renderers">Renderers</a>
+            <a href="#behavior">Behavior</a>
+            <a href="#examples">Examples</a>
+            <a href="#playground">Playground</a>
+        </nav>
+
+        <section class="hero" id="overview">
+            <article class="panel hero-copy">
+                <p class="eyebrow">Library Documentation</p>
+                <h1>qrcode.js</h1>
+                <p>`qrcode.js` is a browser-side QR code generator that exposes a global <code>QRCode</code> constructor. In this repository it supports canvas, SVG, and HTML table rendering, automatic QR version sizing, UTF-8 payload handling, and standard QR error correction levels.</p>
+                <ul class="hero-list">
+                    <li>Works as a plain browser script with no build step.</li>
+                    <li>Accepts either a target element or an element id.</li>
+                    <li>Supports string shorthand or a full options object.</li>
+                    <li>Exposes methods to replace, clear, destroy, and inspect the generated code.</li>
+                </ul>
+                <div class="callout">
+                    <strong>Scope:</strong>
+                    This page documents the library API exposed by <span class="mono">qrcode.js</span> itself. It does not depend on the rest of the app to demonstrate the library.
+                </div>
+            </article>
+            <aside class="panel quickstart" id="quick-start">
+                <div class="badge-row">
+                    <span class="badge">Global constructor</span>
+                    <span class="badge">No build step</span>
+                    <span class="badge">Canvas, SVG, table</span>
+                </div>
+                <pre>&lt;div id="qrcode"&gt;&lt;/div&gt;
+&lt;script src="qrcode.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  new QRCode('qrcode', {
+    text: 'https://qrcode.shaunroselt.com',
+    width: 256,
+    height: 256,
+    correctLevel: 'Q'
+  });
+&lt;/script&gt;</pre>
+                <div class="inline-note">
+                    Adjust the <span class="mono">src</span> path to match your folder structure. This documentation page uses <span class="mono">../qrcode.js</span> because it lives inside the <span class="mono">docs</span> folder.
+                </div>
+            </aside>
+        </section>
+
+        <section class="panel section" id="constructor">
+            <div class="section-head">
+                <div>
+                    <h2>Constructor and Options</h2>
+                    <p>The library entry point is the global <code>QRCode</code> constructor. Pass a target element or id as the first argument, and either a string payload or an options object as the second argument.</p>
+                </div>
+            </div>
+            <div class="grid-2" style="margin-bottom: 18px;">
+                <div class="card">
+                    <h3>Signature</h3>
+                    <pre>const qrCode = new QRCode(elementOrId, options);
+const shorthand = new QRCode(elementOrId, 'https://example.com');</pre>
+                </div>
+                <div class="card">
+                    <h3>What the constructor does</h3>
+                    <ul>
+                        <li>Resolves the target element.</li>
+                        <li>Normalizes margin, error correction, and type options.</li>
+                        <li>Selects the canvas, SVG, or table renderer.</li>
+                        <li>Generates the QR code immediately when <span class="mono">text</span> is provided.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="api-table-wrap">
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Option</th>
+                            <th>Type</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="mono">text</span></td>
+                            <td>string</td>
+                            <td>none</td>
+                            <td>The payload to encode in the QR code.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="mono">width</span></td>
+                            <td>number</td>
+                            <td>256</td>
+                            <td>The output width in pixels.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="mono">height</span></td>
+                            <td>number</td>
+                            <td>256</td>
+                            <td>The output height in pixels.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="mono">margin</span></td>
+                            <td>number</td>
+                            <td>4</td>
+                            <td>The quiet zone around the QR matrix, measured in modules.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="mono">border</span></td>
+                            <td>number</td>
+                            <td>none</td>
+                            <td>Backward-compatible alias for <span class="mono">margin</span>.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="mono">typeNumber</span></td>
+                            <td>number</td>
+                            <td>0</td>
+                            <td>Exact QR version from 1 to 40. Use 0 for automatic sizing.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="mono">minTypeNumber</span></td>
+                            <td>number</td>
+                            <td>0</td>
+                            <td>Minimum QR version to use when automatic sizing is enabled.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="mono">colorDark</span></td>
+                            <td>string</td>
+                            <td>#000000</td>
+                            <td>The color used for dark modules.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="mono">colorLight</span></td>
+                            <td>string</td>
+                            <td>#ffffff</td>
+                            <td>The color used for the light background.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="mono">correctLevel</span></td>
+                            <td>enum or string</td>
+                            <td>H</td>
+                            <td>One of <span class="mono">L</span>, <span class="mono">M</span>, <span class="mono">Q</span>, or <span class="mono">H</span>.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="mono">output</span></td>
+                            <td>string</td>
+                            <td>canvas</td>
+                            <td>Optional renderer override. Supported values are <span class="mono">svg</span> and <span class="mono">table</span>. Omit it to use canvas mode.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="mono">imgStyle</span></td>
+                            <td>string</td>
+                            <td><span class="mono">display:block; max-width:100%;</span></td>
+                            <td>Inline CSS applied to the generated image in canvas mode.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel section" id="methods">
+            <div class="section-head">
+                <div>
+                    <h2>Public Methods</h2>
+                    <p>The public surface is intentionally small. These are the supported instance methods exposed by the library.</p>
+                </div>
+            </div>
+            <div class="method-grid">
+                <article class="method-card">
+                    <h3><span class="mono">setCode(text)</span></h3>
+                    <p>Replaces the current payload and redraws the QR code. Use this when you want to keep the same instance and update the encoded content.</p>
+                    <div class="inline-code">qrCode.setCode('WIFI:T:WPA;S:QR Demo WiFi;P:scanme123;H:false;;');</div>
+                </article>
+                <article class="method-card">
+                    <h3><span class="mono">makeCode(text)</span></h3>
+                    <p>Legacy alias for <span class="mono">setCode(text)</span>. It behaves the same way and still redraws the current instance.</p>
+                    <div class="inline-code">qrCode.makeCode('mailto:hello@qrcode.shaunroselt.com?subject=Support');</div>
+                </article>
+                <article class="method-card">
+                    <h3><span class="mono">clear()</span></h3>
+                    <p>Clears the current QR code drawing without removing the generated elements.</p>
+                    <div class="inline-code">qrCode.clear();</div>
+                </article>
+                <article class="method-card">
+                    <h3><span class="mono">destruct()</span></h3>
+                    <p>Removes the generated elements so the original target container can be reused.</p>
+                    <div class="inline-code">qrCode.destruct();</div>
+                </article>
+                <article class="method-card">
+                    <h3><span class="mono">getTypeNumber()</span></h3>
+                    <p>Returns the resolved QR version after generation. This is useful when you let the library size automatically and want to inspect the result.</p>
+                    <div class="inline-code">const version = qrCode.getTypeNumber();</div>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel section" id="levels">
+            <div class="section-head">
+                <div>
+                    <h2>Error Correction Constants</h2>
+                    <p>The library accepts either <span class="mono">QRCode.CorrectLevel</span> enum values or their string keys. This repository's build also exposes metadata through <span class="mono">QRCode.CorrectLevelInfo</span>.</p>
+                </div>
+            </div>
+            <div class="grid-2" style="margin-bottom: 18px;">
+                <div class="card">
+                    <h3>Enum values</h3>
+                    <pre>QRCode.CorrectLevel.L
+QRCode.CorrectLevel.M
+QRCode.CorrectLevel.Q
+QRCode.CorrectLevel.H</pre>
+                </div>
+                <div class="card">
+                    <h3>Accepted string keys</h3>
+                    <pre>'L'
+'M'
+'Q'
+'H'</pre>
+                </div>
+            </div>
+            <div class="levels" id="levels-grid"></div>
+        </section>
+
+        <section class="panel section" id="renderers">
+            <div class="section-head">
+                <div>
+                    <h2>Renderer Modes</h2>
+                    <p>The same constructor can render to three outputs. These live examples all use the exact same payload and core settings so you can compare only the renderer differences.</p>
+                </div>
+            </div>
+            <div class="grid-3">
+                <article class="card renderer-card" id="canvas-card">
+                    <h3>Canvas Output</h3>
+                    <div class="preview-frame"><div class="renderer-target" id="canvas-target"></div></div>
+                    <p>Canvas is the default mode. This card uses the same payload, size, margin, and error correction level as the SVG and table cards.</p>
+                    <div class="inline-code">new QRCode('canvas-target', { text: sharedRendererPayload, width: 240, height: 240, margin: 4, correctLevel: 'Q' })</div>
+                </article>
+                <article class="card renderer-card" id="svg-card">
+                    <h3>SVG Output</h3>
+                    <div class="preview-frame"><div class="renderer-target" id="svg-target"></div></div>
+                    <p>Set <span class="mono">output: 'svg'</span> when you need vector output instead of canvas rendering. The encoded content is the same as the other two cards.</p>
+                    <div class="inline-code">new QRCode('svg-target', { output: 'svg', text: sharedRendererPayload, width: 240, height: 240, margin: 4, correctLevel: 'Q' })</div>
+                </article>
+                <article class="card renderer-card" id="table-card">
+                    <h3>Table Output</h3>
+                    <div class="preview-frame"><div class="renderer-target" id="table-target"></div></div>
+                    <p>Set <span class="mono">output: 'table'</span> to render the QR code as a plain HTML <span class="mono">&lt;table&gt;</span>. Each QR module becomes a <span class="mono">&lt;td&gt;</span> cell with either the dark or light color, and this card uses the same payload as the canvas and SVG cards.</p>
+                    <div class="inline-code">new QRCode('table-target', { output: 'table', text: sharedRendererPayload, width: 240, height: 240, margin: 4, correctLevel: 'Q' })</div>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel section" id="behavior">
+            <div class="section-head">
+                <div>
+                    <h2>Validation and Behavior</h2>
+                    <p>The library normalizes options and rejects invalid combinations before drawing. These rules matter when you build wrappers or form-based integrations on top of it.</p>
+                </div>
+            </div>
+            <div class="grid-2">
+                <article class="card">
+                    <h3>Validation rules</h3>
+                    <ul>
+                        <li><span class="mono">margin</span> must be an integer greater than or equal to 0.</li>
+                        <li><span class="mono">typeNumber</span> must be 0 or an integer from 1 to 40.</li>
+                        <li><span class="mono">minTypeNumber</span> must be 0 or an integer from 1 to 40.</li>
+                        <li><span class="mono">correctLevel</span> must be one of L, M, Q, or H.</li>
+                        <li>If an explicit <span class="mono">typeNumber</span> is too small for the payload, the library throws an error.</li>
+                    </ul>
+                </article>
+                <article class="card">
+                    <h3>Important implementation details</h3>
+                    <ul>
+                        <li>UTF-8 input is supported.</li>
+                        <li>A UTF-8 BOM is prefixed when multibyte content is present for better decoder compatibility.</li>
+                        <li>Canvas mode automatically calls <span class="mono">makeImage()</span> after drawing.</li>
+                        <li>This repository also exposes <span class="mono">QRCode.CorrectLevelInfo</span> for UI-friendly labels and recovery percentages.</li>
+                    </ul>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel section" id="examples">
+            <div class="section-head">
+                <div>
+                    <h2>Usage Examples</h2>
+                    <p>These examples are intentionally plain and library-focused. They can be copied into any simple HTML page that has loaded <span class="mono">qrcode.js</span>.</p>
+                </div>
+            </div>
+            <div class="example-grid">
+                <article class="example-card">
+                    <h3>Basic URL</h3>
+                    <pre>new QRCode('qrcode', {
+  text: 'https://qrcode.shaunroselt.com/docs/',
+  width: 300,
+  height: 300,
+  correctLevel: 'Q'
+});</pre>
+                </article>
+                <article class="example-card">
+                    <h3>WiFi Payload</h3>
+                    <pre>const wifiPayload =
+  'WIFI:T:WPA;S:QR Demo WiFi;P:scanme123;H:false;;';
+
+new QRCode('qrcode', {
+  text: wifiPayload,
+  width: 300,
+  height: 300,
+  correctLevel: QRCode.CorrectLevel.Q
+});</pre>
+                </article>
+                <article class="example-card">
+                    <h3>vCard Payload</h3>
+                    <pre>const vcardPayload = [
+  'BEGIN:VCARD',
+  'VERSION:3.0',
+  'FN:Shaun Roselt',
+  'N:Roselt;Shaun;;;',
+  'EMAIL:hello@qrcode.shaunroselt.com',
+  'URL:https://qrcode.shaunroselt.com',
+  'END:VCARD'
+].join('\n');
+
+new QRCode('qrcode', {
+  text: vcardPayload,
+  width: 300,
+  height: 300,
+  correctLevel: 'M'
+});</pre>
+                </article>
+                <article class="example-card">
+                    <h3>SVG Renderer</h3>
+                    <pre>new QRCode('qrcode', {
+  text: 'https://qrcode.shaunroselt.com',
+  width: 240,
+  height: 240,
+  margin: 2,
+  output: 'svg',
+  colorDark: '#111111',
+  colorLight: '#ffffff'
+});</pre>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel section" id="playground">
+            <div class="section-head">
+                <div>
+                    <h2>Method Playground</h2>
+                    <p>This live example creates one <span class="mono">QRCode</span> instance and lets you update it through the public methods exposed by the library.</p>
+                </div>
+            </div>
+            <div class="demo-layout">
+                <div class="controls">
+                    <div>
+                        <label for="payload-select">Example payload</label>
+                        <select id="payload-select">
+                            <option value="url">URL</option>
+                            <option value="wifi">WiFi</option>
+                            <option value="vcard">vCard</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="payload-text">Payload text</label>
+                        <textarea id="payload-text"></textarea>
+                    </div>
+                    <div class="button-row">
+                        <button id="set-code-button">setCode()</button>
+                        <button id="make-code-button" class="secondary">makeCode()</button>
+                        <button id="clear-button" class="secondary">clear()</button>
+                        <button id="destruct-button" class="secondary">destruct()</button>
+                        <button id="rebuild-button" class="secondary">Rebuild instance</button>
+                    </div>
+                    <div class="status" id="playground-status"></div>
+                </div>
+                <div class="card">
+                    <h3>Live Instance</h3>
+                    <p>The resolved QR version is read from <span class="mono">getTypeNumber()</span> after each update.</p>
+                    <div class="preview-frame"><div id="playground-target"></div></div>
+                    <div class="inline-code" id="version-readout">Version: waiting for render</div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const payloads = {
+            url: 'https://qrcode.shaunroselt.com/docs/',
+            wifi: 'WIFI:T:WPA;S:QR Demo WiFi;P:scanme123;H:false;;',
+            vcard: [
+                'BEGIN:VCARD',
+                'VERSION:3.0',
+                'FN:Shaun Roselt',
+                'N:Roselt;Shaun;;;',
+                'EMAIL:hello@qrcode.shaunroselt.com',
+                'URL:https://qrcode.shaunroselt.com',
+                'END:VCARD'
+            ].join('\n')
+        };
+
+        const sharedRendererPayload = payloads.url;
+
+        function renderStaticExamples() {
+            new QRCode('canvas-target', {
+                text: sharedRendererPayload,
+                width: 240,
+                height: 240,
+                margin: 4,
+                correctLevel: 'Q'
+            });
+
+            new QRCode('svg-target', {
+                text: sharedRendererPayload,
+                width: 240,
+                height: 240,
+                output: 'svg',
+                margin: 4,
+                correctLevel: 'Q'
+            });
+
+            new QRCode('table-target', {
+                text: sharedRendererPayload,
+                width: 240,
+                height: 240,
+                output: 'table',
+                margin: 4,
+                correctLevel: 'Q'
+            });
+        }
+
+        function renderLevels() {
+            const levelsGrid = document.getElementById('levels-grid');
+            const levels = QRCode.CorrectLevelInfo || {
+                L: { key: 'L', label: 'Very Low', recoveryPercent: 7 },
+                M: { key: 'M', label: 'Low', recoveryPercent: 15 },
+                Q: { key: 'Q', label: 'Medium', recoveryPercent: 25 },
+                H: { key: 'H', label: 'High', recoveryPercent: 30 }
+            };
+
+            levelsGrid.innerHTML = Object.values(levels).map(level => `
+                <article class="level-card">
+                    <div class="level-key">${level.key}</div>
+                    <h3>${level.label}</h3>
+                    <p>Recovery: ${level.recoveryPercent}%</p>
+                </article>
+            `).join('');
+        }
+
+        const payloadSelect = document.getElementById('payload-select');
+        const payloadText = document.getElementById('payload-text');
+        const versionReadout = document.getElementById('version-readout');
+        const status = document.getElementById('playground-status');
+        let playgroundInstance = null;
+
+        function setStatus(text) {
+            status.textContent = text;
+        }
+
+        function highlightCodeBlocks() {
+            const blocks = document.querySelectorAll('pre');
+
+            for (const block of blocks) {
+                const source = block.textContent;
+                const trimmed = source.trim();
+                const language = trimmed.startsWith('<') ? 'html' : 'javascript';
+                const toolbar = document.createElement('span');
+                const languageLabel = document.createElement('span');
+                const copyButton = document.createElement('button');
+                const code = document.createElement('code');
+
+                block.classList.add('syntax-highlighted');
+                block.dataset.language = language;
+                toolbar.className = 'code-toolbar';
+                languageLabel.className = 'code-language';
+                languageLabel.textContent = language;
+                copyButton.className = 'copy-code-button';
+                copyButton.type = 'button';
+                copyButton.textContent = 'Copy';
+                copyButton.addEventListener('click', async () => {
+                    try {
+                        await navigator.clipboard.writeText(source);
+                        copyButton.textContent = 'Copied';
+                        window.setTimeout(() => {
+                            copyButton.textContent = 'Copy';
+                        }, 1600);
+                    } catch {
+                        copyButton.textContent = 'Failed';
+                        window.setTimeout(() => {
+                            copyButton.textContent = 'Copy';
+                        }, 1600);
+                    }
+                });
+                code.className = `language-${language}`;
+                code.textContent = source;
+                toolbar.append(languageLabel, copyButton);
+                block.replaceChildren(toolbar, code);
+                hljs.highlightElement(code);
+            }
+        }
+
+        function setVersion() {
+            const version = playgroundInstance ? playgroundInstance.getTypeNumber() : null;
+            versionReadout.textContent = version ? `Version: ${version}` : 'Version: no active QR code';
+        }
+
+        function createPlaygroundInstance() {
+            const target = document.getElementById('playground-target');
+            target.replaceChildren();
+            playgroundInstance = new QRCode(target, {
+                text: payloadText.value,
+                width: 280,
+                height: 280,
+                correctLevel: 'Q'
+            });
+            setVersion();
+            setStatus('Created a new QRCode instance.');
+        }
+
+        payloadSelect.addEventListener('change', () => {
+            payloadText.value = payloads[payloadSelect.value];
+        });
+
+        document.getElementById('set-code-button').addEventListener('click', () => {
+            if (!playgroundInstance) {
+                createPlaygroundInstance();
+                return;
+            }
+            playgroundInstance.setCode(payloadText.value);
+            setVersion();
+            setStatus('Updated the QR code with setCode().');
+        });
+
+        document.getElementById('make-code-button').addEventListener('click', () => {
+            if (!playgroundInstance) {
+                createPlaygroundInstance();
+                return;
+            }
+            playgroundInstance.makeCode(payloadText.value);
+            setVersion();
+            setStatus('Updated the QR code with makeCode().');
+        });
+
+        document.getElementById('clear-button').addEventListener('click', () => {
+            if (!playgroundInstance) {
+                setStatus('Create a QRCode instance first.');
+                return;
+            }
+            playgroundInstance.clear();
+            setVersion();
+            setStatus('Cleared the current QR code.');
+        });
+
+        document.getElementById('destruct-button').addEventListener('click', () => {
+            if (!playgroundInstance) {
+                setStatus('Create a QRCode instance first.');
+                return;
+            }
+            playgroundInstance.destruct();
+            playgroundInstance = null;
+            setVersion();
+            setStatus('Destroyed the generated elements with destruct().');
+        });
+
+        document.getElementById('rebuild-button').addEventListener('click', () => {
+            createPlaygroundInstance();
+        });
+
+        payloadText.value = payloads.url;
+        highlightCodeBlocks();
+        renderStaticExamples();
+        renderLevels();
+        createPlaygroundInstance();
+    </script>
+</body>
+</html>

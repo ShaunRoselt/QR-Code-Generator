@@ -1,3 +1,5 @@
+"use strict";
+
 // Home Page Module
 const HomePage = {
     render() {

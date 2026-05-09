@@ -1,3 +1,5 @@
+"use strict";
+
 // Simple SPA Router with Query Parameters
 class Router {
     constructor() {
@@ -15,7 +17,11 @@ class Router {
     
     navigate(path) {
         const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
-        const url = `${window.location.pathname}?page=${normalizedPath || this.defaultPage}`;
+        let url = `${window.location.pathname}?page=${normalizedPath || this.defaultPage}`;
+        // Preserve developer role across SPA navigations.
+        if (window.AppRole && window.AppRole.current) {
+            url += `&role=${encodeURIComponent(window.AppRole.current)}`;
+        }
         window.history.pushState({}, '', url);
         this.handleRoute();
     }
@@ -27,7 +33,10 @@ class Router {
         const route = `/${normalizedPage}`;
         
         if (!page) {
-            const url = `${window.location.pathname}?page=${normalizedPage}`;
+            let url = `${window.location.pathname}?page=${normalizedPage}`;
+            if (window.AppRole && window.AppRole.current) {
+                url += `&role=${encodeURIComponent(window.AppRole.current)}`;
+            }
             window.history.replaceState({}, '', url);
         }
         
