@@ -1125,6 +1125,38 @@ const QRCodeLogoControls = {
     },
 
     getPresetMarkup() {
+        return `
+            <div class="logo-presets-panel">
+                <input type="file" class="logo-upload-input" id="qrLogoInput" accept="image/png,image/jpeg,image/svg+xml">
+                <div class="logo-presets-search">
+                    <input type="search" class="form-input logo-presets-search-input" id="logoPresetSearchInput" placeholder="${I18n.translateString('Search logos')}" aria-label="${I18n.translateString('Filter logos by name')}">
+                </div>
+                <div class="logo-presets-grid" id="qrLogoPresets" data-logo-presets-rendered="false">
+                    ${this.getBaseLogoTilesMarkup()}
+                    ${this.getUploadedLogoTilesMarkup()}
+                    <span hidden data-logo-preset-anchor="true"></span>
+                </div>
+                <div class="form-hint logo-presets-empty-state" id="logoPresetSearchEmpty" hidden>${I18n.translateString('No logos match your search.')}</div>
+            </div>
+        `;
+    },
+
+    getBaseLogoTilesMarkup() {
+        return `
+            <button type="button" class="logo-preset-button logo-preset-button-action" data-logo-action="clear" data-logo-preset-name="none remove clear" aria-label="${I18n.translateString('Clear logo')}">
+                <span class="logo-preset-thumb logo-preset-thumb-action"></span>
+                <span class="logo-preset-name">${I18n.translateString('None')}</span>
+            </button>
+            <button type="button" class="logo-preset-button logo-preset-button-action" data-logo-action="upload" data-logo-preset-name="upload custom file logo" aria-label="${I18n.translateString('Upload logo')}">
+                <span class="logo-preset-thumb logo-preset-thumb-action logo-preset-thumb-upload">
+                    <i class="bi bi-upload"></i>
+                </span>
+                <span class="logo-preset-name">${I18n.translateString('Upload logo')}</span>
+            </button>
+        `;
+    },
+
+    getPresetTilesMarkup() {
         const presets = this.getLogoPresets();
 
         presets.forEach(preset => {
@@ -1138,36 +1170,14 @@ const QRCodeLogoControls = {
             }
         });
 
-        return `
-            <div class="logo-presets-panel">
-                <input type="file" class="logo-upload-input" id="qrLogoInput" accept="image/png,image/jpeg,image/svg+xml">
-                <div class="logo-presets-search">
-                    <input type="search" class="form-input logo-presets-search-input" id="logoPresetSearchInput" placeholder="${I18n.translateString('Search logos')}" aria-label="${I18n.translateString('Filter logos by name')}">
-                </div>
-                <div class="logo-presets-grid" id="qrLogoPresets">
-                    <button type="button" class="logo-preset-button logo-preset-button-action" data-logo-action="clear" data-logo-preset-name="none remove clear" aria-label="${I18n.translateString('Clear logo')}">
-                        <span class="logo-preset-thumb logo-preset-thumb-action"></span>
-                        <span class="logo-preset-name">${I18n.translateString('None')}</span>
-                    </button>
-                    <button type="button" class="logo-preset-button logo-preset-button-action" data-logo-action="upload" data-logo-preset-name="upload custom file logo" aria-label="${I18n.translateString('Upload logo')}">
-                        <span class="logo-preset-thumb logo-preset-thumb-action logo-preset-thumb-upload">
-                            <i class="bi bi-upload"></i>
-                        </span>
-                        <span class="logo-preset-name">${I18n.translateString('Upload logo')}</span>
-                    </button>
-                    ${this.getUploadedLogoTilesMarkup()}
-                    ${presets.map(preset => `
-                        <button type="button" class="logo-preset-button" data-logo-preset="${preset.id}" data-logo-preset-name="${`${preset.name} ${preset.slug || preset.id}`.toLowerCase()}" aria-label="${preset.name} logo preset">
-                            <span class="logo-preset-thumb${preset.thumbCls}"${preset.thumbStyle}>
-                                <img src="${preset.dataUrl}" alt="${preset.name} logo preset" loading="lazy">
-                            </span>
-                            <span class="logo-preset-name">${preset.name}</span>
-                        </button>
-                    `).join('')}
-                </div>
-                <div class="form-hint logo-presets-empty-state" id="logoPresetSearchEmpty" hidden>${I18n.translateString('No logos match your search.')}</div>
-            </div>
-        `;
+        return presets.map(preset => `
+            <button type="button" class="logo-preset-button" data-logo-preset="${preset.id}" data-logo-preset-name="${`${preset.name} ${preset.slug || preset.id}`.toLowerCase()}" aria-label="${preset.name} logo preset">
+                <span class="logo-preset-thumb${preset.thumbCls}"${preset.thumbStyle}>
+                    <img src="${preset.dataUrl}" alt="${preset.name} logo preset" loading="lazy">
+                </span>
+                <span class="logo-preset-name">${preset.name}</span>
+            </button>
+        `).join('');
     },
 
     getLogoPresets() {
@@ -1752,6 +1762,34 @@ const QRCodeLogoControls = {
             : 'rounded';
     },
 
+    ensurePresetTilesRendered(root = document) {
+        const grid = root.querySelector('#qrLogoPresets');
+        const anchor = grid?.querySelector('[data-logo-preset-anchor]');
+        if (!grid || !anchor || grid.dataset.logoPresetsRendered === 'true') {
+            return;
+        }
+
+        anchor.insertAdjacentHTML('afterend', this.getPresetTilesMarkup());
+        grid.dataset.logoPresetsRendered = 'true';
+    },
+
+    releasePresetTiles(root = document) {
+        const grid = root.querySelector('#qrLogoPresets');
+        const anchor = grid?.querySelector('[data-logo-preset-anchor]');
+        if (!grid || !anchor || grid.dataset.logoPresetsRendered !== 'true') {
+            return;
+        }
+
+        let node = anchor.nextSibling;
+        while (node) {
+            const nextNode = node.nextSibling;
+            node.remove();
+            node = nextNode;
+        }
+
+        grid.dataset.logoPresetsRendered = 'false';
+    },
+
     getLogoShapeButtonsMarkup(currentShape = this.logoShape) {
         const activeShape = this.normalizeLogoShape(currentShape);
 
@@ -1828,6 +1866,7 @@ const QRCodeLogoControls = {
             });
 
             presetSearchInput?.addEventListener('input', () => {
+                this.ensurePresetTilesRendered(root);
                 this.applyPresetSearch(root, this.getLogoSearchButtons(root), presetSearchInput, presetEmptyState);
             });
 
@@ -3721,6 +3760,12 @@ const QRCodeFrameControls = {
                     if (!card || !card.dataset.frame) {
                         return;
                     }
+                    const previousActiveCard = frameSelector.querySelector('.frame-card.active');
+                    if (previousActiveCard && previousActiveCard !== card) {
+                        previousActiveCard.classList.remove('active');
+                        window.QRFrames.resetFramePreviewCard(previousActiveCard);
+                    }
+                    card.classList.add('active');
                     this.applySettings(root);
                     if (card.dataset.frame === 'custom' && card.dataset.customFrameId) {
                         window.QRFrames.setActiveCustomFrame(card.dataset.customFrameId);
@@ -3729,6 +3774,8 @@ const QRCodeFrameControls = {
                     this.syncControlValues(root, card.dataset.frame);
                     this.updateStylingVisibility(root, card.dataset.frame);
                     this.updatePositionPanelVisibility(root, card.dataset.frame);
+                    this.scheduleFramePreviewSampleRefresh(root);
+                    this.scheduleActiveFrameRefresh(root);
                     window.QRFrames.updateDeveloperJsonViewer?.();
                 }, true);
                 frameSelector.dataset.frameSyncBound = 'true';
@@ -3956,6 +4003,7 @@ const QRCodeFrameControls = {
         }
         window.QRFrames.setFrameQRRect(frameType, partial);
         this.syncCustomFrameStageBox(root);
+        this.scheduleFramePreviewSampleRefresh(root);
         this.scheduleActiveFrameRefresh(root);
     },
 
@@ -4082,6 +4130,7 @@ const QRCodeFrameControls = {
                     heightPct: nextHeightPx / stageMetrics.height
                 });
                 this.syncCustomFrameStageBox(root);
+                this.scheduleFramePreviewSampleRefresh(root);
                 this.scheduleActiveFrameRefresh(root);
                 return;
             }
@@ -4091,6 +4140,7 @@ const QRCodeFrameControls = {
             const yPct = newTop / stageMetrics.height;
             window.QRFrames.setFrameQRRect(frameType, { xPct, yPct });
             this.syncCustomFrameStageBox(root);
+            this.scheduleFramePreviewSampleRefresh(root);
             this.scheduleActiveFrameRefresh(root);
         };
 
@@ -4197,9 +4247,45 @@ const QRCodeFrameControls = {
         });
     },
 
-    updateFramePreviewSamples(root = document) {
+    async updateFramePreviewSamples(root = document) {
         if (!window.QRFrames) {
             return;
+        }
+
+        const qrContainer = root.querySelector('#qrcode');
+        const liveCanvas = qrContainer?.querySelector('canvas');
+        if (liveCanvas instanceof HTMLCanvasElement) {
+            window.QRFrames.updateFramePreviews(liveCanvas);
+            return;
+        }
+
+        const previewState = typeof QRCodePreviewRenderer !== 'undefined'
+            ? QRCodePreviewRenderer.getPreviewStateForContainer(qrContainer)
+            : null;
+
+        if (previewState?.qrCanvas instanceof HTMLCanvasElement) {
+            window.QRFrames.updateFramePreviews(previewState.qrCanvas);
+            return;
+        }
+
+        if (
+            previewState?.qrText
+            && previewState?.qrOptions
+            && typeof buildNativeQRCodeSVG === 'function'
+            && typeof QRCodePreviewRenderer?.svgMarkupToCanvas === 'function'
+        ) {
+            try {
+                const qrSVG = buildNativeQRCodeSVG({
+                    text: previewState.qrText,
+                    size: 100,
+                    qrOptions: previewState.qrOptions
+                });
+                const qrCanvas = await QRCodePreviewRenderer.svgMarkupToCanvas(qrSVG, 100);
+                window.QRFrames.updateFramePreviews(qrCanvas);
+                return;
+            } catch (error) {
+                console.error('Unable to refresh frame thumbnails from the current QR preview.', error);
+            }
         }
 
         const frameCards = root.querySelectorAll('.frame-card');
@@ -4247,8 +4333,9 @@ const QRCodeFrameControls = {
 
     triggerActiveFrameRefresh(root = document) {
         const qrContainer = root.querySelector('#qrcode');
+        const activeFrameType = this.getActiveFrameType(root);
         const refreshed = typeof QRCodePreviewRenderer !== 'undefined'
-            ? QRCodePreviewRenderer.refreshContainerPreview(qrContainer)
+            ? QRCodePreviewRenderer.refreshContainerPreview(qrContainer, activeFrameType)
             : false;
 
         if (refreshed) {
@@ -4348,6 +4435,7 @@ const QRCodeFrameControls = {
 
 const QRCodeDownloadButtonLayout = {
     resizeObserver: null,
+    measureContainer: null,
 
     getResizeObserver() {
         if (!this.resizeObserver && typeof ResizeObserver !== 'undefined') {
@@ -4359,6 +4447,25 @@ const QRCodeDownloadButtonLayout = {
         }
 
         return this.resizeObserver;
+    },
+
+    getMeasureContainer() {
+        if (this.measureContainer?.isConnected) {
+            return this.measureContainer;
+        }
+
+        const container = document.createElement('div');
+        container.setAttribute('aria-hidden', 'true');
+        container.style.position = 'absolute';
+        container.style.visibility = 'hidden';
+        container.style.pointerEvents = 'none';
+        container.style.inset = '0 auto auto -9999px';
+        container.style.width = 'auto';
+        container.style.maxWidth = 'none';
+        container.style.whiteSpace = 'nowrap';
+        document.documentElement.appendChild(container);
+        this.measureContainer = container;
+        return container;
     },
 
     init(root = document) {
@@ -4373,18 +4480,37 @@ const QRCodeDownloadButtonLayout = {
     },
 
     measureButtonWidth(button) {
+        const styles = window.getComputedStyle(button);
+        const measureKey = [
+            button.innerHTML,
+            button.className,
+            styles.font,
+            styles.paddingLeft,
+            styles.paddingRight,
+            styles.borderLeftWidth,
+            styles.borderRightWidth,
+            styles.gap,
+            styles.columnGap,
+            styles.letterSpacing,
+            styles.textTransform
+        ].join('|');
+
+        if (button.dataset.downloadMeasureKey === measureKey) {
+            const cachedWidth = Number.parseFloat(button.dataset.downloadMeasureWidth || '0');
+            if (cachedWidth > 0) {
+                return cachedWidth;
+            }
+        }
+
         const clone = button.cloneNode(true);
-        clone.style.position = 'absolute';
-        clone.style.visibility = 'hidden';
-        clone.style.pointerEvents = 'none';
         clone.style.width = 'auto';
         clone.style.maxWidth = 'none';
         clone.style.whiteSpace = 'nowrap';
-        clone.style.left = '-9999px';
-        clone.style.top = '0';
-        document.body.appendChild(clone);
+        const measureContainer = this.getMeasureContainer();
+        measureContainer.replaceChildren(clone);
         const width = clone.getBoundingClientRect().width;
-        clone.remove();
+        button.dataset.downloadMeasureKey = measureKey;
+        button.dataset.downloadMeasureWidth = String(width);
         return width;
     },
 
@@ -4428,6 +4554,9 @@ const QRCodeDownloadButtonLayout = {
 
 const QRCodeConfigurationAccordion = {
     SECTION_ORDER: ['Content', 'Frame', 'Logo', 'Settings'],
+    layoutShells: new Set(),
+    layoutRefreshScheduled: false,
+    layoutWindowBound: false,
     SECTION_META: {
         Content: {
             icon: 'bi-card-text',
@@ -4527,18 +4656,45 @@ const QRCodeConfigurationAccordion = {
 
     observeLayout(shell, sections) {
         shell.dataset.layoutWidth = String(Math.round(shell.clientWidth || 0));
-        const resizeObserver = new ResizeObserver(() => {
+        shell.__configurationSections = sections;
+        this.layoutShells.add(shell);
+    },
+
+    refreshObservedLayouts(force = false) {
+        this.layoutRefreshScheduled = false;
+
+        this.layoutShells.forEach(shell => {
+            if (!shell?.isConnected) {
+                this.layoutShells.delete(shell);
+                return;
+            }
+
             const nextWidth = Math.round(shell.clientWidth || 0);
             const previousWidth = Number(shell.dataset.layoutWidth || '0');
-            if (nextWidth === previousWidth) {
+            if (!force && nextWidth === previousWidth) {
                 return;
             }
 
             shell.dataset.layoutWidth = String(nextWidth);
-            this.renderResponsiveLayout(shell, sections);
+            this.renderResponsiveLayout(shell, shell.__configurationSections || []);
         });
+    },
 
-        resizeObserver.observe(shell);
+    scheduleLayoutRefresh(force = false) {
+        if (this.layoutRefreshScheduled) {
+            if (force) {
+                this.layoutRefreshForced = true;
+            }
+            return;
+        }
+
+        this.layoutRefreshForced = force;
+        this.layoutRefreshScheduled = true;
+        window.requestAnimationFrame(() => {
+            const shouldForce = Boolean(this.layoutRefreshForced);
+            this.layoutRefreshForced = false;
+            this.refreshObservedLayouts(shouldForce);
+        });
     },
 
     renderResponsiveLayout(shell, sections) {
@@ -4559,6 +4715,7 @@ const QRCodeConfigurationAccordion = {
         shell.replaceChildren(accordion);
         shell.dataset.layoutMode = 'accordion';
         this.bindAccordionInteractions(accordion, shell);
+        this.syncVisibleSection(shell, activeSection || defaultSection);
     },
 
     tabsFit(tabList) {
@@ -4768,7 +4925,7 @@ const QRCodeConfigurationAccordion = {
             panel.hidden = !isActive;
         });
 
-        this.syncFramePlacementWhenVisible(shell, sectionName);
+        this.syncVisibleSection(shell, sectionName);
     },
 
     activateAccordionSection(accordion, shell, sectionName) {
@@ -4792,16 +4949,25 @@ const QRCodeConfigurationAccordion = {
             }
         });
 
-        this.syncFramePlacementWhenVisible(shell, shouldCollapse ? '' : sectionName);
+        this.syncVisibleSection(shell, shouldCollapse ? '' : sectionName);
     },
 
-    syncFramePlacementWhenVisible(root, sectionName) {
+    syncVisibleSection(root, sectionName) {
+        if (typeof QRCodeLogoControls !== 'undefined') {
+            if (sectionName === 'logo') {
+                QRCodeLogoControls.ensurePresetTilesRendered(root);
+            } else {
+                QRCodeLogoControls.releasePresetTiles(root);
+            }
+        }
+
         if (sectionName !== 'frame' || typeof QRCodeFrameControls === 'undefined') {
             return;
         }
 
         window.requestAnimationFrame(() => {
             QRCodeFrameControls.updatePositionPanelVisibility(root, QRCodeFrameControls.getActiveFrameType(root));
+            QRCodeFrameControls.scheduleFramePreviewSampleRefresh(root?.ownerDocument || document);
         });
     },
 
@@ -4810,6 +4976,12 @@ const QRCodeConfigurationAccordion = {
         initializeAccordion();
 
         document.addEventListener('app:route-rendered', initializeAccordion);
+        document.addEventListener('app:sidebar-layout-changed', () => this.scheduleLayoutRefresh(true));
+
+        if (!this.layoutWindowBound) {
+            window.addEventListener('resize', () => this.scheduleLayoutRefresh());
+            this.layoutWindowBound = true;
+        }
 
         const observer = new MutationObserver(() => initializeAccordion());
         observer.observe(document.body, {

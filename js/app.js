@@ -253,6 +253,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeOverlaySidebar = () => sidebar.classList.remove('open');
     let desktopSidebarCollapsedPreference = sidebar.classList.contains('collapsed');
     let sidebarAutoCollapsed = false;
+    let sidebarLayoutRefreshTimeout = null;
+
+    const dispatchSidebarLayoutChanged = () => {
+        document.dispatchEvent(new CustomEvent('app:sidebar-layout-changed'));
+    };
+
+    const scheduleSidebarLayoutChanged = () => {
+        if (isOverlaySidebar()) {
+            return;
+        }
+
+        if (sidebarLayoutRefreshTimeout !== null) {
+            window.clearTimeout(sidebarLayoutRefreshTimeout);
+        }
+
+        sidebarLayoutRefreshTimeout = window.setTimeout(() => {
+            sidebarLayoutRefreshTimeout = null;
+            dispatchSidebarLayoutChanged();
+        }, 320);
+    };
 
     const syncSidebarMode = () => {
         if (isOverlaySidebar()) {
@@ -290,6 +310,20 @@ document.addEventListener('DOMContentLoaded', () => {
         sidebar.classList.toggle('collapsed');
         desktopSidebarCollapsedPreference = sidebar.classList.contains('collapsed');
         sidebarAutoCollapsed = false;
+        scheduleSidebarLayoutChanged();
+    });
+
+    sidebar.addEventListener('transitionend', event => {
+        if (event.propertyName !== 'width' || isOverlaySidebar()) {
+            return;
+        }
+
+        if (sidebarLayoutRefreshTimeout !== null) {
+            window.clearTimeout(sidebarLayoutRefreshTimeout);
+            sidebarLayoutRefreshTimeout = null;
+        }
+
+        dispatchSidebarLayoutChanged();
     });
     
     // Handle navigation clicks

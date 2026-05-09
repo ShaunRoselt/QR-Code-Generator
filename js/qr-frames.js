@@ -845,6 +845,63 @@ const QRFrames = {
         return canvas.toDataURL('image/png');
     },
 
+    updateFramePreviewCard(card, qrCanvas, previewSize = 100) {
+        if (!qrCanvas || !card) {
+            return;
+        }
+
+        const frameType = card.dataset.frame;
+        const preview = card.querySelector('.frame-preview');
+        if (!preview || !frameType) {
+            return;
+        }
+
+        const normalizedQRCanvas = this.getSquareQRSourceCanvas(qrCanvas);
+        const previousCustomFrameId = this.activeCustomFrameId;
+        if (frameType === this.FRAME_TYPES.CUSTOM && card.dataset.customFrameId) {
+            this.setActiveCustomFrame(card.dataset.customFrameId);
+        }
+
+        const framedPreview = this.withFrameCustomization(frameType, () => {
+            const sourceCanvas = document.createElement('canvas');
+            sourceCanvas.width = previewSize;
+            sourceCanvas.height = previewSize;
+            const sourceContext = sourceCanvas.getContext('2d');
+            sourceContext.fillStyle = this.getQRBackgroundFill();
+            sourceContext.fillRect(0, 0, previewSize, previewSize);
+            sourceContext.drawImage(normalizedQRCanvas, 0, 0, previewSize, previewSize);
+            return this.applyFrameWithActiveCustomization(sourceCanvas, frameType, previewSize);
+        });
+        const previewName = this.getFrameDisplayName(frameType);
+
+        preview.innerHTML = `<img src="${framedPreview.toDataURL('image/png')}" alt="${previewName} frame preview">`;
+        if (frameType === this.FRAME_TYPES.CUSTOM && card.dataset.customFrameId) {
+            this.setActiveCustomFrame(previousCustomFrameId);
+        }
+    },
+
+    resetFramePreviewCard(card) {
+        if (!card) {
+            return;
+        }
+
+        const preview = card.querySelector('.frame-preview');
+        if (!preview || !card.dataset.frame) {
+            return;
+        }
+
+        preview.innerHTML = this.getFramePreviewMarkup(card.dataset.frame, card.dataset.customFrameId || '');
+    },
+
+    updateActiveFramePreview(qrCanvas, previewSize = 100) {
+        const activeCard = document.querySelector('.frame-card.active');
+        if (!activeCard) {
+            return;
+        }
+
+        this.updateFramePreviewCard(activeCard, qrCanvas, previewSize);
+    },
+
     /**
      * Update frame selector thumbnails using the current QR preview canvas
      */
@@ -853,35 +910,9 @@ const QRFrames = {
             return;
         }
 
-        const normalizedQRCanvas = this.getSquareQRSourceCanvas(qrCanvas);
-
         const frameCards = document.querySelectorAll('.frame-card');
         frameCards.forEach(card => {
-            const frameType = card.dataset.frame;
-            const preview = card.querySelector('.frame-preview');
-            if (!preview || !frameType) {
-                return;
-            }
-            const previousCustomFrameId = this.activeCustomFrameId;
-            if (frameType === this.FRAME_TYPES.CUSTOM && card.dataset.customFrameId) {
-                this.setActiveCustomFrame(card.dataset.customFrameId);
-            }
-
-            const sourceCanvas = document.createElement('canvas');
-            sourceCanvas.width = previewSize;
-            sourceCanvas.height = previewSize;
-            const sourceContext = sourceCanvas.getContext('2d');
-            sourceContext.fillStyle = this.getQRBackgroundFill();
-            sourceContext.fillRect(0, 0, previewSize, previewSize);
-            sourceContext.drawImage(normalizedQRCanvas, 0, 0, previewSize, previewSize);
-
-            const framedPreview = this.applyFrame(sourceCanvas, frameType, previewSize);
-            const previewName = this.getFrameDisplayName(frameType);
-
-            preview.innerHTML = `<img src="${framedPreview.toDataURL('image/png')}" alt="${previewName} frame preview">`;
-            if (frameType === this.FRAME_TYPES.CUSTOM && card.dataset.customFrameId) {
-                this.setActiveCustomFrame(previousCustomFrameId);
-            }
+            this.updateFramePreviewCard(card, qrCanvas, previewSize);
         });
     },
 

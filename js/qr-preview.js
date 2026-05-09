@@ -258,6 +258,18 @@ const QRCodePreviewRenderer = {
     menuPadding: 12,
     activeMenuTarget: null,
     contextMenuInitialized: false,
+    cloneCanvas(sourceCanvas) {
+        if (!(sourceCanvas instanceof HTMLCanvasElement)) {
+            return null;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = sourceCanvas.width;
+        canvas.height = sourceCanvas.height;
+        const context = canvas.getContext('2d');
+        context.drawImage(sourceCanvas, 0, 0);
+        return canvas;
+    },
 
     createSVGPreviewElement(svgMarkup, displaySize) {
         const wrapper = document.createElement('div');
@@ -533,10 +545,15 @@ const QRCodePreviewRenderer = {
         return qrSVG;
     },
 
-    refreshContainerPreview(qrContainer) {
+    refreshContainerPreview(qrContainer, frameType = null) {
         const state = this.getPreviewStateForContainer(qrContainer);
         if (!state?.qrText || !state?.qrOptions) {
             return false;
+        }
+
+        const nextFrameType = frameType || window.QRFrames?.getActiveFrameType?.(document) || state.frameType;
+        if (nextFrameType) {
+            state.frameType = nextFrameType;
         }
 
         const svgMarkup = this.buildPreviewSVGMarkup(state, state.displaySize, true);
@@ -1840,7 +1857,8 @@ const QRCodePreviewRenderer = {
                 frameType,
                 displaySize,
                 qrOptions,
-                qrText
+                qrText,
+                qrCanvas: this.cloneCanvas(canvas)
             };
 
             const canRenderFramedSVGPreview = frameType === 'none'
