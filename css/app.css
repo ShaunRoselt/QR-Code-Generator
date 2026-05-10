@@ -64,8 +64,11 @@ body {
     transform: translateY(-1px);
 }
 
-.app-title i {
-    font-size: 1.2rem;
+.app-title-logo {
+    width: 1.65rem;
+    height: 1.65rem;
+    display: block;
+    flex-shrink: 0;
 }
 
 .top-bar-spacer {
@@ -1047,7 +1050,14 @@ body.kiosk-mode .qr-placeholder {
 }
 
 .setting-icon.app-icon {
-    color: var(--accent-primary);
+    background: transparent;
+    box-shadow: none;
+}
+
+.setting-logo {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .setting-info {

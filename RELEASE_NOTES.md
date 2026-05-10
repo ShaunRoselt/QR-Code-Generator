@@ -83,7 +83,7 @@ Simply clone the repository and open `index.html` in a web browser. No build pro
 
 ### 🌐 GitHub Pages
 
-The application is ready for deployment on GitHub Pages. Just enable Pages in your repository settings and point to the root directory.
+The application is ready for deployment on GitHub Pages. Enable Pages for the repository root, keep the `CNAME` file set to `qrcode.apps.shaunroselt.com`, and point the `qrcode.apps` DNS CNAME record to `ShaunRoselt.github.io`.
 
 ### 📄 License
 

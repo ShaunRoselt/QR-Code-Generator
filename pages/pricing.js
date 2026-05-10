@@ -7,7 +7,7 @@ const PricingPage = {
         keywords: 'QR code generator pricing, QR plans, dynamic QR pricing, enterprise QR pricing',
         ogTitle: 'QR Code Generator Pricing | Plans and Feature Comparison',
         ogDescription: 'Review plan pricing and included capacity for QR Code Generator, from starter use to enterprise rollout.',
-        ogUrl: 'https://qrcode.shaunroselt.com/index.html?page=pricing',
+        ogUrl: 'https://qrcode.apps.shaunroselt.com/index.html?page=pricing',
         twitterTitle: 'QR Code Generator Pricing | Plans and Feature Comparison',
         twitterDescription: 'Compare QR Code Generator pricing plans, usage limits, and included features.'
     },
@@ -99,7 +99,7 @@ const PricingPage = {
                 <div class="pricing-card-actions">
                     <a class="btn btn-primary" href="?page=home" data-route="/home">Open app</a>
                     ${plan.contactOnly
-                        ? '<a class="btn btn-secondary" href="mailto:hello@qrcode.shaunroselt.com">Contact sales</a>'
+                        ? '<a class="btn btn-secondary" href="mailto:hello@qrcode.apps.shaunroselt.com">Contact sales</a>'
                         : '<a class="btn btn-secondary" href="?page=url" data-route="/url">Try a QR flow</a>'}
                 </div>
             </article>
@@ -141,7 +141,7 @@ const PricingPage = {
                 <div class="public-shell">
                     <header class="marketing-topbar">
                         <a class="brand-mark" href="?page=public" data-route="/public" aria-label="QR Code Generator home">
-                            <span class="brand-icon"><i class="bi bi-qr-code-scan"></i></span>
+                            <span class="brand-icon"><img class="brand-logo" src="assets/favicon.svg" alt="" width="48" height="48"></span>
                             <span class="brand-copy">
                                 <strong>QR Code Generator</strong>
                                 <span>Plans and product fit</span>

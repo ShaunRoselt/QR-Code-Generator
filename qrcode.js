@@ -1024,7 +1024,7 @@ var QRCode;
 	 * @class QRCode
 	 * @constructor
 	 * @example 
-	 * new QRCode(document.getElementById("test"), "https://qrcode.shaunroselt.com/?page=url");
+	 * new QRCode(document.getElementById("test"), "https://qrcode.apps.shaunroselt.com/?page=url");
 	 *
 	 * @example
 	 * const oQRCode = new QRCode("test", {
@@ -1034,7 +1034,7 @@ var QRCode;
 	 * });
 	 * 
 	 * oQRCode.clear(); // Remove the current QR code.
-	 * oQRCode.makeCode("https://qrcode.shaunroselt.com/?page=wifi"); // Render a new QR code for another app flow.
+	 * oQRCode.makeCode("https://qrcode.apps.shaunroselt.com/?page=wifi"); // Render a new QR code for another app flow.
 	 *
 	 * @param {HTMLElement|String} el target element or 'id' attribute of element.
 	 * @param {Object|String} vOption

@@ -564,7 +564,7 @@
 &lt;script src="qrcode.js"&gt;&lt;/script&gt;
 &lt;script&gt;
   new QRCode('qrcode', {
-    text: 'https://qrcode.shaunroselt.com',
+    text: 'https://qrcode.apps.shaunroselt.com',
     width: 256,
     height: 256,
     correctLevel: 'Q'
@@ -703,7 +703,7 @@ const shorthand = new QRCode(elementOrId, 'https://example.com');</pre>
                 <article class="method-card">
                     <h3><span class="mono">makeCode(text)</span></h3>
                     <p>Legacy alias for <span class="mono">setCode(text)</span>. It behaves the same way and still redraws the current instance.</p>
-                    <div class="inline-code">qrCode.makeCode('mailto:hello@qrcode.shaunroselt.com?subject=Support');</div>
+                    <div class="inline-code">qrCode.makeCode('mailto:hello@qrcode.apps.shaunroselt.com?subject=Support');</div>
                 </article>
                 <article class="method-card">
                     <h3><span class="mono">clear()</span></h3>
@@ -819,7 +819,7 @@ QRCode.CorrectLevel.H</pre>
                 <article class="example-card">
                     <h3>Basic URL</h3>
                     <pre>new QRCode('qrcode', {
-  text: 'https://qrcode.shaunroselt.com/docs/',
+    text: 'https://qrcode.apps.shaunroselt.com/docs/',
   width: 300,
   height: 300,
   correctLevel: 'Q'
@@ -844,8 +844,8 @@ new QRCode('qrcode', {
   'VERSION:3.0',
   'FN:Shaun Roselt',
   'N:Roselt;Shaun;;;',
-  'EMAIL:hello@qrcode.shaunroselt.com',
-  'URL:https://qrcode.shaunroselt.com',
+    'EMAIL:hello@qrcode.apps.shaunroselt.com',
+    'URL:https://qrcode.apps.shaunroselt.com',
   'END:VCARD'
 ].join('\n');
 
@@ -859,7 +859,7 @@ new QRCode('qrcode', {
                 <article class="example-card">
                     <h3>SVG Renderer</h3>
                     <pre>new QRCode('qrcode', {
-  text: 'https://qrcode.shaunroselt.com',
+    text: 'https://qrcode.apps.shaunroselt.com',
   width: 240,
   height: 240,
   margin: 2,
@@ -914,15 +914,15 @@ new QRCode('qrcode', {
 
     <script>
         const payloads = {
-            url: 'https://qrcode.shaunroselt.com/docs/',
+            url: 'https://qrcode.apps.shaunroselt.com/docs/',
             wifi: 'WIFI:T:WPA;S:QR Demo WiFi;P:scanme123;H:false;;',
             vcard: [
                 'BEGIN:VCARD',
                 'VERSION:3.0',
                 'FN:Shaun Roselt',
                 'N:Roselt;Shaun;;;',
-                'EMAIL:hello@qrcode.shaunroselt.com',
-                'URL:https://qrcode.shaunroselt.com',
+                'EMAIL:hello@qrcode.apps.shaunroselt.com',
+                'URL:https://qrcode.apps.shaunroselt.com',
                 'END:VCARD'
             ].join('\n')
         };

@@ -19,7 +19,7 @@ const URLMode = {
                         
                         <div class="form-group">
                             <label class="form-label">Website URL</label>
-                            <input type="url" class="form-input" id="urlInput" placeholder="https://example.com" value="https://qrcode.shaunroselt.com/">
+                            <input type="url" class="form-input" id="urlInput" placeholder="https://example.com" value="https://qrcode.apps.shaunroselt.com/">
                             <div class="form-hint">Enter the complete URL including https://</div>
                         </div>
                         

@@ -177,7 +177,7 @@ const SettingsPage = {
                 <div class="setting-row app-details">
                     <div class="setting-left">
                         <div class="setting-icon app-icon">
-                            <i class="bi bi-qr-code-scan"></i>
+                            <img class="setting-logo" src="assets/favicon.svg" alt="" width="40" height="40">
                         </div>
                         <div class="setting-info">
                             <div class="setting-label">QR Code Generator</div>

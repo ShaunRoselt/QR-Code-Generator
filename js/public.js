@@ -1,14 +1,14 @@
 "use strict";
 
 const PublicPage = {
-    heroQrUrl: 'https://qrcode.shaunroselt.com',
+    heroQrUrl: 'https://qrcode.apps.shaunroselt.com/',
     meta: {
         title: 'QR Code Generator | The Best Free QR Code Generator',
         description: 'The best free QR Code Generator for creating high-resolution QR codes in your browser. Generate QR codes for websites, WiFi, contact cards, events, social links, and more.',
         keywords: 'free QR code generator, QR code creator, QR code maker, browser QR code generator, WiFi QR code, vCard QR code',
         ogTitle: 'QR Code Generator | The Best Free QR Code Generator',
         ogDescription: 'Create high-resolution QR codes in your browser with no signup, no backend, and no tracking.',
-        ogUrl: 'https://qrcode.shaunroselt.com/index.html?page=public',
+        ogUrl: 'https://qrcode.apps.shaunroselt.com/index.html?page=public',
         twitterTitle: 'QR Code Generator | The Best Free QR Code Generator',
         twitterDescription: 'Create QR codes for websites, WiFi, events, contact cards, and more. Free to use in your browser.'
     },
@@ -19,7 +19,7 @@ const PublicPage = {
                 <div class="public-shell">
                     <header class="marketing-topbar">
                         <a class="brand-mark" href="?page=public" data-route="/public" aria-label="QR Code Generator home">
-                            <span class="brand-icon"><i class="bi bi-qr-code-scan"></i></span>
+                            <span class="brand-icon"><img class="brand-logo" src="assets/favicon.svg" alt="" width="48" height="48"></span>
                             <span class="brand-copy">
                                 <strong>QR Code Generator</strong>
                                 <span>Free browser-based QR creation</span>
@@ -64,7 +64,7 @@ const PublicPage = {
                                         <span class="preview-meta">Free today</span>
                                     </div>
                                     <div class="preview-qr">
-                                        <a class="preview-qr-link" href="${this.heroQrUrl}" target="_blank" rel="noopener noreferrer" aria-label="Open qrcode.shaunroselt.com">
+                                        <a class="preview-qr-link" href="${this.heroQrUrl}" target="_blank" rel="noopener noreferrer" aria-label="Open qrcode.apps.shaunroselt.com">
                                             <div class="preview-grid preview-grid-live" id="publicHeroQr"></div>
                                         </a>
                                         <div class="preview-frame">Scan me</div>

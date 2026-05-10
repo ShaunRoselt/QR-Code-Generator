@@ -84,5 +84,5 @@ All QR code generation happens locally in the browser. The app does not require 
 
 ## Links
 
-- Homepage: https://qrcode.shaunroselt.com
+- Homepage: https://qrcode.apps.shaunroselt.com
 - Repository: https://github.com/ShaunRoselt/QR-Code-Generator

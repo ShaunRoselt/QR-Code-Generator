@@ -7,7 +7,7 @@ const ComparePage = {
         keywords: 'QR code generator comparison, QR code software compare, QRCode Monkey vs Flowcode vs Canva, QR code generator features table',
         ogTitle: 'QR Code Generator Compare | Neutral Feature Table',
         ogDescription: 'A source-backed comparison table for popular QR code generators, focused on public offers, customization, exports, analytics, and signup requirements.',
-        ogUrl: 'https://qrcode.shaunroselt.com/index.html?page=compare',
+        ogUrl: 'https://qrcode.apps.shaunroselt.com/index.html?page=compare',
         twitterTitle: 'QR Code Generator Compare | Neutral Feature Table',
         twitterDescription: 'See a neutral feature table comparing popular QR code generators using public product pages.'
     },
@@ -396,7 +396,7 @@ const ComparePage = {
                 <div class="public-shell">
                     <header class="marketing-topbar">
                         <a class="brand-mark" href="?page=public" data-route="/public" aria-label="QR Code Generator home">
-                            <span class="brand-icon"><i class="bi bi-qr-code-scan"></i></span>
+                            <span class="brand-icon"><img class="brand-logo" src="assets/favicon.svg" alt="" width="48" height="48"></span>
                             <span class="brand-copy">
                                 <strong>QR Code Generator</strong>
                                 <span>Neutral comparison view</span>

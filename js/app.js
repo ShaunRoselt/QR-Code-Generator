@@ -7,7 +7,7 @@ const DEFAULT_PAGE_META = {
     keywords: 'qr code generator, qr code maker, qr code creator',
     ogTitle: 'QR Code Generator',
     ogDescription: 'Professional QR Code Generator - Create custom QR codes',
-    ogUrl: 'https://qrcode.shaunroselt.com/index.html?page=home',
+    ogUrl: 'https://qrcode.apps.shaunroselt.com/index.html?page=home',
     twitterTitle: 'QR Code Generator',
     twitterDescription: 'Professional QR Code Generator - Create custom QR codes'
 };
