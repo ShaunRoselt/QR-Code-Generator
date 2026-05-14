@@ -398,6 +398,116 @@ const QRFrames = {
             : normalizedRotation;
     },
 
+    normalizeFrameTextValue(frameText, fallbackText = '') {
+        if (typeof frameText !== 'string') {
+            return fallbackText;
+        }
+
+        if (this.isDefaultFrameText(frameText)) {
+            return fallbackText;
+        }
+
+        return frameText
+            .replace(/\r\n?/g, '\n')
+            .replace(/\u00a0/g, ' ')
+            .slice(0, 160);
+    },
+
+    getFrameTextBounds(frameType, width = 300) {
+        const fallbackBounds = { x: width * 0.08, y: width * 0.72, width: width * 0.84, height: width * 0.2 };
+        if (!frameType || !this.supportsFrameText(frameType)) {
+            return null;
+        }
+
+        if (!this.isDecorativeFrame(frameType)) {
+            const metrics = this.getFrameMetrics(frameType, width);
+            if (!metrics.hasText) {
+                return null;
+            }
+
+            return {
+                x: width * 0.08,
+                y: metrics.size,
+                width: width * 0.84,
+                height: metrics.textHeight
+            };
+        }
+
+        const metrics = this.getDecorativeFrameMetrics(frameType, width);
+        const definition = this.getDecorativeFrameTextDefinition(frameType);
+        if (!definition) {
+            return fallbackBounds;
+        }
+
+        const textWidth = (definition.width || 52) * metrics.scale;
+        const textHeight = (definition.height || Math.max((definition.fontSize || 9) * 1.65, 10)) * metrics.scale;
+        const centerX = (definition.x ?? 32) * metrics.scale;
+        const centerY = (definition.y ?? 42) * metrics.scale;
+
+        return {
+            x: centerX - (textWidth / 2),
+            y: centerY - (textHeight / 2),
+            width: textWidth,
+            height: textHeight
+        };
+    },
+
+    clampFrameTextRect(frameType, rect = {}, width = 300) {
+        const bounds = this.getFrameTextBounds(frameType, width);
+        if (!bounds) {
+            return null;
+        }
+
+        const widthPx = Math.max(20, Math.min(bounds.width, Number(rect.width) || bounds.width));
+        const heightPx = Math.max(12, Math.min(bounds.height * 2.5, Number(rect.height) || bounds.height));
+        const minX = 0;
+        const minY = 0;
+        const maxX = Math.max(minX, width - widthPx);
+        const frameHeight = this.getFrameHeightRatio(frameType) * width;
+        const maxY = Math.max(minY, frameHeight - heightPx);
+        const nextX = Math.min(maxX, Math.max(minX, Number(rect.x) || bounds.x));
+        const nextY = Math.min(maxY, Math.max(minY, Number(rect.y) || bounds.y));
+
+        return {
+            x: nextX,
+            y: nextY,
+            width: widthPx,
+            height: heightPx
+        };
+    },
+
+    getDefaultFrameTextRect(frameType, width = 300) {
+        return this.clampFrameTextRect(frameType, this.getFrameTextBounds(frameType, width), width);
+    },
+
+    getFrameTextRect(frameType, width = 300) {
+        if (!this.supportsFrameText(frameType)) {
+            return null;
+        }
+
+        const customization = this.getFrameCustomization(frameType);
+        return this.clampFrameTextRect(frameType, customization.textRect || this.getDefaultFrameTextRect(frameType, width), width);
+    },
+
+    getFrameTextRectRange(frameType, rectOverride = null, width = 300) {
+        const rect = this.clampFrameTextRect(
+            frameType,
+            rectOverride || this.getFrameTextRect(frameType, width),
+            width
+        );
+        if (!rect) {
+            return null;
+        }
+
+        const frameHeight = this.getFrameHeightRatio(frameType) * width;
+        return {
+            minX: 0,
+            minY: 0,
+            maxX: Math.max(0, width - rect.width),
+            maxY: Math.max(0, frameHeight - rect.height)
+        };
+    },
+
     createFrameCustomization(frameType = this.FRAME_TYPES.NONE, overrides = {}) {
         const frameDefinition = this.getFrameDefinition(frameType);
         const defaultCustomization = frameDefinition?.defaultCustomization || {};
@@ -408,7 +518,7 @@ const QRFrames = {
 
         return {
             frameText: typeof overrides.frameText === 'string'
-                ? (this.isDefaultFrameText(overrides.frameText) ? defaultFrameText : overrides.frameText)
+                ? this.normalizeFrameTextValue(overrides.frameText, defaultFrameText)
                 : defaultFrameText,
             frameColor,
             backgroundColor,
@@ -416,6 +526,7 @@ const QRFrames = {
                 ? null
                 : FrameColorControl.normalizeColorValue(overrides.textColor, this.getDefaultTextColor(frameType, frameColor)),
             qrRotation: this.normalizeQRRotation(overrides.qrRotation ?? defaultCustomization.qrRotation ?? 0),
+            textRect: this.clampFrameTextRect(frameType, overrides.textRect || defaultCustomization.textRect || this.getDefaultFrameTextRect(frameType), 300),
             transparentBackground: backgroundColorState.alpha <= 0
         };
     },
@@ -575,14 +686,13 @@ const QRFrames = {
             frameColor,
             backgroundColor,
             textColor,
-            qrRotation
+            qrRotation,
+            textRect
         } = settings;
         const defaultFrameText = this.getDefaultFrameText(frameType);
 
         if (typeof frameText === 'string') {
-            customization.frameText = this.isDefaultFrameText(frameText)
-                ? (defaultFrameText || this.FRAME_TEXT_DEFAULT)
-                : frameText;
+            customization.frameText = this.normalizeFrameTextValue(frameText, defaultFrameText || this.FRAME_TEXT_DEFAULT);
         } else if (!customization.frameText) {
             customization.frameText = defaultFrameText;
         }
@@ -605,8 +715,40 @@ const QRFrames = {
             customization.qrRotation = this.normalizeQRRotation(qrRotation);
         }
 
+        if (textRect) {
+            customization.textRect = this.clampFrameTextRect(frameType, {
+                ...customization.textRect,
+                ...textRect
+            }, 300);
+        }
+
         this.frameCustomizations[this.getFrameCustomizationKey(frameType)] = customization;
         this.applyFrameCustomization(frameType);
+    },
+
+    setFrameTextRect(frameType, partial, width = 300) {
+        if (!frameType || !this.supportsFrameText(frameType)) {
+            return null;
+        }
+
+        const nextRect = this.clampFrameTextRect(frameType, {
+            ...this.getFrameTextRect(frameType, width),
+            ...partial
+        }, width);
+        this.setFrameCustomization(frameType, { textRect: nextRect });
+        return nextRect;
+    },
+
+    resetFrameTextRect(frameType, width = 300) {
+        if (!frameType || !this.supportsFrameText(frameType)) {
+            return null;
+        }
+
+        const customization = this.getFrameCustomization(frameType);
+        customization.textRect = this.getDefaultFrameTextRect(frameType, width);
+        this.frameCustomizations[this.getFrameCustomizationKey(frameType)] = customization;
+        this.applyFrameCustomization(frameType);
+        return customization.textRect;
     },
 
     resetFrameToDefaults(frameType = this.FRAME_TYPES.NONE) {
@@ -776,6 +918,9 @@ const QRFrames = {
                             <div class="custom-frame-stage" id="customFrameStage">
                                 <img id="customFrameStageImage" alt="${I18n.translateString('Frame placement preview')}">
                                 <div class="custom-frame-stage-text" id="customFrameStageText" contenteditable="true" spellcheck="false" role="textbox" aria-label="${I18n.translateString('Edit frame text in preview')}"></div>
+                                <button type="button" class="custom-frame-stage-text-move-handle" id="customFrameStageTextMoveHandle" aria-label="${I18n.translateString('Move frame text')}">
+                                    <i class="bi bi-arrows-move" aria-hidden="true"></i>
+                                </button>
                                 <div class="custom-frame-qr-box" id="customFrameQRBox" tabindex="0" role="slider" aria-label="${I18n.translateString('QR code placement')}">
                                     <div class="custom-frame-qr-box-chrome" id="customFrameQRBoxChrome">
                                         <span class="custom-frame-qr-box-preview" id="customFrameQRBoxPreview"><span>QR</span></span>
@@ -1015,6 +1160,7 @@ const QRFrames = {
         const isBorderFrame = frameType === this.FRAME_TYPES.SCAN_ME_BORDER;
 
         const metrics = {
+            frameType,
             size,
             hasText,
             totalHeight: size + textHeight,
@@ -1228,6 +1374,7 @@ const QRFrames = {
         const qrBounds = this.applyQRRectOverride(frameType, size, totalHeight, defaultQRBounds);
 
         return {
+            frameType,
             size,
             scale,
             artboardHeight: config.artboardHeight,
@@ -1247,6 +1394,10 @@ const QRFrames = {
         }
 
         const customization = this.getFrameCustomization(frameType);
+        const rect = this.getFrameTextRect(frameType, size);
+        if (!rect) {
+            return null;
+        }
 
         if (!this.isDecorativeFrame(frameType)) {
             const metrics = this.getFrameMetrics(frameType, size);
@@ -1255,15 +1406,16 @@ const QRFrames = {
             }
 
             return {
-                left: size * 0.08,
-                top: metrics.size,
-                width: size * 0.84,
-                height: metrics.textHeight,
+                left: rect.x,
+                top: rect.y,
+                width: rect.width,
+                height: rect.height,
                 fontSize: metrics.fontSize,
                 fontWeight: '700',
                 fontFamily: this.FRAME_FONT_DEFAULT,
                 color: customization.textColor || customization.frameColor,
-                rotation: 0
+                rotation: 0,
+                align: 'center'
             };
         }
 
@@ -1273,25 +1425,97 @@ const QRFrames = {
             return null;
         }
 
-        const width = (definition.width || 52) * metrics.scale;
-        const height = (definition.height || Math.max((definition.fontSize || 9) * 1.65, 10)) * metrics.scale;
-        const centerX = (definition.x ?? 32) * metrics.scale;
-        const centerY = (definition.y ?? 42) * metrics.scale;
         const defaultColor = definition.color === 'frameColor'
             ? customization.frameColor
             : (definition.color || customization.frameColor);
 
         return {
-            left: centerX - (width / 2),
-            top: centerY - (height / 2),
-            width,
-            height,
+            left: rect.x,
+            top: rect.y,
+            width: rect.width,
+            height: rect.height,
             fontSize: (definition.fontSize || 9) * metrics.scale,
             fontWeight: definition.fontWeight || '700',
             fontFamily: definition.fontFamily || this.FRAME_FONT_DEFAULT,
             color: customization.textColor || defaultColor,
-            rotation: definition.rotation || 0
+            rotation: definition.rotation || 0,
+            align: definition.align || 'center'
         };
+    },
+
+    getFrameTextLines(frameText = this.getResolvedFrameText()) {
+        const normalized = String(frameText || '').replace(/\r\n?/g, '\n');
+        if (!normalized.length) {
+            return [];
+        }
+        return normalized.split('\n');
+    },
+
+    escapeTextForSVG(text) {
+        return this.escapeHTML(String(text ?? ''));
+    },
+
+    buildSVGTextMarkup(layout) {
+        if (!layout) {
+            return '';
+        }
+
+        const { x, y, width, height, fontSize, fontWeight, fontFamily, color, rotation = 0, align = 'center' } = layout;
+        const lines = this.getFrameTextLines();
+        if (!lines.length) {
+            return '';
+        }
+
+        const safeFontSize = Math.max(1, fontSize);
+        const lineHeight = safeFontSize * 1.15;
+        const totalHeight = lineHeight * lines.length;
+        const baselineY = y + ((height - totalHeight) / 2) + (lineHeight / 2);
+        const anchor = align === 'left' ? 'start' : (align === 'right' ? 'end' : 'middle');
+        const textX = align === 'left'
+            ? x
+            : (align === 'right' ? x + width : x + (width / 2));
+        const transform = rotation ? ` transform="rotate(${this.formatMetric(rotation)} ${this.formatMetric(x + (width / 2))} ${this.formatMetric(y + (height / 2))})"` : '';
+
+        return `
+            <text x="${this.formatMetric(textX)}" y="${this.formatMetric(baselineY)}" text-anchor="${anchor}" font-size="${this.formatMetric(safeFontSize)}" font-weight="${fontWeight}" font-family="${fontFamily}" fill="${this.getLabelColor(color)}"${transform}>${lines.map((line, index) => `<tspan x="${this.formatMetric(textX)}" dy="${index === 0 ? 0 : this.formatMetric(lineHeight)}">${this.escapeTextForSVG(line)}</tspan>`).join('')}</text>
+        `;
+    },
+
+    drawCanvasTextBlock(ctx, layout) {
+        if (!ctx || !layout) {
+            return;
+        }
+
+        const { x, y, width, height, fontSize, fontWeight, fontFamily, color, rotation = 0, align = 'center' } = layout;
+        const lines = this.getFrameTextLines();
+        if (!lines.length) {
+            return;
+        }
+
+        const safeFontSize = Math.max(1, fontSize);
+        const lineHeight = safeFontSize * 1.15;
+        const totalHeight = lineHeight * lines.length;
+        const textX = align === 'left'
+            ? x
+            : (align === 'right' ? x + width : x + (width / 2));
+        const startY = y + ((height - totalHeight) / 2) + (lineHeight / 2);
+
+        ctx.save();
+        ctx.fillStyle = this.getLabelColor(color);
+        ctx.font = `${fontWeight} ${safeFontSize}px ${fontFamily}`;
+        ctx.textAlign = align;
+        ctx.textBaseline = 'middle';
+
+        if (rotation) {
+            ctx.translate(x + (width / 2), y + (height / 2));
+            ctx.rotate((rotation * Math.PI) / 180);
+            ctx.translate(-(x + (width / 2)), -(y + (height / 2)));
+        }
+
+        lines.forEach((line, index) => {
+            ctx.fillText(line, textX, startY + (index * lineHeight));
+        });
+        ctx.restore();
     },
 
     getDecorativeFrameTextDefinition(frameType) {
@@ -1618,6 +1842,7 @@ const QRFrames = {
         const translateX = qrBounds.x - (sourceViewBox.minX * scaleX);
         const translateY = qrBounds.y - (sourceViewBox.minY * scaleY);
         const rotationTransform = this.getQRRotationTransform(qrBounds, this.QR_ROTATION);
+        const textLayout = metrics.hasText ? this.getFrameTextLayout(frameType, size) : null;
         const borderInset = metrics.borderWidth / 2;
         const noneFrameBackground = frameType === this.FRAME_TYPES.NONE && !this.TRANSPARENT_BACKGROUND ? `
             <rect x="0" y="0" width="${size}" height="${metrics.totalHeight}" fill="${this.getQRBackgroundFill()}"></rect>
@@ -1646,9 +1871,7 @@ const QRFrames = {
                     <rect x="${this.formatMetric(borderInset)}" y="${this.formatMetric(borderInset)}" width="${this.formatMetric(size - metrics.borderWidth)}" height="${this.formatMetric(metrics.totalHeight - metrics.borderWidth)}" rx="${metrics.borderRadius}" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="${metrics.borderWidth}" fill="none"></rect>
                     <line x1="${this.formatMetric(borderInset)}" y1="${size}" x2="${this.formatMetric(size - borderInset)}" y2="${size}" stroke="${this.FRAME_FOREGROUND_COLOR}" stroke-width="${metrics.separatorWidth}"></line>
                 ` : ''}
-                ${metrics.hasText ? `
-                    <text x="${size / 2}" y="${this.formatMetric(metrics.textY)}" text-anchor="middle" dominant-baseline="middle" font-size="${metrics.fontSize}" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="${this.getLabelColor(this.FRAME_FOREGROUND_COLOR)}">${this.FRAME_TEXT}</text>
-                ` : ''}
+                ${textLayout ? this.buildSVGTextMarkup(textLayout) : ''}
             </svg>
         `;
     },
@@ -1713,20 +1936,9 @@ const QRFrames = {
     getDecorativeFrameSVGMarkup(frameType, metrics) {
         const interiorBackground = metrics.interiorBackground ? `<rect x="${this.formatMetric(metrics.interiorBackground.x)}" y="${this.formatMetric(metrics.interiorBackground.y)}" width="${this.formatMetric(metrics.interiorBackground.width)}" height="${this.formatMetric(metrics.interiorBackground.height)}" rx="${this.formatMetric(metrics.interiorBackground.radius)}" fill="${this.getFrameBackgroundFill()}"></rect>` : '';
         const qrBackground = metrics.qrBackground ? `<rect x="${this.formatMetric(metrics.qrBackground.x)}" y="${this.formatMetric(metrics.qrBackground.y)}" width="${this.formatMetric(metrics.qrBackground.width)}" height="${this.formatMetric(metrics.qrBackground.height)}" rx="${this.formatMetric(metrics.qrBackground.radius)}" fill="${this.getQRBackgroundFill()}"></rect>` : '';
-        const customText = ({
-            x = metrics.size / 2,
-            y,
-            color,
-            fontSize = metrics.fontSize,
-            fontWeight = '700',
-            fontFamily = this.FRAME_FONT_DEFAULT,
-            rotation,
-            rotateX = x,
-            rotateY = y
-        }) => `
-            <text x="${this.formatMetric(x)}" y="${this.formatMetric(y)}" text-anchor="middle" dominant-baseline="middle" font-size="${this.formatMetric(fontSize)}" font-weight="${fontWeight}" font-family="${fontFamily}" fill="${this.getLabelColor(color)}"${rotation !== undefined ? ` transform="rotate(${rotation} ${this.formatMetric(rotateX)} ${this.formatMetric(rotateY)})"` : ''}>${this.FRAME_TEXT}</text>
-        `;
-        const commonText = (textY, color) => customText({ y: textY, color });
+        const sharedTextMarkup = this.buildSVGTextMarkup(this.getFrameTextLayout(frameType, metrics.size));
+        const customText = () => sharedTextMarkup;
+        const commonText = () => sharedTextMarkup;
 
         switch (frameType) {
             case this.FRAME_TYPES.ROUNDED_BANNER:
@@ -2345,12 +2557,7 @@ const QRFrames = {
     drawScanMeFrame(ctx, metrics) {
         ctx.fillStyle = this.getFrameBackgroundFill();
         ctx.fillRect(0, metrics.size, metrics.size, metrics.textHeight);
-
-        ctx.fillStyle = this.getLabelColor(this.FRAME_FOREGROUND_COLOR);
-        ctx.font = `700 ${metrics.fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(this.getResolvedFrameText(), metrics.size / 2, metrics.textY);
+        this.drawCanvasTextBlock(ctx, this.getFrameTextLayout(metrics.frameType, metrics.size));
     },
 
     /**
@@ -2384,12 +2591,7 @@ const QRFrames = {
         ctx.lineTo(metrics.size - (metrics.borderWidth / 2), metrics.size);
         ctx.stroke();
 
-        // Draw "Scan me!" text
-        ctx.fillStyle = this.getLabelColor(this.FRAME_FOREGROUND_COLOR);
-        ctx.font = `700 ${metrics.fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(this.getResolvedFrameText(), metrics.size / 2, metrics.textY);
+        this.drawCanvasTextBlock(ctx, this.getFrameTextLayout(metrics.frameType, metrics.size));
     },
 
     drawRoundedBannerFrame(ctx, metrics) {
@@ -3106,11 +3308,7 @@ const QRFrames = {
     },
 
     drawFrameLabel(ctx, metrics, y, color) {
-        ctx.fillStyle = this.getLabelColor(color);
-        ctx.font = `700 ${metrics.fontSize}px ${this.FRAME_FONT_DEFAULT}`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(this.getResolvedFrameText(), metrics.size / 2, y);
+        this.drawCanvasTextBlock(ctx, this.getFrameTextLayout(metrics.frameType, metrics.size));
     },
 
     drawArtboardText(ctx, metrics, {
@@ -3124,20 +3322,18 @@ const QRFrames = {
         rotateX = x,
         rotateY = y
     }) {
-        ctx.save();
-        ctx.fillStyle = this.getLabelColor(color);
-        ctx.font = `${fontWeight} ${this.scaleArtboardY(fontSize, metrics)}px ${fontFamily}`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        if (rotation !== undefined) {
-            ctx.translate(this.scaleArtboardX(rotateX, metrics), this.scaleArtboardY(rotateY, metrics));
-            ctx.rotate((rotation * Math.PI) / 180);
-            ctx.translate(-this.scaleArtboardX(rotateX, metrics), -this.scaleArtboardY(rotateY, metrics));
-        }
-
-        ctx.fillText(this.getResolvedFrameText(), this.scaleArtboardX(x, metrics), this.scaleArtboardY(y, metrics));
-        ctx.restore();
+        this.drawCanvasTextBlock(ctx, this.getFrameTextLayout(metrics.frameType, metrics.size) || {
+            x: this.scaleArtboardX(x, metrics) - (metrics.size * 0.3),
+            y: this.scaleArtboardY(y, metrics) - (this.scaleArtboardY(fontSize, metrics) * 0.8),
+            width: metrics.size * 0.6,
+            height: this.scaleArtboardY(fontSize * 1.8, metrics),
+            fontSize: this.scaleArtboardY(fontSize, metrics),
+            fontWeight,
+            fontFamily,
+            color,
+            rotation: rotation ?? 0,
+            align: 'center'
+        });
     },
 
     /**
