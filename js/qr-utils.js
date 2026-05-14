@@ -3695,9 +3695,93 @@ const QRCodeFrameControls = {
         }
 
         const showTextSettings = window.QRFrames.supportsFrameText(frameType);
-        root.querySelectorAll('[data-frame-setting="text"], [data-frame-setting="textColor"]').forEach(section => {
+        root.querySelectorAll('[data-frame-setting="textColor"]').forEach(section => {
             section.hidden = !showTextSettings;
         });
+
+        const stageText = root.querySelector('#customFrameStageText');
+        if (stageText) {
+            stageText.hidden = !showTextSettings;
+            stageText.contentEditable = showTextSettings ? 'true' : 'false';
+            stageText.dataset.placeholder = showTextSettings
+                ? I18n.translateString('Edit frame text')
+                : '';
+        }
+
+        this.syncStageTextEditor(root, frameType);
+    },
+
+    normalizeInlineFrameText(value) {
+        return String(value || '')
+            .replace(/[\r\n]+/g, ' ')
+            .slice(0, 40);
+    },
+
+    setStageTextContent(stageText, value) {
+        if (!stageText) {
+            return;
+        }
+
+        const normalizedValue = this.normalizeInlineFrameText(value);
+        if (stageText.textContent !== normalizedValue) {
+            stageText.textContent = normalizedValue;
+        }
+    },
+
+    syncStageTextEditor(root = document, frameType = this.getActiveFrameType(root), stageMetrics = null) {
+        if (!window.QRFrames) {
+            return;
+        }
+
+        const stage = root.querySelector('#customFrameStage');
+        const stageText = root.querySelector('#customFrameStageText');
+        if (!stage || !stageText) {
+            return;
+        }
+
+        if (!frameType || !window.QRFrames.supportsFrameText(frameType)) {
+            stageText.hidden = true;
+            return;
+        }
+
+        const metrics = stageMetrics || this.getCustomFrameStageMetrics(stage);
+        const textLayout = metrics ? window.QRFrames.getFrameTextLayout(frameType, metrics.width) : null;
+        if (!metrics || !textLayout) {
+            stageText.hidden = true;
+            return;
+        }
+
+        stageText.hidden = false;
+        stageText.style.left = `${textLayout.left}px`;
+        stageText.style.top = `${textLayout.top}px`;
+        stageText.style.width = `${textLayout.width}px`;
+        stageText.style.height = `${textLayout.height}px`;
+        stageText.style.fontSize = `${textLayout.fontSize}px`;
+        stageText.style.fontWeight = textLayout.fontWeight;
+        stageText.style.fontFamily = textLayout.fontFamily;
+        stageText.style.color = textLayout.color;
+        stageText.style.transform = textLayout.rotation ? `rotate(${textLayout.rotation}deg)` : 'none';
+    },
+
+    notifyFrameEditorChange(root = document) {
+        this.applySettings(root);
+        this.syncStageTextEditor(root);
+        this.scheduleFramePreviewSampleRefresh(root);
+        this.scheduleActiveFrameRefresh(root);
+        window.QRFrames.updateDeveloperJsonViewer?.();
+    },
+
+    getStageRotationFromPointer(interactionRect, stageMetrics, event) {
+        const rectLeft = interactionRect.xPct * stageMetrics.width;
+        const rectTop = interactionRect.yPct * stageMetrics.height;
+        const rectWidth = interactionRect.widthPct * stageMetrics.width;
+        const rectHeight = interactionRect.heightPct * stageMetrics.height;
+        const centerX = rectLeft + (rectWidth / 2);
+        const centerY = rectTop + (rectHeight / 2);
+        const pointerX = event.clientX - stageMetrics.left;
+        const pointerY = event.clientY - stageMetrics.top;
+        const angle = (Math.atan2(pointerY - centerY, pointerX - centerX) * 180 / Math.PI) + 90;
+        return window.QRFrames.normalizeQRRotation(angle);
     },
 
     init(root = document) {
@@ -3705,27 +3789,33 @@ const QRCodeFrameControls = {
             return;
         }
 
-        const frameTextInput = root.querySelector('#frameTextInput');
+        const stageText = root.querySelector('#customFrameStageText');
         const frameForegroundColorControl = FrameColorControl.getControl(root, 'frameForegroundColor');
         const frameBackgroundColorControl = FrameColorControl.getControl(root, 'frameBackgroundColor');
         const frameTextColorControl = FrameColorControl.getControl(root, 'frameTextColor');
 
-        if (!frameTextInput || !frameForegroundColorControl || !frameBackgroundColorControl || !frameTextColorControl) {
+        if (!stageText || !frameForegroundColorControl || !frameBackgroundColorControl || !frameTextColorControl) {
             return;
         }
 
-        if (frameTextInput.dataset.frameControlsInitialized !== 'true') {
-            const rerender = () => {
-                this.applySettings(root);
-                this.scheduleFramePreviewSampleRefresh(root);
-                this.scheduleActiveFrameRefresh(root);
-                window.QRFrames.updateDeveloperJsonViewer?.();
-            };
+        if (stageText.dataset.frameControlsInitialized !== 'true') {
+            stageText.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                }
+            });
 
-            frameTextInput.addEventListener('input', rerender);
-            FrameColorControl.bindControl(frameForegroundColorControl, rerender);
-            FrameColorControl.bindControl(frameBackgroundColorControl, rerender);
-            FrameColorControl.bindControl(frameTextColorControl, rerender, { markUserModified: true });
+            stageText.addEventListener('input', () => {
+                const normalizedValue = this.normalizeInlineFrameText(stageText.textContent);
+                if (stageText.textContent !== normalizedValue) {
+                    stageText.textContent = normalizedValue;
+                }
+                this.notifyFrameEditorChange(root);
+            });
+
+            FrameColorControl.bindControl(frameForegroundColorControl, () => this.notifyFrameEditorChange(root));
+            FrameColorControl.bindControl(frameBackgroundColorControl, () => this.notifyFrameEditorChange(root));
+            FrameColorControl.bindControl(frameTextColorControl, () => this.notifyFrameEditorChange(root), { markUserModified: true });
 
             const frameSelector = root.querySelector('#frameSelector');
             const frameSearchInput = root.querySelector('#framePresetSearchInput');
@@ -3761,12 +3851,13 @@ const QRCodeFrameControls = {
                         return;
                     }
                     const previousActiveCard = frameSelector.querySelector('.frame-card.active');
+                    const previousFrameType = previousActiveCard?.dataset.frame || this.getActiveFrameType(root);
                     if (previousActiveCard && previousActiveCard !== card) {
                         previousActiveCard.classList.remove('active');
                         window.QRFrames.resetFramePreviewCard(previousActiveCard);
                     }
                     card.classList.add('active');
-                    this.applySettings(root);
+                    this.applySettings(root, previousFrameType);
                     if (card.dataset.frame === 'custom' && card.dataset.customFrameId) {
                         window.QRFrames.setActiveCustomFrame(card.dataset.customFrameId);
                     }
@@ -3791,7 +3882,7 @@ const QRCodeFrameControls = {
             this.initCustomFrameControls(root);
             this.applyFrameSearch(root, frameSearchInput, frameSearchEmpty);
 
-            frameTextInput.dataset.frameControlsInitialized = 'true';
+            stageText.dataset.frameControlsInitialized = 'true';
         }
 
         const activeFrameType = this.getActiveFrameType(root);
@@ -3935,7 +4026,7 @@ const QRCodeFrameControls = {
         if (!stage || !img || !frameType) {
             return;
         }
-        const dataUrl = window.QRFrames.getPlacementStageImageDataUrl(frameType);
+        const dataUrl = window.QRFrames.getPlacementStageImageDataUrl(frameType, 300, { omitText: true });
         if (!dataUrl) {
             return;
         }
@@ -3974,6 +4065,7 @@ const QRCodeFrameControls = {
     syncCustomFrameStageBox(root = document, frameType = this.getActiveFrameType(root), remainingRetries = 2) {
         const stage = root.querySelector('#customFrameStage');
         const box = root.querySelector('#customFrameQRBox');
+        const boxChrome = root.querySelector('#customFrameQRBoxChrome');
         if (!stage || !box || !frameType) {
             return;
         }
@@ -3993,7 +4085,12 @@ const QRCodeFrameControls = {
         box.style.height = `${heightPx}px`;
         box.style.left = `${leftPx}px`;
         box.style.top = `${topPx}px`;
+        if (boxChrome) {
+            const qrRotation = window.QRFrames.getFrameCustomization(frameType).qrRotation || 0;
+            boxChrome.style.transform = qrRotation ? `rotate(${qrRotation}deg)` : 'none';
+        }
 
+        this.syncStageTextEditor(root, frameType, stageMetrics);
     },
 
     updateFramePlacementFromControls(root = document, partial = {}) {
@@ -4047,17 +4144,33 @@ const QRCodeFrameControls = {
         let dragOffsetY = 0;
         let resizeHandle = '';
         let interactionRect = null;
+        let rotationOffset = 0;
 
         const onPointerDown = (event) => {
             const frameType = this.getActiveFrameType(root);
             if (!frameType) {
                 return;
             }
+            const rotateHandleElement = event.target.closest('[data-placement-rotate-handle]');
             const resizeHandleElement = event.target.closest('[data-placement-resize-handle]');
             resizeHandle = resizeHandleElement?.dataset.placementResizeHandle || '';
-            interactionMode = resizeHandle ? 'resize' : 'move';
             interactionRect = window.QRFrames.getFrameQRRect(frameType);
             pointerId = event.pointerId;
+
+            if (rotateHandleElement) {
+                const stageMetrics = this.getCustomFrameStageMetrics(stage);
+                if (!stageMetrics) {
+                    return;
+                }
+                interactionMode = 'rotate';
+                const currentRotation = window.QRFrames.getFrameCustomization(frameType).qrRotation || 0;
+                rotationOffset = currentRotation - this.getStageRotationFromPointer(interactionRect, stageMetrics, event);
+                box.setPointerCapture(pointerId);
+                event.preventDefault();
+                return;
+            }
+
+            interactionMode = resizeHandle ? 'resize' : 'move';
             const boxRect = box.getBoundingClientRect();
             dragOffsetX = event.clientX - boxRect.left;
             dragOffsetY = event.clientY - boxRect.top;
@@ -4074,6 +4187,19 @@ const QRCodeFrameControls = {
                 return;
             }
             const frameType = this.getActiveFrameType(root);
+            if (interactionMode === 'rotate') {
+                if (!interactionRect) {
+                    return;
+                }
+                const nextRotation = this.getStageRotationFromPointer(interactionRect, stageMetrics, event) + rotationOffset;
+                window.QRFrames.setFrameCustomization(frameType, {
+                    qrRotation: nextRotation
+                });
+                this.syncCustomFrameStageBox(root);
+                this.scheduleFramePreviewSampleRefresh(root);
+                this.scheduleActiveFrameRefresh(root);
+                return;
+            }
             if (interactionMode === 'resize') {
                 if (!interactionRect) {
                     return;
@@ -4152,6 +4278,7 @@ const QRCodeFrameControls = {
             interactionMode = '';
             resizeHandle = '';
             interactionRect = null;
+            rotationOffset = 0;
             try {
                 if (activePointerId !== null) {
                     box.releasePointerCapture(activePointerId);
@@ -4181,6 +4308,38 @@ const QRCodeFrameControls = {
             this.updateFramePlacementFromControls(root, updates[event.key]);
         });
 
+        const rotateHandle = root.querySelector('#customFrameQRRotateHandle');
+        if (rotateHandle && rotateHandle.dataset.rotateKeyBound !== 'true') {
+            rotateHandle.addEventListener('keydown', (event) => {
+                const frameType = this.getActiveFrameType(root);
+                if (!frameType) {
+                    return;
+                }
+
+                const step = event.shiftKey ? 15 : 1;
+                let delta = 0;
+                if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
+                    delta = -step;
+                } else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
+                    delta = step;
+                }
+
+                if (!delta) {
+                    return;
+                }
+
+                event.preventDefault();
+                const currentRotation = window.QRFrames.getFrameCustomization(frameType).qrRotation || 0;
+                window.QRFrames.setFrameCustomization(frameType, {
+                    qrRotation: currentRotation + delta
+                });
+                this.syncCustomFrameStageBox(root);
+                this.scheduleFramePreviewSampleRefresh(root);
+                this.scheduleActiveFrameRefresh(root);
+            });
+            rotateHandle.dataset.rotateKeyBound = 'true';
+        }
+
         box.addEventListener('pointerdown', onPointerDown);
         box.addEventListener('pointermove', onPointerMove);
         box.addEventListener('pointerup', onPointerUp);
@@ -4204,18 +4363,18 @@ const QRCodeFrameControls = {
             return;
         }
 
-        const frameTextInput = root.querySelector('#frameTextInput');
+        const stageText = root.querySelector('#customFrameStageText');
         const frameForegroundColorControl = FrameColorControl.getControl(root, 'frameForegroundColor');
         const frameBackgroundColorControl = FrameColorControl.getControl(root, 'frameBackgroundColor');
         const frameTextColorControl = FrameColorControl.getControl(root, 'frameTextColor');
 
-        if (!frameTextInput || !frameForegroundColorControl || !frameBackgroundColorControl || !frameTextColorControl) {
+        if (!stageText || !frameForegroundColorControl || !frameBackgroundColorControl || !frameTextColorControl) {
             return;
         }
 
         const customization = window.QRFrames.getFrameCustomization(frameType);
 
-        frameTextInput.value = customization.frameText;
+        this.setStageTextContent(stageText, customization.frameText);
         FrameColorControl.setValue(frameForegroundColorControl, customization.frameColor);
         FrameColorControl.setValue(frameBackgroundColorControl, customization.backgroundColor);
         frameTextColorControl.picker.dataset.userModified = customization.textColor ? 'true' : 'false';
@@ -4223,24 +4382,25 @@ const QRCodeFrameControls = {
             frameTextColorControl,
             customization.textColor || window.QRFrames.getDefaultTextColor(frameType, customization.frameColor)
         );
+        this.syncStageTextEditor(root, frameType);
     },
 
-    applySettings(root = document) {
+    applySettings(root = document, frameType = this.getActiveFrameType(root)) {
         if (!window.QRFrames) {
             return;
         }
 
-        const frameTextInput = root.querySelector('#frameTextInput');
+        const stageText = root.querySelector('#customFrameStageText');
         const frameForegroundColorControl = FrameColorControl.getControl(root, 'frameForegroundColor');
         const frameBackgroundColorControl = FrameColorControl.getControl(root, 'frameBackgroundColor');
         const frameTextColorControl = FrameColorControl.getControl(root, 'frameTextColor');
 
-        if (!frameTextInput || !frameForegroundColorControl || !frameBackgroundColorControl || !frameTextColorControl) {
+        if (!stageText || !frameForegroundColorControl || !frameBackgroundColorControl || !frameTextColorControl) {
             return;
         }
 
-        window.QRFrames.setFrameCustomization(this.getActiveFrameType(root), {
-            frameText: frameTextInput.value,
+        window.QRFrames.setFrameCustomization(frameType, {
+            frameText: this.normalizeInlineFrameText(stageText.textContent),
             frameColor: FrameColorControl.getValue(frameForegroundColorControl),
             backgroundColor: FrameColorControl.getValue(frameBackgroundColorControl),
             textColor: frameTextColorControl.picker.dataset.userModified === 'true' ? FrameColorControl.getValue(frameTextColorControl) : null

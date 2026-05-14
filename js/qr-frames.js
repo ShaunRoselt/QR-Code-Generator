@@ -19,6 +19,7 @@ const QRFrames = {
     FRAME_TEXT_DEFAULT: 'Scan me!',
     FRAME_TEXT_VARIANTS: new Set(['Scan me!', 'Skandeer my!', 'Scanne mich!', 'סרקו אותי!', 'امسحني!']),
     FRAME_TEXT_COLOR: null,
+    QR_ROTATION: 0,
     TRANSPARENT_BACKGROUND: false,
     frameCatalog: null,
     frameCatalogPromise: null,
@@ -385,6 +386,18 @@ const QRFrames = {
         return ![this.FRAME_TYPES.NONE, this.FRAME_TYPES.CUSTOM].includes(frameType);
     },
 
+    normalizeQRRotation(rotation) {
+        const numericRotation = Number(rotation);
+        if (!Number.isFinite(numericRotation)) {
+            return 0;
+        }
+
+        const normalizedRotation = ((numericRotation % 360) + 360) % 360;
+        return Math.abs(normalizedRotation) < 0.001 || Math.abs(normalizedRotation - 360) < 0.001
+            ? 0
+            : normalizedRotation;
+    },
+
     createFrameCustomization(frameType = this.FRAME_TYPES.NONE, overrides = {}) {
         const frameDefinition = this.getFrameDefinition(frameType);
         const defaultCustomization = frameDefinition?.defaultCustomization || {};
@@ -395,13 +408,14 @@ const QRFrames = {
 
         return {
             frameText: typeof overrides.frameText === 'string'
-                ? overrides.frameText || defaultFrameText
+                ? (this.isDefaultFrameText(overrides.frameText) ? defaultFrameText : overrides.frameText)
                 : defaultFrameText,
             frameColor,
             backgroundColor,
             textColor: overrides.textColor == null
                 ? null
                 : FrameColorControl.normalizeColorValue(overrides.textColor, this.getDefaultTextColor(frameType, frameColor)),
+            qrRotation: this.normalizeQRRotation(overrides.qrRotation ?? defaultCustomization.qrRotation ?? 0),
             transparentBackground: backgroundColorState.alpha <= 0
         };
     },
@@ -450,6 +464,7 @@ const QRFrames = {
         this.FRAME_BACKGROUND_COLOR = customization.backgroundColor;
         this.QR_BACKGROUND_COLOR = customization.backgroundColor;
         this.FRAME_TEXT_COLOR = customization.textColor;
+        this.QR_ROTATION = customization.qrRotation;
         this.TRANSPARENT_BACKGROUND = customization.transparentBackground;
         return customization;
     },
@@ -464,6 +479,7 @@ const QRFrames = {
             frameColor: this.FRAME_FOREGROUND_COLOR,
             backgroundColor: this.FRAME_BACKGROUND_COLOR,
             textColor: this.FRAME_TEXT_COLOR,
+            qrRotation: this.QR_ROTATION,
             transparentBackground: this.TRANSPARENT_BACKGROUND
         };
 
@@ -477,6 +493,7 @@ const QRFrames = {
             this.FRAME_BACKGROUND_COLOR = previousState.backgroundColor;
             this.QR_BACKGROUND_COLOR = previousState.backgroundColor;
             this.FRAME_TEXT_COLOR = previousState.textColor;
+            this.QR_ROTATION = previousState.qrRotation;
             this.TRANSPARENT_BACKGROUND = previousState.transparentBackground;
         }
     },
@@ -494,10 +511,6 @@ const QRFrames = {
         const customization = this.getFrameCustomization(frameType);
         return `
             <div class="frame-settings-panel">
-                <div class="form-group" data-frame-setting="text" hidden>
-                    <label class="form-label" for="frameTextInput">${I18n.translateString('Frame Text')}</label>
-                    <input type="text" class="form-input" id="frameTextInput" value="${this.escapeAttribute(customization.frameText)}" maxlength="40">
-                </div>
                 <div class="frame-settings-grid">
                     <div data-frame-setting="frameColor">
                         ${FrameColorControl.render({ id: 'frameForegroundColor', label: 'Frame Color', value: customization.frameColor })}
@@ -561,14 +574,15 @@ const QRFrames = {
             frameText,
             frameColor,
             backgroundColor,
-            textColor
+            textColor,
+            qrRotation
         } = settings;
         const defaultFrameText = this.getDefaultFrameText(frameType);
 
         if (typeof frameText === 'string') {
             customization.frameText = this.isDefaultFrameText(frameText)
                 ? (defaultFrameText || this.FRAME_TEXT_DEFAULT)
-                : (frameText || defaultFrameText);
+                : frameText;
         } else if (!customization.frameText) {
             customization.frameText = defaultFrameText;
         }
@@ -585,6 +599,10 @@ const QRFrames = {
             customization.textColor = null;
         } else if (typeof textColor === 'string') {
             customization.textColor = FrameColorControl.normalizeColorValue(textColor, this.getDefaultTextColor(frameType, customization.frameColor));
+        }
+
+        if (qrRotation !== undefined) {
+            customization.qrRotation = this.normalizeQRRotation(qrRotation);
         }
 
         this.frameCustomizations[this.getFrameCustomizationKey(frameType)] = customization;
@@ -754,19 +772,25 @@ const QRFrames = {
                         </div>
                         <div class="frame-edit-section frame-edit-section-position">
                             <div class="frame-edit-section-title">${I18n.translateString('Position & size')}</div>
-                            <div class="form-hint" id="customFramePositionHint">${I18n.translateString('Drag the QR box on the preview and resize it from any corner or side.')}</div>
+                            <div class="form-hint" id="customFramePositionHint">${I18n.translateString('Drag the QR box on the preview, resize it from any corner or side, or use the top handle to rotate it.')}</div>
                             <div class="custom-frame-stage" id="customFrameStage">
                                 <img id="customFrameStageImage" alt="${I18n.translateString('Frame placement preview')}">
+                                <div class="custom-frame-stage-text" id="customFrameStageText" contenteditable="true" spellcheck="false" role="textbox" aria-label="${I18n.translateString('Edit frame text in preview')}"></div>
                                 <div class="custom-frame-qr-box" id="customFrameQRBox" tabindex="0" role="slider" aria-label="${I18n.translateString('QR code placement')}">
-                                    <span>QR</span>
-                                    <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-top-left" data-placement-resize-handle="top-left" aria-hidden="true"></span>
-                                    <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-top-right" data-placement-resize-handle="top-right" aria-hidden="true"></span>
-                                    <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-bottom-left" data-placement-resize-handle="bottom-left" aria-hidden="true"></span>
-                                    <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-bottom-right" data-placement-resize-handle="bottom-right" aria-hidden="true"></span>
-                                    <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-top" data-placement-resize-handle="top" aria-hidden="true"></span>
-                                    <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-right" data-placement-resize-handle="right" aria-hidden="true"></span>
-                                    <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-bottom" data-placement-resize-handle="bottom" aria-hidden="true"></span>
-                                    <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-left" data-placement-resize-handle="left" aria-hidden="true"></span>
+                                    <div class="custom-frame-qr-box-chrome" id="customFrameQRBoxChrome">
+                                        <span class="custom-frame-qr-box-preview" id="customFrameQRBoxPreview"><span>QR</span></span>
+                                        <button type="button" class="custom-frame-qr-rotate-handle" id="customFrameQRRotateHandle" data-placement-rotate-handle="true" aria-label="${I18n.translateString('Rotate QR code')}">
+                                            <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+                                        </button>
+                                        <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-top-left" data-placement-resize-handle="top-left" aria-hidden="true"></span>
+                                        <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-top-right" data-placement-resize-handle="top-right" aria-hidden="true"></span>
+                                        <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-bottom-left" data-placement-resize-handle="bottom-left" aria-hidden="true"></span>
+                                        <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-bottom-right" data-placement-resize-handle="bottom-right" aria-hidden="true"></span>
+                                        <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-top" data-placement-resize-handle="top" aria-hidden="true"></span>
+                                        <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-right" data-placement-resize-handle="right" aria-hidden="true"></span>
+                                        <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-bottom" data-placement-resize-handle="bottom" aria-hidden="true"></span>
+                                        <span class="custom-frame-qr-resize-handle custom-frame-qr-resize-handle-left" data-placement-resize-handle="left" aria-hidden="true"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -834,14 +858,28 @@ const QRFrames = {
         return `<img src="${previewCanvas.toDataURL('image/png')}" alt="${previewName} frame preview">`;
     },
 
-    getPlacementStageImageDataUrl(frameType, size = 300) {
+    getPlacementStageImageDataUrl(frameType, size = 300, options = {}) {
+        const { omitText = false } = options;
         if (frameType === this.FRAME_TYPES.CUSTOM) {
             return this.getActiveCustomFrame()?.dataUrl || '';
         }
         if (!frameType) {
             return '';
         }
-        const canvas = this.withFrameCustomization(frameType, () => this.applyFrame(this.createBlankQRCodeCanvas(size), frameType, size));
+        const canvas = this.withFrameCustomization(frameType, () => {
+            const sourceCanvas = this.createBlankQRCodeCanvas(size);
+            const previousFrameText = this.FRAME_TEXT;
+
+            if (omitText && this.supportsFrameText(frameType)) {
+                this.FRAME_TEXT = '';
+            }
+
+            try {
+                return this.applyFrameWithActiveCustomization(sourceCanvas, frameType, size);
+            } finally {
+                this.FRAME_TEXT = previousFrameText;
+            }
+        });
         return canvas.toDataURL('image/png');
     },
 
@@ -1203,6 +1241,116 @@ const QRFrames = {
         };
     },
 
+    getFrameTextLayout(frameType, size = 300) {
+        if (!frameType || !this.supportsFrameText(frameType)) {
+            return null;
+        }
+
+        const customization = this.getFrameCustomization(frameType);
+
+        if (!this.isDecorativeFrame(frameType)) {
+            const metrics = this.getFrameMetrics(frameType, size);
+            if (!metrics.hasText) {
+                return null;
+            }
+
+            return {
+                left: size * 0.08,
+                top: metrics.size,
+                width: size * 0.84,
+                height: metrics.textHeight,
+                fontSize: metrics.fontSize,
+                fontWeight: '700',
+                fontFamily: this.FRAME_FONT_DEFAULT,
+                color: customization.textColor || customization.frameColor,
+                rotation: 0
+            };
+        }
+
+        const metrics = this.getDecorativeFrameMetrics(frameType, size);
+        const definition = this.getDecorativeFrameTextDefinition(frameType);
+        if (!definition) {
+            return null;
+        }
+
+        const width = (definition.width || 52) * metrics.scale;
+        const height = (definition.height || Math.max((definition.fontSize || 9) * 1.65, 10)) * metrics.scale;
+        const centerX = (definition.x ?? 32) * metrics.scale;
+        const centerY = (definition.y ?? 42) * metrics.scale;
+        const defaultColor = definition.color === 'frameColor'
+            ? customization.frameColor
+            : (definition.color || customization.frameColor);
+
+        return {
+            left: centerX - (width / 2),
+            top: centerY - (height / 2),
+            width,
+            height,
+            fontSize: (definition.fontSize || 9) * metrics.scale,
+            fontWeight: definition.fontWeight || '700',
+            fontFamily: definition.fontFamily || this.FRAME_FONT_DEFAULT,
+            color: customization.textColor || defaultColor,
+            rotation: definition.rotation || 0
+        };
+    },
+
+    getDecorativeFrameTextDefinition(frameType) {
+        switch (frameType) {
+            case this.FRAME_TYPES.ROUNDED_BANNER:
+                return { x: 32, y: 75.765, width: 52, color: '#ffffff' };
+            case this.FRAME_TYPES.OUTLINED_LABEL:
+                return { x: 32, y: 73.765, width: 52, color: 'frameColor' };
+            case this.FRAME_TYPES.FOOTER_PANEL:
+                return { x: 32, y: 73.765, width: 52, color: '#ffffff' };
+            case this.FRAME_TYPES.CENTER_BADGE:
+                return { x: 32, y: 71.765, width: 44, color: '#ffffff' };
+            case this.FRAME_TYPES.POINTER_PANEL:
+                return { x: 32, y: 75.765, width: 52, color: '#ffffff' };
+            case this.FRAME_TYPES.BOLD_BORDER:
+                return { x: 32, y: 73.765, width: 52, color: '#ffffff' };
+            case this.FRAME_TYPES.CENTERED_QR:
+                return { x: 32, y: 68.765, width: 50, color: 'frameColor' };
+            case this.FRAME_TYPES.BOX_POINTER:
+                return { x: 32, y: 75.765, width: 52, color: '#ffffff' };
+            case this.FRAME_TYPES.TOP_BANNER:
+                return { x: 32, y: 9.765, width: 52, color: '#ffffff' };
+            case this.FRAME_TYPES.SKETCH_BORDER:
+                return { x: 32, y: 67.765, width: 48, color: '#ffffff' };
+            case this.FRAME_TYPES.SCRIPT_CARD:
+                return { x: 32, y: 72.7, width: 52, height: 18, fontSize: 20, fontWeight: '400', fontFamily: this.FRAME_FONT_SCRIPT, color: 'frameColor' };
+            case this.FRAME_TYPES.VIDEO_PANEL:
+                return { x: 39, y: 75.765, width: 34, color: '#ffffff' };
+            case this.FRAME_TYPES.PHONE_SCREEN:
+                return { x: 32, y: 63.18, width: 46, fontSize: 8, color: 'frameColor' };
+            case this.FRAME_TYPES.ARROW_NOTE:
+                return { x: 34, y: 74.5, width: 46, height: 18, fontSize: 18, fontWeight: '400', fontFamily: this.FRAME_FONT_SCRIPT, color: 'frameColor', rotation: -6.5 };
+            case this.FRAME_TYPES.CORNER_ACCENT:
+                return { x: 37, y: 71.68, width: 24, fontSize: 8, color: 'frameColor' };
+            case this.FRAME_TYPES.BAG_TAG:
+                return { x: 32, y: 73.765, width: 42, color: '#ffffff' };
+            case this.FRAME_TYPES.MAILER:
+                return { x: 32, y: 70.68, width: 44, fontSize: 8, color: 'frameColor' };
+            case this.FRAME_TYPES.DELIVERY_VAN:
+                return { x: 17, y: 47.248, width: 20, fontSize: 5.86, color: '#ffffff' };
+            case this.FRAME_TYPES.DISPLAY_STAND:
+                return { x: 33, y: 7.68, width: 34, fontSize: 8, color: 'frameColor' };
+            case this.FRAME_TYPES.SIDEBAR_CARD:
+                return { x: 39.5, y: 65.595, width: 24, fontSize: 7, color: '#ffffff' };
+            case this.FRAME_TYPES.CLIPBOARD:
+                return { x: 32, y: 75.18, width: 48, fontSize: 8, color: '#ffffff' };
+            case this.FRAME_TYPES.NOTEBOOK:
+                return { x: 34, y: 73.18, width: 40, fontSize: 8, color: '#ffffff' };
+            case this.FRAME_TYPES.FOLDED_BANNER:
+                return { x: 32, y: 75.51, width: 42, fontSize: 6, color: '#ffffff' };
+            case this.FRAME_TYPES.RIBBON:
+                return { x: 32, y: 64.345, width: 42, fontSize: 7, color: '#ffffff' };
+            case this.FRAME_TYPES.GIFT_BOW:
+                return { x: 32, y: 76.345, width: 40, fontSize: 7, color: '#ffffff' };
+            default:
+                return null;
+        }
+    },
+
     getScanMeBorderInnerPadding(size) {
         const borderWidth = Math.max(2, Math.round(size * this.BORDER_FRAME_WIDTH_RATIO));
         const qrInset = Math.max(20, Math.round(size * 0.12));
@@ -1469,6 +1617,7 @@ const QRFrames = {
         const scaleY = qrHeight / sourceViewBox.height;
         const translateX = qrBounds.x - (sourceViewBox.minX * scaleX);
         const translateY = qrBounds.y - (sourceViewBox.minY * scaleY);
+        const rotationTransform = this.getQRRotationTransform(qrBounds, this.QR_ROTATION);
         const borderInset = metrics.borderWidth / 2;
         const noneFrameBackground = frameType === this.FRAME_TYPES.NONE && !this.TRANSPARENT_BACKGROUND ? `
             <rect x="0" y="0" width="${size}" height="${metrics.totalHeight}" fill="${this.getQRBackgroundFill()}"></rect>
@@ -1487,7 +1636,7 @@ const QRFrames = {
                 ${noneFrameBackground}
                 ${qrAreaBackground}
                 ${scanMeBorderBackground}
-                <g transform="translate(${this.formatMetric(translateX)} ${this.formatMetric(translateY)}) scale(${this.formatMetric(scaleX)} ${this.formatMetric(scaleY)})">
+                <g transform="${rotationTransform}translate(${this.formatMetric(translateX)} ${this.formatMetric(translateY)}) scale(${this.formatMetric(scaleX)} ${this.formatMetric(scaleY)})">
                     ${qrContent}
                 </g>
                 ${frameType === this.FRAME_TYPES.SCAN_ME ? `
@@ -1512,17 +1661,53 @@ const QRFrames = {
         const qrScaleY = qrHeight / sourceViewBox.height;
         const qrTranslateX = metrics.qrBounds.x - (sourceViewBox.minX * qrScaleX);
         const qrTranslateY = metrics.qrBounds.y - (sourceViewBox.minY * qrScaleY);
+        const rotationTransform = this.getQRRotationTransform(metrics.qrBounds, this.QR_ROTATION);
         const frameMarkup = this.getDecorativeFrameSVGMarkup(frameType, metrics);
 
         return `
             <svg viewBox="0 0 ${size} ${metrics.totalHeight}" fill="none" xmlns="http://www.w3.org/2000/svg">
                 ${frameMarkup.beforeQR}
-                <g transform="translate(${this.formatMetric(qrTranslateX)} ${this.formatMetric(qrTranslateY)}) scale(${this.formatMetric(qrScaleX)} ${this.formatMetric(qrScaleY)})">
+                <g transform="${rotationTransform}translate(${this.formatMetric(qrTranslateX)} ${this.formatMetric(qrTranslateY)}) scale(${this.formatMetric(qrScaleX)} ${this.formatMetric(qrScaleY)})">
                     ${qrContent}
                 </g>
                 ${frameMarkup.afterQR}
             </svg>
         `;
+    },
+
+    getQRRotationTransform(qrBounds, rotation = this.QR_ROTATION) {
+        const normalizedRotation = this.normalizeQRRotation(rotation);
+        if (!normalizedRotation || !qrBounds) {
+            return '';
+        }
+
+        const width = qrBounds.width ?? qrBounds.size ?? 0;
+        const height = qrBounds.height ?? qrBounds.size ?? 0;
+        const centerX = qrBounds.x + (width / 2);
+        const centerY = qrBounds.y + (height / 2);
+        return `rotate(${this.formatMetric(normalizedRotation)} ${this.formatMetric(centerX)} ${this.formatMetric(centerY)}) `;
+    },
+
+    drawQRImage(ctx, sourceCanvas, qrBounds, rotation = this.QR_ROTATION) {
+        if (!ctx || !sourceCanvas || !qrBounds) {
+            return;
+        }
+
+        const width = qrBounds.width ?? qrBounds.size;
+        const height = qrBounds.height ?? qrBounds.size;
+        const normalizedRotation = this.normalizeQRRotation(rotation);
+        if (!normalizedRotation) {
+            ctx.drawImage(sourceCanvas, qrBounds.x, qrBounds.y, width, height);
+            return;
+        }
+
+        const centerX = qrBounds.x + (width / 2);
+        const centerY = qrBounds.y + (height / 2);
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate((normalizedRotation * Math.PI) / 180);
+        ctx.drawImage(sourceCanvas, -width / 2, -height / 2, width, height);
+        ctx.restore();
     },
 
     getDecorativeFrameSVGMarkup(frameType, metrics) {
@@ -1970,7 +2155,7 @@ const QRFrames = {
             ctx.fill();
 
             const qrBounds = metrics.qrBounds;
-            ctx.drawImage(sourceCanvas, qrBounds.x, qrBounds.y, qrBounds.width ?? qrBounds.size, qrBounds.height ?? qrBounds.size);
+            this.drawQRImage(ctx, sourceCanvas, qrBounds);
         } else {
             if (!this.TRANSPARENT_BACKGROUND) {
                 ctx.fillStyle = this.getQRBackgroundFill();
@@ -1980,7 +2165,7 @@ const QRFrames = {
                 }
             }
             const qrBounds = metrics.qrBounds;
-            ctx.drawImage(sourceCanvas, qrBounds.x, qrBounds.y, qrBounds.width ?? qrBounds.size, qrBounds.height ?? qrBounds.size);
+            this.drawQRImage(ctx, sourceCanvas, qrBounds);
         }
 
         // Apply frame based on type
@@ -2056,13 +2241,7 @@ const QRFrames = {
         }
 
         if (metrics.qrBounds) {
-            ctx.drawImage(
-                canvas,
-                metrics.qrBounds.x,
-                metrics.qrBounds.y,
-                metrics.qrBounds.width ?? metrics.qrBounds.size,
-                metrics.qrBounds.height ?? metrics.qrBounds.size
-            );
+            this.drawQRImage(ctx, canvas, metrics.qrBounds);
         }
 
         switch (frameType) {
@@ -3311,7 +3490,7 @@ const QRFrames = {
             ctx.fillStyle = this.getQRBackgroundFill();
             ctx.fillRect(x, y, qrWidth, qrHeight);
         }
-        ctx.drawImage(sourceCanvas, x, y, qrWidth, qrHeight);
+        this.drawQRImage(ctx, sourceCanvas, metrics.qrBounds);
     },
 
     buildCustomFrameSVG(size, qrContent, sourceViewBox) {
@@ -3324,6 +3503,7 @@ const QRFrames = {
         const scaleY = qrHeight / sourceViewBox.height;
         const translateX = x - (sourceViewBox.minX * scaleX);
         const translateY = y - (sourceViewBox.minY * scaleY);
+        const rotationTransform = this.getQRRotationTransform(metrics.qrBounds, this.QR_ROTATION);
         const qrBackground = this.TRANSPARENT_BACKGROUND
             ? ''
             : `<rect x="${this.formatMetric(x)}" y="${this.formatMetric(y)}" width="${this.formatMetric(qrWidth)}" height="${this.formatMetric(qrHeight)}" fill="${this.getQRBackgroundFill()}"></rect>`;
@@ -3331,7 +3511,7 @@ const QRFrames = {
             <svg viewBox="0 0 ${size} ${metrics.totalHeight}" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <image href="${frame.dataUrl}" x="0" y="0" width="${size}" height="${metrics.totalHeight}" preserveAspectRatio="none"></image>
                 ${qrBackground}
-                <g transform="translate(${this.formatMetric(translateX)} ${this.formatMetric(translateY)}) scale(${this.formatMetric(scaleX)} ${this.formatMetric(scaleY)})">
+                <g transform="${rotationTransform}translate(${this.formatMetric(translateX)} ${this.formatMetric(translateY)}) scale(${this.formatMetric(scaleX)} ${this.formatMetric(scaleY)})">
                     ${qrContent}
                 </g>
             </svg>

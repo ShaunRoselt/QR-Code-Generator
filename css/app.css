@@ -1646,22 +1646,38 @@ body.kiosk-mode .qr-placeholder {
     -webkit-user-drag: none;
 }
 
+.custom-frame-stage-text {
+    position: absolute;
+    z-index: 1;
+    display: block;
+    padding: 2px 6px;
+    border: 1px dashed transparent;
+    border-radius: 6px;
+    background: transparent;
+    outline: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    transform-origin: center;
+    user-select: text;
+}
+
+.custom-frame-stage-text:empty::before {
+    content: attr(data-placeholder);
+    color: var(--text-secondary);
+    opacity: 0.75;
+}
+
+.custom-frame-stage-text:focus {
+    border-color: var(--accent-primary);
+    background: color-mix(in srgb, var(--bg-secondary) 12%, transparent);
+}
+
 .custom-frame-qr-box {
     position: absolute;
     box-sizing: border-box;
-    border: none;
-    outline: 2px dashed var(--accent-primary);
-    outline-offset: -2px;
-    background: rgba(64, 158, 255, 0.18);
     cursor: grab;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--accent-primary);
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     min-width: 18px;
     min-height: 18px;
     touch-action: none;
@@ -1669,6 +1685,57 @@ body.kiosk-mode .qr-placeholder {
 
 .custom-frame-qr-box:active {
     cursor: grabbing;
+}
+
+.custom-frame-qr-box-chrome {
+    position: absolute;
+    inset: 0;
+    transform-origin: center;
+}
+
+.custom-frame-qr-box-preview {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    outline: 2px dashed var(--accent-primary);
+    outline-offset: -2px;
+    background: rgba(64, 158, 255, 0.18);
+    color: var(--accent-primary);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    pointer-events: none;
+}
+
+.custom-frame-qr-rotate-handle {
+    position: absolute;
+    top: -27px;
+    left: calc(50% - 14px);
+    width: 28px;
+    height: 28px;
+    border: 2px solid #ffffff;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-primary);
+    color: #ffffff;
+    box-shadow: 0 1px 4px var(--shadow-medium);
+    cursor: grab;
+    touch-action: none;
+}
+
+.custom-frame-qr-rotate-handle:active {
+    cursor: grabbing;
+}
+
+.custom-frame-qr-rotate-handle:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent-primary) 70%, #ffffff);
+    outline-offset: 2px;
 }
 
 .custom-frame-qr-resize-handle {
