@@ -235,6 +235,13 @@ router.register('/vcard', () => {
     document.getElementById('mainContent').innerHTML = VcardMode.render();
     VcardMode.init();
 });
+router.register('/frames', () => {
+    applyShellMode('/frames');
+    updateNavigation('/frames');
+    applyPageMetadata(DEFAULT_PAGE_META);
+    document.getElementById('mainContent').innerHTML = FramesMode.render();
+    FramesMode.init();
+});
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
