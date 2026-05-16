@@ -4,6 +4,7 @@
 const FramesMode = {
     frameLibraryCache: null,
     framePreviewCache: new Map(),
+    blockIdCounter: 0,
     PREVIEW_QR_TEXT: 'https://qrcode.apps.shaunroselt.com/',
     PREVIEW_QR_OPTIONS: Object.freeze({
         colorDark: '#000000',
@@ -11,13 +12,41 @@ const FramesMode = {
         correctLevel: 'Q',
         margin: 4
     }),
+    BLOCK_LIBRARY: Object.freeze([
+        {
+            type: 'qr',
+            name: 'QR Code Block',
+            description: 'Drop a QR code anywhere on the canvas.',
+            icon: 'bi-qr-code'
+        },
+        {
+            type: 'text',
+            name: 'Text Block',
+            description: 'Place editable text anywhere in the layout.',
+            icon: 'bi-type-h2'
+        }
+    ]),
 
     state: {
         activeTab: 'frames',
         searchTerm: '',
         selectedFrameKey: '',
+        selectedBlockId: '',
+        isSidebarCollapsed: false,
+        preferLeftSidebarExpanded: false,
+        isRightSidebarCollapsed: false,
+        autoCollapseLeftSidebar: false,
+        rightSidebarTab: 'block',
+        canvasZoom: 1,
+        canvasPanX: 0,
+        canvasPanY: 0,
+        canvasBackgroundColor: '#2d2d2d',
+        canvasGridColor: '#66c0f4',
+        canvasGridOpacity: 0.08,
+        canvasGridBaseSize: 32,
         isLoading: true,
-        errorMessage: ''
+        errorMessage: '',
+        canvasBlocks: []
     },
 
     render() {
@@ -26,10 +55,22 @@ const FramesMode = {
         const filteredFrames = this.state.activeTab === 'frames'
             ? this.getFilteredFrames(allFrames, this.state.searchTerm)
             : [];
-        const selectedFrame = this.getSelectedFrame(allFrames, filteredFrames);
-        const searchPlaceholder = this.state.activeTab === 'frames'
+        const filteredBlocks = this.state.activeTab === 'blocks'
+            ? this.getFilteredBlocks(this.state.searchTerm)
+            : [];
+        const selectedFrame = hasFrameData ? this.getSelectedFrame(allFrames) : null;
+        const selectedBlock = this.getSelectedBlock();
+        const totalFrameCount = allFrames.length;
+        const searchLabel = this.state.activeTab === 'frames'
             ? I18n.translateString('Search frames')
-            : I18n.translateString('Blocks coming soon');
+            : I18n.translateString('Search blocks');
+        const leftSidebarCollapsed = this.isLeftSidebarCollapsed();
+        const sidebarToggleLabel = leftSidebarCollapsed
+            ? I18n.translateString('Expand sidebar')
+            : I18n.translateString('Collapse sidebar');
+        const rightSidebarToggleLabel = this.state.isRightSidebarCollapsed
+            ? I18n.translateString('Expand properties sidebar')
+            : I18n.translateString('Collapse properties sidebar');
 
         return `
             <div class="qr-mode-page frame-editor-page">
@@ -37,34 +78,76 @@ const FramesMode = {
                     <h1 class="content-title">${I18n.translateString('Frame Editor')}</h1>
                 </div>
 
-                <div class="frame-editor-layout">
-                    <aside class="frame-editor-sidebar-panel" aria-label="${I18n.translateString('Frame Editor sidebar')}">
-                        <div class="frame-editor-tabs" role="tablist" aria-label="${I18n.translateString('Frame Editor panels')}">
-                            ${this.renderTabButton('frames', 'Frames', 'bi-collection')}
-                            ${this.renderTabButton('blocks', 'Blocks', 'bi-grid-3x3-gap')}
-                        </div>
+                <div class="frame-editor-header-bar">
+                    <button
+                        type="button"
+                        class="frame-editor-sidebar-toggle"
+                        data-frame-editor-toggle-sidebar
+                        aria-expanded="${leftSidebarCollapsed ? 'false' : 'true'}"
+                        aria-controls="frameEditorSidebarPanel"
+                        title="${this.escapeHTML(sidebarToggleLabel)}"
+                    >
+                        <i class="bi ${leftSidebarCollapsed ? 'bi-layout-sidebar-inset-reverse' : 'bi-layout-sidebar-inset'}" aria-hidden="true"></i>
+                        <span class="frame-editor-button-label">${I18n.translateString('Sidebar')}</span>
+                    </button>
+                    <div class="frame-editor-header-actions">
+                        <button
+                            type="button"
+                            class="frame-editor-sidebar-toggle"
+                            data-frame-editor-toggle-right-sidebar
+                            aria-expanded="${this.state.isRightSidebarCollapsed ? 'false' : 'true'}"
+                            aria-controls="frameEditorRightSidebarPanel"
+                            title="${this.escapeHTML(rightSidebarToggleLabel)}"
+                        >
+                            <i class="bi ${this.state.isRightSidebarCollapsed ? 'bi-layout-sidebar-reverse' : 'bi-layout-sidebar'}" aria-hidden="true"></i>
+                            <span class="frame-editor-button-label">${I18n.translateString('Properties')}</span>
+                        </button>
+                    </div>
+                </div>
 
-                        <div class="frame-editor-sidebar-search search-field">
-                            <i class="bi bi-search search-icon" aria-hidden="true"></i>
-                            <input
-                                type="search"
-                                class="search-input"
-                                id="frameEditorSearchInput"
-                                value="${this.escapeHTML(this.state.searchTerm)}"
-                                placeholder="${this.escapeHTML(searchPlaceholder)}"
-                                aria-label="${this.escapeHTML(I18n.translateString('Search frames'))}"
-                                ${this.state.activeTab === 'frames' ? '' : 'disabled'}
-                            >
-                        </div>
+                <div class="frame-editor-layout-scroll">
+                    <div class="frame-editor-layout${leftSidebarCollapsed ? ' frame-editor-layout-sidebar-collapsed' : ''}${this.state.isRightSidebarCollapsed ? ' frame-editor-layout-right-sidebar-collapsed' : ''}">
+                        <aside
+                            id="frameEditorSidebarPanel"
+                            class="frame-editor-sidebar-panel"
+                            aria-label="${I18n.translateString('Frame Editor sidebar')}"
+                            aria-hidden="${leftSidebarCollapsed ? 'true' : 'false'}"
+                        >
+                            <div class="frame-editor-tabs" role="tablist" aria-label="${I18n.translateString('Frame Editor panels')}">
+                                ${this.renderTabButton('frames', 'Frames', 'bi-collection')}
+                                ${this.renderTabButton('blocks', 'Blocks', 'bi-grid-3x3-gap')}
+                            </div>
 
-                        <div class="frame-editor-sidebar-body">
-                            ${this.renderSidebarContent(filteredFrames, allFrames.length, selectedFrame)}
-                        </div>
-                    </aside>
+                            <div class="frame-editor-sidebar-search search-field">
+                                <i class="bi bi-search search-icon" aria-hidden="true"></i>
+                                <input
+                                    type="search"
+                                    class="search-input"
+                                    id="frameEditorSearchInput"
+                                    value="${this.escapeHTML(this.state.searchTerm)}"
+                                    placeholder="${this.escapeHTML(searchLabel)}"
+                                    aria-label="${this.escapeHTML(searchLabel)}"
+                                >
+                            </div>
 
-                    <section class="frame-editor-workspace-panel">
-                        ${this.renderWorkspace(selectedFrame, allFrames.length)}
-                    </section>
+                            <div class="frame-editor-sidebar-body">
+                                ${this.renderSidebarContent(filteredFrames, totalFrameCount, filteredBlocks)}
+                            </div>
+                        </aside>
+
+                        <section class="frame-editor-workspace-panel">
+                            ${this.renderWorkspace(selectedFrame, totalFrameCount, selectedBlock)}
+                        </section>
+
+                        <aside
+                            id="frameEditorRightSidebarPanel"
+                            class="frame-editor-right-sidebar-panel"
+                            aria-label="${I18n.translateString('Frame Editor properties')}"
+                            aria-hidden="${this.state.isRightSidebarCollapsed ? 'true' : 'false'}"
+                        >
+                            ${this.renderRightSidebar(selectedBlock)}
+                        </aside>
+                    </div>
                 </div>
             </div>
         `;
@@ -88,19 +171,9 @@ const FramesMode = {
         `;
     },
 
-    renderSidebarContent(filteredFrames, totalFrameCount, selectedFrame) {
+    renderSidebarContent(filteredFrames, totalFrameCount, filteredBlocks) {
         if (this.state.activeTab === 'blocks') {
-            return `
-                <div class="frame-editor-sidebar-summary">
-                    <span class="frame-editor-sidebar-title">${I18n.translateString('Blocks')}</span>
-                    <span class="frame-editor-sidebar-count">${I18n.translateString('Coming soon')}</span>
-                </div>
-                <div class="frame-editor-empty-state">
-                    <i class="bi bi-grid-3x3-gap" aria-hidden="true"></i>
-                    <div class="frame-editor-empty-title">${I18n.translateString('No blocks yet')}</div>
-                    <p>${I18n.translateString('This tab will hold items like text, images, and other frame elements.')}</p>
-                </div>
-            `;
+            return this.renderBlocksSidebar(filteredBlocks);
         }
 
         if (this.state.isLoading) {
@@ -137,6 +210,8 @@ const FramesMode = {
             `;
         }
 
+        const selectedFrame = this.getSelectedFrame(this.getAllFrames(false));
+
         return `
             <div class="frame-editor-sidebar-summary">
                 <span class="frame-editor-sidebar-title">${I18n.translateString('Frames')}</span>
@@ -144,6 +219,34 @@ const FramesMode = {
             </div>
             <div class="frame-editor-frame-list" role="list">
                 ${filteredFrames.map(frame => this.renderFrameListItem(frame, selectedFrame)).join('')}
+            </div>
+        `;
+    },
+
+    renderBlocksSidebar(filteredBlocks) {
+        const totalBlocks = this.BLOCK_LIBRARY.length;
+
+        if (!filteredBlocks.length) {
+            return `
+                <div class="frame-editor-sidebar-summary">
+                    <span class="frame-editor-sidebar-title">${I18n.translateString('Blocks')}</span>
+                    <span class="frame-editor-sidebar-count">${I18n.translate('{count} available', { count: String(totalBlocks) })}</span>
+                </div>
+                <div class="frame-editor-empty-state">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <div class="frame-editor-empty-title">${I18n.translateString('No matching blocks')}</div>
+                    <p>${I18n.translateString('Try a different keyword or clear the search to see all available blocks.')}</p>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="frame-editor-sidebar-summary">
+                <span class="frame-editor-sidebar-title">${I18n.translateString('Blocks')}</span>
+                <span class="frame-editor-sidebar-count">${I18n.translate('{count} available', { count: String(filteredBlocks.length) })}</span>
+            </div>
+            <div class="frame-editor-library-list" role="list">
+                ${filteredBlocks.map(block => this.renderBlockLibraryItem(block)).join('')}
             </div>
         `;
     },
@@ -169,17 +272,179 @@ const FramesMode = {
         `;
     },
 
-    renderWorkspace(selectedFrame, totalFrameCount) {
-        if (this.state.activeTab === 'blocks') {
+    renderBlockLibraryItem(block) {
+        return `
+            <button
+                type="button"
+                class="frame-editor-library-item"
+                data-frame-editor-add-block="${block.type}"
+                data-frame-editor-drag-block="${block.type}"
+                draggable="true"
+                title="${this.escapeHTML(block.name)}"
+            >
+                <span class="frame-editor-library-item-icon" aria-hidden="true">
+                    <i class="bi ${block.icon}"></i>
+                </span>
+                <span class="frame-editor-library-item-meta">
+                    <span class="frame-editor-library-item-name">${this.escapeHTML(I18n.translateString(block.name))}</span>
+                    <span class="frame-editor-library-item-description">${this.escapeHTML(I18n.translateString(block.description))}</span>
+                </span>
+                <span class="frame-editor-library-item-action">${I18n.translateString('Drag or click')}</span>
+            </button>
+        `;
+    },
+
+    renderRightSidebar(selectedBlock) {
+        return `
+            <div class="frame-editor-right-sidebar-tabs" role="tablist" aria-label="${this.escapeHTML(I18n.translateString('Frame Editor properties panels'))}">
+                ${this.renderRightSidebarTabButton('block', 'Block', 'bi-bounding-box')}
+                ${this.renderRightSidebarTabButton('canvas', 'Canvas', 'bi-grid-1x2')}
+            </div>
+            <div class="frame-editor-right-sidebar-body">
+                ${this.state.rightSidebarTab === 'block'
+                    ? this.renderRightSidebarBlockContent(selectedBlock)
+                    : this.renderRightSidebarCanvasContent()}
+            </div>
+        `;
+    },
+
+    renderRightSidebarTabButton(tabId, label, icon) {
+        const isActive = this.state.rightSidebarTab === tabId;
+
+        return `
+            <button
+                type="button"
+                class="frame-editor-tab${isActive ? ' active' : ''}"
+                data-frame-editor-properties-tab="${tabId}"
+                role="tab"
+                aria-selected="${isActive ? 'true' : 'false'}"
+            >
+                <i class="bi ${icon}" aria-hidden="true"></i>
+                <span>${this.escapeHTML(I18n.translateString(label))}</span>
+            </button>
+        `;
+    },
+
+    renderRightSidebarBlockContent(selectedBlock) {
+        if (!selectedBlock) {
             return `
-                <div class="frame-editor-workspace-empty">
-                    <i class="bi bi-grid-3x3-gap" aria-hidden="true"></i>
-                    <h2 class="section-title">${I18n.translateString('Blocks')}</h2>
-                    <p class="content-subtitle">${I18n.translateString('Block tools will be added here later for text, images, and other editable frame content.')}</p>
+                <div class="frame-editor-empty-state frame-editor-empty-state-compact">
+                    <i class="bi bi-cursor" aria-hidden="true"></i>
+                    <div class="frame-editor-empty-title">${I18n.translateString('No block selected')}</div>
+                    <p>${I18n.translateString('Select a block on the canvas to edit its properties here.')}</p>
                 </div>
             `;
         }
 
+        if (selectedBlock.type === 'text') {
+            return `
+                <div class="frame-editor-sidebar-panel-section">
+                    <div class="frame-editor-sidebar-summary">
+                        <span class="frame-editor-sidebar-title">${I18n.translateString('Text Block')}</span>
+                    </div>
+                    <div class="frame-editor-sidebar-form">
+                        <label class="frame-editor-field frame-editor-field-wide">
+                            <span>${I18n.translateString('Text')}</span>
+                            <textarea rows="3" data-block-setting="text">${this.escapeHTML(selectedBlock.text)}</textarea>
+                        </label>
+                        <label class="frame-editor-field">
+                            <span>${I18n.translateString('Font size')}</span>
+                            <input type="range" min="18" max="72" step="1" value="${this.escapeHTML(String(selectedBlock.fontSize))}" data-block-setting="fontSize">
+                        </label>
+                        <label class="frame-editor-field">
+                            <span>${I18n.translateString('Width')}</span>
+                            <input type="range" min="180" max="520" step="10" value="${this.escapeHTML(String(selectedBlock.width))}" data-block-setting="width">
+                        </label>
+                        <label class="frame-editor-field">
+                            <span>${I18n.translateString('Color')}</span>
+                            <input type="color" value="${this.escapeHTML(selectedBlock.color)}" data-block-setting="color">
+                        </label>
+                        <div class="frame-editor-field frame-editor-field-wide">
+                            <span>${I18n.translateString('Formatting')}</span>
+                            <div class="frame-editor-toggle-group">
+                                ${this.renderSidebarToggleButton('fontWeight', selectedBlock.fontWeight >= 700 ? '400' : '700', selectedBlock.fontWeight >= 700, 'bi-type-bold', 'Bold')}
+                                ${this.renderSidebarToggleButton('fontStyle', selectedBlock.fontStyle === 'italic' ? 'normal' : 'italic', selectedBlock.fontStyle === 'italic', 'bi-type-italic', 'Italic')}
+                                ${this.renderSidebarToggleButton('textAlign', 'left', selectedBlock.textAlign === 'left', 'bi-text-left', 'Left')}
+                                ${this.renderSidebarToggleButton('textAlign', 'center', selectedBlock.textAlign === 'center', 'bi-text-center', 'Center')}
+                                ${this.renderSidebarToggleButton('textAlign', 'right', selectedBlock.textAlign === 'right', 'bi-text-right', 'Right')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="frame-editor-sidebar-panel-section">
+                <div class="frame-editor-sidebar-summary">
+                    <span class="frame-editor-sidebar-title">${I18n.translateString('QR Code Block')}</span>
+                </div>
+                <div class="frame-editor-sidebar-form">
+                    <label class="frame-editor-field frame-editor-field-wide">
+                        <span>${I18n.translateString('QR content')}</span>
+                        <input type="text" value="${this.escapeHTML(selectedBlock.content)}" data-block-setting="content">
+                    </label>
+                    <label class="frame-editor-field">
+                        <span>${I18n.translateString('Size')}</span>
+                        <input type="range" min="120" max="300" step="4" value="${this.escapeHTML(String(selectedBlock.size))}" data-block-setting="size">
+                    </label>
+                    <label class="frame-editor-field">
+                        <span>${I18n.translateString('Dark color')}</span>
+                        <input type="color" value="${this.escapeHTML(selectedBlock.colorDark)}" data-block-setting="colorDark">
+                    </label>
+                </div>
+            </div>
+        `;
+    },
+
+    renderRightSidebarCanvasContent() {
+        return `
+            <div class="frame-editor-sidebar-panel-section">
+                <div class="frame-editor-sidebar-summary">
+                    <span class="frame-editor-sidebar-title">${I18n.translateString('Canvas')}</span>
+                </div>
+                <div class="frame-editor-sidebar-form">
+                    <label class="frame-editor-field">
+                        <span>${I18n.translateString('Background')}</span>
+                        <input type="color" value="${this.escapeHTML(this.state.canvasBackgroundColor)}" data-canvas-setting="canvasBackgroundColor">
+                    </label>
+                    <label class="frame-editor-field">
+                        <span>${I18n.translateString('Grid color')}</span>
+                        <input type="color" value="${this.escapeHTML(this.state.canvasGridColor)}" data-canvas-setting="canvasGridColor">
+                    </label>
+                    <label class="frame-editor-field">
+                        <span>${I18n.translateString('Grid opacity')}</span>
+                        <input type="range" min="0" max="0.3" step="0.01" value="${this.escapeHTML(String(this.state.canvasGridOpacity))}" data-canvas-setting="canvasGridOpacity">
+                    </label>
+                    <label class="frame-editor-field">
+                        <span>${I18n.translateString('Grid size')}</span>
+                        <input type="range" min="16" max="64" step="2" value="${this.escapeHTML(String(this.state.canvasGridBaseSize))}" data-canvas-setting="canvasGridBaseSize">
+                    </label>
+                    <button type="button" class="frame-editor-action-button" data-canvas-action="reset-view">
+                        <i class="bi bi-arrows-angle-contract" aria-hidden="true"></i>
+                        <span>${I18n.translateString('Reset view')}</span>
+                    </button>
+                </div>
+            </div>
+        `;
+    },
+
+    renderSidebarToggleButton(setting, value, isActive, icon, label) {
+        return `
+            <button
+                type="button"
+                class="frame-editor-toggle-button${isActive ? ' active' : ''}"
+                data-block-toggle="${setting}"
+                data-block-value="${value}"
+                aria-pressed="${isActive ? 'true' : 'false'}"
+                title="${this.escapeHTML(I18n.translateString(label))}"
+            >
+                <i class="bi ${icon}" aria-hidden="true"></i>
+            </button>
+        `;
+    },
+
+    renderWorkspace(selectedFrame, totalFrameCount, selectedBlock) {
         if (this.state.isLoading) {
             return `
                 <div class="frame-editor-workspace-empty">
@@ -200,45 +465,252 @@ const FramesMode = {
             `;
         }
 
-        if (!selectedFrame) {
+        return `
+            <div class="frame-editor-canvas-shell">
+                <div class="frame-editor-canvas-scroll">
+                    <div
+                        class="frame-editor-canvas-stage"
+                        data-frame-editor-stage
+                        style="background-color: ${this.escapeHTML(this.state.canvasBackgroundColor)};"
+                        aria-label="${this.escapeHTML(I18n.translateString('Frame editor canvas'))}"
+                    >
+                        <div class="frame-editor-canvas-controls" role="group" aria-label="${this.escapeHTML(I18n.translateString('Canvas controls'))}">
+                            <button type="button" class="frame-editor-canvas-control" data-canvas-zoom="out" title="${this.escapeHTML(I18n.translateString('Zoom out'))}">
+                                <i class="bi bi-dash-lg" aria-hidden="true"></i>
+                            </button>
+                            <span class="frame-editor-canvas-zoom-readout">${this.escapeHTML(String(Math.round(this.state.canvasZoom * 100)))}%</span>
+                            <button type="button" class="frame-editor-canvas-control" data-canvas-zoom="in" title="${this.escapeHTML(I18n.translateString('Zoom in'))}">
+                                <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                            </button>
+                            <button type="button" class="frame-editor-canvas-control frame-editor-canvas-control-reset" data-canvas-zoom="reset">
+                                ${I18n.translateString('Reset')}
+                            </button>
+                        </div>
+
+                        <div class="frame-editor-canvas-viewport" data-frame-editor-viewport>
+                            <div
+                                class="frame-editor-canvas-grid"
+                                aria-hidden="true"
+                                style="${this.getCanvasGridStyle()}"
+                            ></div>
+                            <div
+                                class="frame-editor-canvas-camera"
+                                data-frame-editor-camera
+                                style="transform: translate(${this.state.canvasPanX}px, ${this.state.canvasPanY}px);"
+                            >
+                                <div
+                                    class="frame-editor-canvas-scene"
+                                    data-frame-editor-scene
+                                    style="transform: scale(${this.state.canvasZoom});"
+                                >
+                                    <div class="frame-editor-canvas-block-layer">
+                                        ${this.state.canvasBlocks.map(block => this.renderCanvasBlock(block)).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    renderTextBlockPopup(block) {
+        return `
+            <div class="frame-editor-block-toolbar" role="toolbar" aria-label="${this.escapeHTML(I18n.translateString('Text block toolbar'))}">
+                ${this.renderPopupIconButton('fontSize', '-2', 'bi-type', 'A-', 'Decrease font size', 'data-block-adjust')}
+                <span class="frame-editor-toolbar-chip">${this.escapeHTML(String(block.fontSize))}px</span>
+                ${this.renderPopupIconButton('fontSize', '2', 'bi-type-h1', 'A+', 'Increase font size', 'data-block-adjust')}
+                <span class="frame-editor-toolbar-divider" aria-hidden="true"></span>
+                ${this.renderAlignmentButton('left', block.textAlign, 'bi-text-left')}
+                ${this.renderAlignmentButton('center', block.textAlign, 'bi-text-center')}
+                ${this.renderAlignmentButton('right', block.textAlign, 'bi-text-right')}
+                <span class="frame-editor-toolbar-divider" aria-hidden="true"></span>
+                <label class="frame-editor-toolbar-color" title="${this.escapeHTML(I18n.translateString('Text color'))}">
+                    <span>A</span>
+                    <input type="color" value="${this.escapeHTML(block.color)}" data-block-setting="color">
+                </label>
+                ${this.renderPopupToggleButton('fontWeight', block.fontWeight >= 700 ? '400' : '700', block.fontWeight >= 700, 'bi-type-bold', 'Bold')}
+                ${this.renderPopupToggleButton('fontStyle', block.fontStyle === 'italic' ? 'normal' : 'italic', block.fontStyle === 'italic', 'bi-type-italic', 'Italic')}
+                <span class="frame-editor-toolbar-divider" aria-hidden="true"></span>
+                ${this.renderPopupIconButton('duplicate', '', 'bi-files', '', 'Duplicate block', 'data-block-action')}
+                ${this.renderPopupIconButton('delete', '', 'bi-trash3', '', 'Delete block', 'data-block-action danger')}
+            </div>
+        `;
+    },
+
+    renderPopupToggleButton(setting, value, isActive, icon, label) {
+        return `
+            <button
+                type="button"
+                class="frame-editor-toolbar-button${isActive ? ' active' : ''}"
+                data-block-toggle="${setting}"
+                data-block-value="${value}"
+                aria-pressed="${isActive ? 'true' : 'false'}"
+                title="${this.escapeHTML(I18n.translateString(label))}"
+            >
+                <i class="bi ${icon}" aria-hidden="true"></i>
+            </button>
+        `;
+    },
+
+    renderAlignmentButton(value, activeValue, icon) {
+        return `
+            <button
+                type="button"
+                class="frame-editor-toolbar-button${activeValue === value ? ' active' : ''}"
+                data-block-toggle="textAlign"
+                data-block-value="${value}"
+                aria-pressed="${activeValue === value ? 'true' : 'false'}"
+                title="${this.escapeHTML(I18n.translateString(value.charAt(0).toUpperCase() + value.slice(1)))}"
+            >
+                <i class="bi ${icon}" aria-hidden="true"></i>
+            </button>
+        `;
+    },
+
+    renderPopupIconButton(key, value, icon, fallbackLabel, title, mode = 'data-block-action') {
+        const label = fallbackLabel ? `<span>${this.escapeHTML(fallbackLabel)}</span>` : '';
+        const dataAttribute = mode === 'data-block-adjust'
+            ? `data-block-adjust="${key}" data-block-delta="${value}"`
+            : `data-block-action="${key}"`;
+
+        return `
+            <button
+                type="button"
+                class="frame-editor-toolbar-button${String(mode).includes('danger') ? ' danger' : ''}"
+                ${dataAttribute}
+                title="${this.escapeHTML(I18n.translateString(title))}"
+            >
+                <i class="bi ${icon}" aria-hidden="true"></i>
+                ${label}
+            </button>
+        `;
+    },
+
+    renderQrBlockPopup(block) {
+        return `
+            <div class="frame-editor-block-toolbar frame-editor-block-toolbar-qr" role="toolbar" aria-label="${this.escapeHTML(I18n.translateString('QR block toolbar'))}">
+                <label class="frame-editor-toolbar-input" title="${this.escapeHTML(I18n.translateString('QR content'))}">
+                    <i class="bi bi-link-45deg" aria-hidden="true"></i>
+                    <input
+                        type="text"
+                        value="${this.escapeHTML(block.content)}"
+                        data-block-setting="content"
+                        placeholder="${this.escapeHTML(I18n.translateString('QR content'))}"
+                    >
+                </label>
+                ${this.renderPopupIconButton('size', '-12', 'bi-dash-lg', '', 'Decrease QR size', 'data-block-adjust')}
+                <span class="frame-editor-toolbar-chip">${this.escapeHTML(String(block.size))}px</span>
+                ${this.renderPopupIconButton('size', '12', 'bi-plus-lg', '', 'Increase QR size', 'data-block-adjust')}
+                <label class="frame-editor-toolbar-color" title="${this.escapeHTML(I18n.translateString('Dark color'))}">
+                    <span><i class="bi bi-circle-fill" aria-hidden="true"></i></span>
+                    <input type="color" value="${this.escapeHTML(block.colorDark)}" data-block-setting="colorDark">
+                </label>
+                <span class="frame-editor-toolbar-divider" aria-hidden="true"></span>
+                ${this.renderPopupIconButton('duplicate', '', 'bi-files', '', 'Duplicate block', 'data-block-action')}
+                ${this.renderPopupIconButton('delete', '', 'bi-trash3', '', 'Delete block', 'data-block-action danger')}
+            </div>
+        `;
+    },
+
+    renderCanvasBlock(block) {
+        const isActive = this.state.selectedBlockId === block.id;
+        const width = block.type === 'text' ? block.width : block.size;
+        const popupPlacementClass = block.yPct < 18 ? ' is-below' : '';
+        const popupHorizontalClass = block.xPct < 24
+            ? ' is-left'
+            : block.xPct > 76
+                ? ' is-right'
+                : '';
+        const style = [
+            `left: ${block.xPct}%`,
+            `top: ${block.yPct}%`,
+            `width: ${width}px`
+        ].join('; ');
+
+        return `
+            <div
+                class="frame-editor-canvas-block frame-editor-canvas-block-${block.type}${isActive ? ' active' : ''}"
+                data-frame-editor-canvas-block="${block.id}"
+                data-block-type="${block.type}"
+                style="${style}"
+                tabindex="0"
+                role="button"
+                aria-label="${this.escapeHTML(I18n.translateString(block.type === 'text' ? 'Text Block' : 'QR Code Block'))}"
+            >
+                ${block.type === 'text'
+                    ? `<div class="frame-editor-canvas-block-badge">${this.escapeHTML(I18n.translateString('Text'))}</div>`
+                    : ''}
+                ${this.renderCanvasBlockInner(block)}
+                ${isActive ? `
+                    <div class="frame-editor-block-popup-anchor${popupPlacementClass}${popupHorizontalClass}" data-frame-editor-popup>
+                        <div class="frame-editor-block-popup frame-editor-block-popup-${block.type}">
+                            ${block.type === 'text'
+                                ? this.renderTextBlockPopup(block)
+                                : this.renderQrBlockPopup(block)}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    },
+
+    renderCanvasBlockInner(block) {
+        if (block.type === 'text') {
+            const isActive = this.state.selectedBlockId === block.id;
+            const inlineStyle = [
+                `font-size: ${block.fontSize}px`,
+                `font-weight: ${block.fontWeight}`,
+                `font-style: ${block.fontStyle}`,
+                `color: ${block.color}`,
+                `text-align: ${block.textAlign || 'left'}`
+            ].join('; ');
+
             return `
-                <div class="frame-editor-workspace-empty">
-                    <i class="bi bi-brush" aria-hidden="true"></i>
-                    <h2 class="section-title">${I18n.translateString('No frame selected')}</h2>
-                    <p class="content-subtitle">${I18n.translateString('Pick a frame from the left sidebar to start working with it.')}</p>
+                <div class="frame-editor-text-block-surface">
+                    <div
+                        class="frame-editor-text-block-content"
+                        style="${inlineStyle}"
+                        ${isActive ? 'contenteditable="true"' : ''}
+                        ${isActive ? `data-block-inline-editor="text" data-block-id="${block.id}"` : ''}
+                        spellcheck="false"
+                    >
+                        ${this.escapeHTML(block.text)}
+                    </div>
                 </div>
             `;
         }
 
-        const selectedPreviewMarkup = this.getLargePreviewMarkup(selectedFrame);
-
         return `
-            <div class="frame-editor-workspace-header">
-                <div>
-                    <div class="frame-editor-workspace-kicker">${I18n.translateString('Frame Workspace')}</div>
-                    <h2 class="section-title">
-                        <i class="bi bi-brush" aria-hidden="true"></i>
-                        ${this.escapeHTML(selectedFrame.name)}
-                    </h2>
-                    <p class="content-subtitle">${I18n.translateString('Use the sidebar to browse saved frames. Editing controls will live here as the workspace expands.')}</p>
-                </div>
-                <div class="frame-editor-workspace-badges">
-                    <span class="frame-editor-badge">${this.escapeHTML(selectedFrame.sourceLabel)}</span>
-                    <span class="frame-editor-badge">${I18n.translate('{count} frames', { count: String(totalFrameCount) })}</span>
-                </div>
-            </div>
-
-            <div class="frame-editor-canvas-shell">
-                <div class="frame-editor-canvas-preview">
-                    ${selectedPreviewMarkup}
-                </div>
-                <div class="frame-editor-canvas-note">
-                    <i class="bi bi-layout-sidebar-inset" aria-hidden="true"></i>
-                    <div class="frame-editor-empty-title">${I18n.translateString('Editor tools coming next')}</div>
-                    <p>${I18n.translateString('The new left sidebar is ready for browsing frames. Blocks will be added from the second tab when that workflow is built out.')}</p>
-                </div>
+            <div class="frame-editor-qr-block-surface" style="width: ${block.size}px; height: ${block.size}px;">
+                ${this.getCanvasQrMarkup(block)}
             </div>
         `;
+    },
+
+    getCanvasQrMarkup(block) {
+        return buildNativeQRCodeSVG({
+            text: block.content || this.PREVIEW_QR_TEXT,
+            size: block.size,
+            qrOptions: {
+                ...this.PREVIEW_QR_OPTIONS,
+                colorDark: block.colorDark,
+                colorLight: 'transparent',
+                transparentBackground: true,
+                correctLevel: QRCode.CorrectLevel[this.PREVIEW_QR_OPTIONS.correctLevel]
+            },
+            includeLogo: false
+        });
+    },
+
+    getCanvasGridStyle() {
+        const gridSize = Math.max(8, this.state.canvasGridBaseSize * this.state.canvasZoom);
+        const offsetX = ((this.state.canvasPanX % gridSize) + gridSize) % gridSize;
+        const offsetY = ((this.state.canvasPanY % gridSize) + gridSize) % gridSize;
+        const gridColor = this.hexToRgba(this.state.canvasGridColor, this.state.canvasGridOpacity);
+
+        return `background-image: linear-gradient(${gridColor} 1px, transparent 1px), linear-gradient(90deg, ${gridColor} 1px, transparent 1px); background-size: ${gridSize}px ${gridSize}px; background-position: ${offsetX}px ${offsetY}px;`;
     },
 
     getRoot() {
@@ -253,9 +725,14 @@ const FramesMode = {
 
         root.innerHTML = this.render();
         this.bindEvents(root);
+        this.syncViewportLayout(root);
     },
 
     init() {
+        if (!this.handleViewportResize) {
+            this.handleViewportResize = () => this.syncViewportLayout();
+            window.addEventListener('resize', this.handleViewportResize);
+        }
         this.renderIntoRoot();
         void this.loadFrames();
     },
@@ -294,6 +771,28 @@ const FramesMode = {
     },
 
     bindEvents(root) {
+        root.querySelectorAll('[data-frame-editor-toggle-sidebar]').forEach(button => {
+            button.addEventListener('click', () => {
+                const nextCollapsed = !this.isLeftSidebarCollapsed();
+                this.state = {
+                    ...this.state,
+                    isSidebarCollapsed: nextCollapsed,
+                    preferLeftSidebarExpanded: !nextCollapsed
+                };
+                this.renderIntoRoot();
+            });
+        });
+
+        root.querySelectorAll('[data-frame-editor-toggle-right-sidebar]').forEach(button => {
+            button.addEventListener('click', () => {
+                this.state = {
+                    ...this.state,
+                    isRightSidebarCollapsed: !this.state.isRightSidebarCollapsed
+                };
+                this.renderIntoRoot();
+            });
+        });
+
         root.querySelectorAll('[data-frame-editor-tab]').forEach(button => {
             button.addEventListener('click', () => {
                 const nextTab = button.dataset.frameEditorTab;
@@ -303,7 +802,23 @@ const FramesMode = {
 
                 this.state = {
                     ...this.state,
-                    activeTab: nextTab
+                    activeTab: nextTab,
+                    searchTerm: ''
+                };
+                this.renderIntoRoot();
+            });
+        });
+
+        root.querySelectorAll('[data-frame-editor-properties-tab]').forEach(button => {
+            button.addEventListener('click', () => {
+                const nextTab = button.dataset.frameEditorPropertiesTab;
+                if (!nextTab || nextTab === this.state.rightSidebarTab) {
+                    return;
+                }
+
+                this.state = {
+                    ...this.state,
+                    rightSidebarTab: nextTab
                 };
                 this.renderIntoRoot();
             });
@@ -313,13 +828,17 @@ const FramesMode = {
         if (searchInput) {
             searchInput.addEventListener('input', event => {
                 const nextSearchTerm = event.target.value;
-                const filteredFrames = this.getFilteredFrames(this.getAllFrames(false), nextSearchTerm);
-
-                this.state = {
+                const nextState = {
                     ...this.state,
-                    searchTerm: nextSearchTerm,
-                    selectedFrameKey: this.resolveSelectedFrameKey(filteredFrames)
+                    searchTerm: nextSearchTerm
                 };
+
+                if (this.state.activeTab === 'frames') {
+                    const filteredFrames = this.getFilteredFrames(this.getAllFrames(false), nextSearchTerm);
+                    nextState.selectedFrameKey = this.resolveSelectedFrameKey(filteredFrames.length ? filteredFrames : this.getAllFrames(false));
+                }
+
+                this.state = nextState;
                 this.renderIntoRoot();
             });
         }
@@ -338,6 +857,759 @@ const FramesMode = {
                 this.renderIntoRoot();
             });
         });
+
+        root.querySelectorAll('[data-frame-editor-add-block]').forEach(button => {
+            button.addEventListener('click', () => {
+                const blockType = button.dataset.frameEditorAddBlock;
+                if (!this.isSupportedBlockType(blockType)) {
+                    return;
+                }
+
+                this.addBlock(blockType);
+            });
+
+            button.addEventListener('dragstart', event => {
+                const blockType = button.dataset.frameEditorDragBlock;
+                if (!this.isSupportedBlockType(blockType) || !event.dataTransfer) {
+                    return;
+                }
+
+                event.dataTransfer.effectAllowed = 'copy';
+                event.dataTransfer.setData('text/frame-editor-block', blockType);
+                event.dataTransfer.setData('text/plain', blockType);
+            });
+        });
+
+        const stage = root.querySelector('[data-frame-editor-stage]');
+        if (stage) {
+            stage.addEventListener('pointerdown', event => {
+                this.beginCanvasPan(root, stage, event);
+            });
+
+            stage.addEventListener('click', event => {
+                if (this.stagePanSuppressClick === true) {
+                    this.stagePanSuppressClick = false;
+                    return;
+                }
+
+                if (event.target.closest('[data-frame-editor-canvas-block]') || event.target.closest('[data-frame-editor-popup]')) {
+                    return;
+                }
+
+                if (!this.state.selectedBlockId) {
+                    return;
+                }
+
+                this.state = {
+                    ...this.state,
+                    selectedBlockId: ''
+                };
+                this.renderIntoRoot();
+            });
+
+            stage.addEventListener('dragover', event => {
+                if (!this.getDraggedBlockType(event)) {
+                    return;
+                }
+
+                event.preventDefault();
+                stage.classList.add('is-drop-target');
+            });
+
+            stage.addEventListener('dragleave', event => {
+                if (event.currentTarget !== event.target) {
+                    return;
+                }
+                stage.classList.remove('is-drop-target');
+            });
+
+            stage.addEventListener('drop', event => {
+                const blockType = this.getDraggedBlockType(event);
+                stage.classList.remove('is-drop-target');
+                if (!this.isSupportedBlockType(blockType)) {
+                    return;
+                }
+
+                event.preventDefault();
+                this.addBlock(blockType, this.getCanvasPositionFromPointer(stage, event.clientX, event.clientY));
+            });
+
+            stage.addEventListener('wheel', event => {
+                if (!event.target.closest('[data-frame-editor-popup]')) {
+                    event.preventDefault();
+                    this.adjustCanvasZoom(event.deltaY < 0 ? 0.12 : -0.12, {
+                        x: event.clientX,
+                        y: event.clientY
+                    }, root);
+                }
+            }, { passive: false });
+        }
+
+        root.querySelectorAll('[data-canvas-zoom]').forEach(button => {
+            button.addEventListener('click', () => {
+                const action = button.dataset.canvasZoom;
+                if (action === 'in') {
+                    this.adjustCanvasZoom(0.12, null, root);
+                    return;
+                }
+                if (action === 'out') {
+                    this.adjustCanvasZoom(-0.12, null, root);
+                    return;
+                }
+                if (action === 'reset') {
+                    this.resetCanvasView();
+                }
+            });
+        });
+
+        root.querySelectorAll('[data-frame-editor-canvas-block]').forEach(blockElement => {
+            blockElement.addEventListener('pointerdown', event => {
+                this.beginCanvasBlockDrag(root, blockElement, event);
+            });
+
+            blockElement.addEventListener('keydown', event => {
+                const blockId = blockElement.dataset.frameEditorCanvasBlock;
+                if (!blockId) {
+                    return;
+                }
+
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    this.selectBlock(blockId);
+                    return;
+                }
+
+                const block = this.getBlockById(blockId);
+                if (!block) {
+                    return;
+                }
+
+                const step = event.shiftKey ? 2 : 1;
+                const updates = {
+                    ArrowLeft: { xPct: block.xPct - step },
+                    ArrowRight: { xPct: block.xPct + step },
+                    ArrowUp: { yPct: block.yPct - step },
+                    ArrowDown: { yPct: block.yPct + step }
+                };
+                if (!updates[event.key]) {
+                    return;
+                }
+
+                event.preventDefault();
+                this.updateBlock(blockId, updates[event.key]);
+                this.renderIntoRoot();
+            });
+        });
+
+        this.bindInlineEditors(root);
+
+        root.querySelectorAll('[data-block-setting]').forEach(control => {
+            const onSettingChange = event => {
+                this.handleInspectorSettingInput(root, event.currentTarget);
+            };
+            control.addEventListener('input', onSettingChange);
+            control.addEventListener('change', onSettingChange);
+        });
+
+        root.querySelectorAll('[data-canvas-setting]').forEach(control => {
+            const onCanvasChange = event => {
+                this.handleCanvasSettingInput(event.currentTarget);
+            };
+            control.addEventListener('input', onCanvasChange);
+            control.addEventListener('change', onCanvasChange);
+        });
+
+        root.querySelectorAll('[data-block-toggle]').forEach(button => {
+            button.addEventListener('click', () => {
+                const block = this.getSelectedBlock();
+                if (!block) {
+                    return;
+                }
+
+                const setting = button.dataset.blockToggle;
+                if (!setting) {
+                    return;
+                }
+
+                this.updateBlock(block.id, {
+                    [setting]: button.dataset.blockValue || ''
+                });
+                this.renderIntoRoot();
+            });
+        });
+
+        root.querySelectorAll('[data-block-adjust]').forEach(button => {
+            button.addEventListener('click', () => {
+                const setting = button.dataset.blockAdjust;
+                const delta = Number(button.dataset.blockDelta || 0);
+                if (!setting || !delta) {
+                    return;
+                }
+
+                this.adjustSelectedBlockNumeric(setting, delta);
+            });
+        });
+
+        root.querySelectorAll('[data-block-action]').forEach(button => {
+            button.addEventListener('click', () => {
+                const action = button.dataset.blockAction;
+                if (action === 'delete') {
+                    this.removeSelectedBlock();
+                    return;
+                }
+                if (action === 'duplicate') {
+                    this.duplicateSelectedBlock();
+                }
+            });
+        });
+
+        root.querySelectorAll('[data-canvas-action]').forEach(button => {
+            button.addEventListener('click', () => {
+                if (button.dataset.canvasAction === 'reset-view') {
+                    this.resetCanvasView();
+                }
+            });
+        });
+    },
+
+    beginCanvasBlockDrag(root, blockElement, event) {
+        if (event.button !== 0) {
+            return;
+        }
+
+        if (event.target.closest('[data-frame-editor-popup]') || event.target.closest('[data-block-inline-editor]')) {
+            return;
+        }
+
+        const stage = root.querySelector('[data-frame-editor-stage]');
+        const blockId = blockElement.dataset.frameEditorCanvasBlock;
+        const block = this.getBlockById(blockId);
+        if (!stage || !block) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const stageRect = stage.getBoundingClientRect();
+        const startPointer = {
+            x: event.clientX,
+            y: event.clientY
+        };
+        let nextPosition = {
+            xPct: block.xPct,
+            yPct: block.yPct
+        };
+        let didMove = false;
+
+        const onPointerMove = moveEvent => {
+            const deltaX = moveEvent.clientX - startPointer.x;
+            const deltaY = moveEvent.clientY - startPointer.y;
+
+            if (!didMove && Math.hypot(deltaX, deltaY) >= 4) {
+                didMove = true;
+                blockElement.classList.add('dragging');
+            }
+
+            if (!didMove) {
+                return;
+            }
+
+            nextPosition = this.clampCanvasBlockPosition(
+                stageRect,
+                blockElement,
+                block.xPct + (((deltaX / this.state.canvasZoom) / stageRect.width) * 100),
+                block.yPct + (((deltaY / this.state.canvasZoom) / stageRect.height) * 100)
+            );
+            blockElement.style.left = `${nextPosition.xPct}%`;
+            blockElement.style.top = `${nextPosition.yPct}%`;
+        };
+
+        const finishDrag = () => {
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerUp);
+            blockElement.classList.remove('dragging');
+
+            if (didMove) {
+                this.updateBlock(blockId, nextPosition);
+                this.selectBlock(blockId);
+                return;
+            }
+
+            this.selectBlock(blockId);
+        };
+
+        const onPointerUp = () => {
+            finishDrag();
+        };
+
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
+    },
+
+    beginCanvasPan(root, stage, event) {
+        if (event.button !== 0) {
+            return;
+        }
+
+        if (event.target.closest('[data-frame-editor-canvas-block]') || event.target.closest('[data-frame-editor-popup]') || event.target.closest('[data-block-inline-editor]')) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const camera = root.querySelector('[data-frame-editor-camera]');
+        if (!camera) {
+            return;
+        }
+
+        const startPointer = {
+            x: event.clientX,
+            y: event.clientY
+        };
+        const startPan = {
+            x: this.state.canvasPanX,
+            y: this.state.canvasPanY
+        };
+        let didPan = false;
+
+        const onPointerMove = moveEvent => {
+            const deltaX = moveEvent.clientX - startPointer.x;
+            const deltaY = moveEvent.clientY - startPointer.y;
+            if (!didPan && Math.hypot(deltaX, deltaY) >= 4) {
+                didPan = true;
+                stage.classList.add('is-panning');
+            }
+
+            if (!didPan) {
+                return;
+            }
+
+            camera.style.transform = `translate(${startPan.x + deltaX}px, ${startPan.y + deltaY}px)`;
+        };
+
+        const finishPan = moveEvent => {
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerUp);
+            stage.classList.remove('is-panning');
+
+            if (!didPan) {
+                return;
+            }
+
+            const deltaX = moveEvent.clientX - startPointer.x;
+            const deltaY = moveEvent.clientY - startPointer.y;
+            this.stagePanSuppressClick = true;
+            this.state = {
+                ...this.state,
+                canvasPanX: startPan.x + deltaX,
+                canvasPanY: startPan.y + deltaY
+            };
+            this.renderIntoRoot();
+        };
+
+        const onPointerUp = upEvent => {
+            finishPan(upEvent);
+        };
+
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
+    },
+
+    handleInspectorSettingInput(root, control) {
+        const block = this.getSelectedBlock();
+        if (!block) {
+            return;
+        }
+
+        const setting = control.dataset.blockSetting;
+        if (!setting) {
+            return;
+        }
+
+        const numericSettings = new Set(['fontSize', 'width', 'size']);
+        const nextValue = numericSettings.has(setting)
+            ? Number(control.value)
+            : control.value;
+
+        this.updateBlock(block.id, {
+            [setting]: nextValue
+        });
+        const updatedBlock = this.getBlockById(block.id);
+        this.syncCanvasBlock(root, updatedBlock);
+        this.clampUpdatedBlockToCanvas(root, updatedBlock);
+    },
+
+    syncCanvasBlock(root, block) {
+        if (!block) {
+            return;
+        }
+
+        const blockElement = root.querySelector(`[data-frame-editor-canvas-block="${block.id}"]`);
+        if (!blockElement) {
+            this.renderIntoRoot();
+            return;
+        }
+
+        const width = block.type === 'text' ? block.width : block.size;
+        blockElement.style.left = `${block.xPct}%`;
+        blockElement.style.top = `${block.yPct}%`;
+        blockElement.style.width = `${width}px`;
+        const isActive = this.state.selectedBlockId === block.id;
+        const popupPlacementClass = block.yPct < 18 ? ' is-below' : '';
+        const popupHorizontalClass = block.xPct < 24
+            ? ' is-left'
+            : block.xPct > 76
+                ? ' is-right'
+                : '';
+        blockElement.innerHTML = `
+            ${block.type === 'text'
+                ? `<div class="frame-editor-canvas-block-badge">${this.escapeHTML(I18n.translateString('Text'))}</div>`
+                : ''}
+            ${this.renderCanvasBlockInner(block)}
+            ${isActive ? `
+                <div class="frame-editor-block-popup-anchor${popupPlacementClass}${popupHorizontalClass}" data-frame-editor-popup>
+                    <div class="frame-editor-block-popup frame-editor-block-popup-${block.type}">
+                        ${block.type === 'text'
+                            ? this.renderTextBlockPopup(block)
+                            : this.renderQrBlockPopup(block)}
+                    </div>
+                </div>
+            ` : ''}
+        `;
+        this.bindInlineEditors(root);
+    },
+
+    clampUpdatedBlockToCanvas(root, block) {
+        if (!block) {
+            return;
+        }
+
+        const stage = root.querySelector('[data-frame-editor-stage]');
+        const blockElement = root.querySelector(`[data-frame-editor-canvas-block="${block.id}"]`);
+        if (!stage || !blockElement) {
+            return;
+        }
+
+        const clampedPosition = this.clampCanvasBlockPosition(
+            stage.getBoundingClientRect(),
+            blockElement,
+            block.xPct,
+            block.yPct
+        );
+        this.updateBlock(block.id, clampedPosition);
+        blockElement.style.left = `${clampedPosition.xPct}%`;
+        blockElement.style.top = `${clampedPosition.yPct}%`;
+    },
+
+    bindInlineEditors(root) {
+        root.querySelectorAll('[data-block-inline-editor="text"]').forEach(editor => {
+            if (editor.dataset.inlineEditorBound === 'true') {
+                return;
+            }
+
+            editor.addEventListener('pointerdown', event => {
+                event.stopPropagation();
+            });
+            editor.addEventListener('click', event => {
+                event.stopPropagation();
+            });
+            editor.addEventListener('keydown', event => {
+                event.stopPropagation();
+            });
+            editor.addEventListener('input', event => {
+                const target = event.currentTarget;
+                const blockId = target.dataset.blockId;
+                if (!blockId) {
+                    return;
+                }
+
+                const normalizedText = this.normalizeBlockText(target.textContent);
+                if (target.textContent !== normalizedText) {
+                    target.textContent = normalizedText;
+                }
+
+                this.updateBlock(blockId, {
+                    text: normalizedText
+                });
+            });
+
+            editor.dataset.inlineEditorBound = 'true';
+        });
+    },
+
+    adjustSelectedBlockNumeric(setting, delta) {
+        const selectedBlock = this.getSelectedBlock();
+        if (!selectedBlock) {
+            return;
+        }
+
+        const limits = {
+            fontSize: { min: 18, max: 72 },
+            size: { min: 120, max: 300 }
+        };
+        const currentValue = Number(selectedBlock[setting]);
+        const nextValue = this.clamp(
+            currentValue + delta,
+            limits[setting]?.min ?? currentValue + delta,
+            limits[setting]?.max ?? currentValue + delta
+        );
+
+        this.updateBlock(selectedBlock.id, {
+            [setting]: nextValue
+        });
+        this.renderIntoRoot();
+    },
+
+    handleCanvasSettingInput(control) {
+        const setting = control.dataset.canvasSetting;
+        if (!setting) {
+            return;
+        }
+
+        const numericSettings = new Set(['canvasGridOpacity', 'canvasGridBaseSize']);
+        this.state = {
+            ...this.state,
+            [setting]: numericSettings.has(setting) ? Number(control.value) : control.value
+        };
+        this.renderIntoRoot();
+    },
+
+    adjustCanvasZoom(delta, anchorPoint = null, root = this.getRoot()) {
+        const viewport = root?.querySelector?.('[data-frame-editor-viewport]');
+        const oldZoom = this.state.canvasZoom;
+        const nextZoom = Number(this.clamp(oldZoom + delta, 0.5, 2.5).toFixed(2));
+        if (!viewport || nextZoom === oldZoom) {
+            return;
+        }
+
+        const rect = viewport.getBoundingClientRect();
+        const anchorX = anchorPoint ? anchorPoint.x - rect.left : rect.width / 2;
+        const anchorY = anchorPoint ? anchorPoint.y - rect.top : rect.height / 2;
+        const contentX = (anchorX - this.state.canvasPanX) / oldZoom;
+        const contentY = (anchorY - this.state.canvasPanY) / oldZoom;
+        const nextPanX = anchorX - (contentX * nextZoom);
+        const nextPanY = anchorY - (contentY * nextZoom);
+
+        this.state = {
+            ...this.state,
+            canvasZoom: nextZoom,
+            canvasPanX: nextPanX,
+            canvasPanY: nextPanY
+        };
+        this.renderIntoRoot();
+    },
+
+    resetCanvasView() {
+        this.state = {
+            ...this.state,
+            canvasZoom: 1,
+            canvasPanX: 0,
+            canvasPanY: 0
+        };
+        this.renderIntoRoot();
+    },
+
+    syncViewportLayout(root = this.getRoot()) {
+        if (!root) {
+            return;
+        }
+
+        const viewportWidth = root.getBoundingClientRect().width;
+        const nextAutoCollapse = viewportWidth < (this.state.isRightSidebarCollapsed ? 1220 : 1480);
+        if (nextAutoCollapse === this.state.autoCollapseLeftSidebar) {
+            return;
+        }
+
+        this.state = {
+            ...this.state,
+            autoCollapseLeftSidebar: nextAutoCollapse
+        };
+        this.renderIntoRoot();
+    },
+
+    addBlock(blockType, position = null) {
+        if (!this.isSupportedBlockType(blockType)) {
+            return;
+        }
+
+        const nextBlock = this.createBlock(blockType, position);
+        this.state = {
+            ...this.state,
+            selectedBlockId: nextBlock.id,
+            canvasBlocks: [...this.state.canvasBlocks, nextBlock]
+        };
+        this.renderIntoRoot();
+    },
+
+    createBlock(blockType, position = null) {
+        const basePosition = position || {};
+        const xPct = Number.isFinite(basePosition.xPct) ? basePosition.xPct : 50;
+        const yPct = Number.isFinite(basePosition.yPct) ? basePosition.yPct : (blockType === 'text' ? 28 : 52);
+
+        if (blockType === 'text') {
+            return {
+                id: this.getNextBlockId(),
+                type: 'text',
+                text: I18n.translateString('This is a text block'),
+                xPct,
+                yPct,
+                width: 320,
+                fontSize: 34,
+                fontWeight: 700,
+                fontStyle: 'normal',
+                color: '#1f2937',
+                textAlign: 'left'
+            };
+        }
+
+        return {
+            id: this.getNextBlockId(),
+            type: 'qr',
+            content: this.PREVIEW_QR_TEXT,
+            xPct,
+            yPct,
+            size: 180,
+            colorDark: '#111111',
+            colorLight: 'transparent'
+        };
+    },
+
+    updateBlock(blockId, patch) {
+        this.state = {
+            ...this.state,
+            canvasBlocks: this.state.canvasBlocks.map(block => block.id === blockId
+                ? { ...block, ...patch }
+                : block)
+        };
+    },
+
+    removeSelectedBlock() {
+        const selectedBlock = this.getSelectedBlock();
+        if (!selectedBlock) {
+            return;
+        }
+
+        const remainingBlocks = this.state.canvasBlocks.filter(block => block.id !== selectedBlock.id);
+        this.state = {
+            ...this.state,
+            canvasBlocks: remainingBlocks,
+            selectedBlockId: remainingBlocks[remainingBlocks.length - 1]?.id || ''
+        };
+        this.renderIntoRoot();
+    },
+
+    duplicateSelectedBlock() {
+        const selectedBlock = this.getSelectedBlock();
+        if (!selectedBlock) {
+            return;
+        }
+
+        const duplicatedBlock = {
+            ...selectedBlock,
+            id: this.getNextBlockId(),
+            xPct: this.clamp(selectedBlock.xPct + 4, 10, 90),
+            yPct: this.clamp(selectedBlock.yPct + 4, 10, 90)
+        };
+
+        this.state = {
+            ...this.state,
+            selectedBlockId: duplicatedBlock.id,
+            canvasBlocks: [...this.state.canvasBlocks, duplicatedBlock]
+        };
+        this.renderIntoRoot();
+    },
+
+    selectBlock(blockId) {
+        if (this.state.selectedBlockId === blockId) {
+            return;
+        }
+
+        this.state = {
+            ...this.state,
+            selectedBlockId: blockId
+        };
+        this.renderIntoRoot();
+    },
+
+    getSelectedBlock() {
+        return this.state.canvasBlocks.find(block => block.id === this.state.selectedBlockId) || null;
+    },
+
+    isLeftSidebarCollapsed() {
+        return this.state.isSidebarCollapsed || (this.state.autoCollapseLeftSidebar && !this.state.preferLeftSidebarExpanded);
+    },
+
+    getBlockById(blockId) {
+        return this.state.canvasBlocks.find(block => block.id === blockId) || null;
+    },
+
+    getNextBlockId() {
+        this.blockIdCounter += 1;
+        return `block-${this.blockIdCounter}`;
+    },
+
+    getDraggedBlockType(event) {
+        return event.dataTransfer?.getData('text/frame-editor-block')
+            || event.dataTransfer?.getData('text/plain')
+            || '';
+    },
+
+    hexToRgba(hexColor, alpha = 1) {
+        const normalized = String(hexColor || '').replace('#', '').trim();
+        if (normalized.length !== 6) {
+            return `rgba(102, 192, 244, ${alpha})`;
+        }
+
+        const red = Number.parseInt(normalized.slice(0, 2), 16);
+        const green = Number.parseInt(normalized.slice(2, 4), 16);
+        const blue = Number.parseInt(normalized.slice(4, 6), 16);
+        return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+    },
+
+    getCanvasPositionFromPointer(stage, clientX, clientY) {
+        const rect = stage.getBoundingClientRect();
+        return {
+            xPct: (((clientX - rect.left - this.state.canvasPanX) / this.state.canvasZoom) / rect.width) * 100,
+            yPct: (((clientY - rect.top - this.state.canvasPanY) / this.state.canvasZoom) / rect.height) * 100
+        };
+    },
+
+    clampCanvasBlockPosition(stageRect, blockElement, xPct, yPct) {
+        return {
+            xPct,
+            yPct
+        };
+    },
+
+    isSupportedBlockType(blockType) {
+        return this.BLOCK_LIBRARY.some(block => block.type === blockType);
+    },
+
+    getFilteredBlocks(searchTerm = this.state.searchTerm) {
+        const normalizedSearchTerm = String(searchTerm || '').trim().toLowerCase();
+        if (!normalizedSearchTerm) {
+            return this.BLOCK_LIBRARY;
+        }
+
+        return this.BLOCK_LIBRARY.filter(block => {
+            const haystack = `${block.name} ${block.description}`.toLowerCase();
+            return haystack.includes(normalizedSearchTerm);
+        });
+    },
+
+    clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+    },
+
+    normalizeBlockText(value) {
+        return String(value ?? '')
+            .replace(/\r\n?/g, '\n')
+            .replace(/\u00a0/g, ' ')
+            .slice(0, 240);
     },
 
     getAllFrames(includePreview = true) {
@@ -394,17 +1666,12 @@ const FramesMode = {
         return hasSelection ? this.state.selectedFrameKey : frames[0].key;
     },
 
-    getSelectedFrame(allFrames, filteredFrames = allFrames) {
+    getSelectedFrame(allFrames) {
         if (!Array.isArray(allFrames) || !allFrames.length) {
             return null;
         }
 
-        if (Array.isArray(filteredFrames) && filteredFrames.length === 0) {
-            return null;
-        }
-
-        const preferredFrames = Array.isArray(filteredFrames) && filteredFrames.length ? filteredFrames : allFrames;
-        return preferredFrames.find(frame => frame.key === this.state.selectedFrameKey) || preferredFrames[0] || null;
+        return allFrames.find(frame => frame.key === this.state.selectedFrameKey) || allFrames[0] || null;
     },
 
     getLargePreviewMarkup(frame) {
