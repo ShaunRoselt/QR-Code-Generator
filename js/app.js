@@ -59,6 +59,24 @@ function applyShellMode(route) {
     document.body.classList.toggle('public-route', route === '/public' || route === '/pricing' || route === '/compare');
 }
 
+function isBetaEnrolled() {
+    try {
+        return localStorage.getItem('qr-beta-enrolled') === 'true';
+    } catch (error) {
+        return false;
+    }
+}
+
+function syncBetaSidebarVisibility() {
+    const isBeta = isBetaEnrolled();
+    document.querySelectorAll('[data-beta-only-nav]').forEach(item => {
+        item.hidden = !isBeta;
+    });
+    document.querySelectorAll('[data-beta-only-divider]').forEach(item => {
+        item.hidden = !isBeta;
+    });
+}
+
 function applyCurrentRouteMetadata() {
     const currentRoute = router.getCurrentRoute();
     if (currentRoute === '/public') {
@@ -236,6 +254,10 @@ router.register('/vcard', () => {
     VcardMode.init();
 });
 router.register('/frames', () => {
+    if (!isBetaEnrolled()) {
+        router.navigate('/home');
+        return;
+    }
     applyShellMode('/frames');
     updateNavigation('/frames');
     applyPageMetadata(DEFAULT_PAGE_META);
@@ -249,6 +271,12 @@ document.addEventListener('DOMContentLoaded', () => {
     I18n.init();
     document.addEventListener('app:route-rendered', () => {
         applyCurrentRouteMetadata();
+    });
+    document.addEventListener('app:beta-changed', syncBetaSidebarVisibility);
+    document.addEventListener('app:beta-changed', () => {
+        if (router.getCurrentRoute() === '/frames' && !isBetaEnrolled()) {
+            router.navigate('/home');
+        }
     });
 
     // Hamburger menu toggle - collapse/expand sidebar
@@ -382,6 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
         new ResizeObserver(syncSidebarMode).observe(appContainer);
     }
 
+    syncBetaSidebarVisibility();
     syncSidebarMode();
     
     // Initialize router

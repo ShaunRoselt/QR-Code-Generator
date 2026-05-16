@@ -36,6 +36,7 @@
 
     <!-- App Styles -->
     <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="css/frame-editor.css">
     <link rel="stylesheet" href="css/public.css">
 </head>
 <body data-theme="dark">
@@ -111,9 +112,9 @@
                     <span>vCard</span>
                 </a>
                 
-                <div class="nav-divider" role="separator" aria-hidden="true"></div>
+                <div class="nav-divider" data-beta-only-divider hidden role="separator" aria-hidden="true"></div>
 
-                <a href="?page=frames" class="nav-item" data-route="/frames" title="Frame Editor">
+                <a href="?page=frames" class="nav-item" data-beta-only-nav hidden data-route="/frames" title="Frame Editor">
                     <i class="bi bi-brush"></i>
                     <span>Frame Editor</span>
                 </a>
@@ -143,6 +144,7 @@
     <script src="js/qr-utils.js"></script>
     <script src="js/qr-frames.js"></script>
     <script src="js/qr-preview.js"></script>
+    <script src="js/frame-editor-controls.js"></script>
     <script src="js/share-link.js"></script>
     
     <!-- QR Mode Modules -->

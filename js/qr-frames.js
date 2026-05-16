@@ -452,21 +452,46 @@ const QRFrames = {
         };
     },
 
+    getFrameTextReferenceWidth() {
+        return 300;
+    },
+
+    scaleFrameTextRect(rect, sourceWidth, targetWidth) {
+        if (!rect) {
+            return null;
+        }
+
+        const normalizedSourceWidth = Math.max(1, Number(sourceWidth) || this.getFrameTextReferenceWidth());
+        const normalizedTargetWidth = Math.max(1, Number(targetWidth) || normalizedSourceWidth);
+        const scale = normalizedTargetWidth / normalizedSourceWidth;
+
+        return {
+            x: Number(rect.x) * scale,
+            y: Number(rect.y) * scale,
+            width: Number(rect.width) * scale,
+            height: Number(rect.height) * scale
+        };
+    },
+
     clampFrameTextRect(frameType, rect = {}, width = 300) {
         const bounds = this.getFrameTextBounds(frameType, width);
         if (!bounds) {
             return null;
         }
 
-        const widthPx = Math.max(20, Math.min(bounds.width, Number(rect.width) || bounds.width));
-        const heightPx = Math.max(12, Math.min(bounds.height * 2.5, Number(rect.height) || bounds.height));
-        const minX = 0;
-        const minY = 0;
-        const maxX = Math.max(minX, width - widthPx);
         const frameHeight = this.getFrameHeightRatio(frameType) * width;
-        const maxY = Math.max(minY, frameHeight - heightPx);
-        const nextX = Math.min(maxX, Math.max(minX, Number(rect.x) || bounds.x));
-        const nextY = Math.min(maxY, Math.max(minY, Number(rect.y) || bounds.y));
+        const fallbackX = Number.isFinite(Number(rect.x)) ? Number(rect.x) : Number(rect.left);
+        const fallbackY = Number.isFinite(Number(rect.y)) ? Number(rect.y) : Number(rect.top);
+        const widthPx = Math.max(20, Math.min(width, Number(rect.width) || bounds.width));
+        const heightPx = Math.max(12, Math.min(frameHeight, Number(rect.height) || bounds.height));
+        const minVisibleX = Math.min(widthPx * 0.35, width * 0.12);
+        const minVisibleY = Math.min(heightPx * 0.35, frameHeight * 0.12);
+        const minX = minVisibleX - widthPx;
+        const minY = minVisibleY - heightPx;
+        const maxX = width - minVisibleX;
+        const maxY = frameHeight - minVisibleY;
+        const nextX = Math.min(maxX, Math.max(minX, Number.isFinite(fallbackX) ? fallbackX : bounds.x));
+        const nextY = Math.min(maxY, Math.max(minY, Number.isFinite(fallbackY) ? fallbackY : bounds.y));
 
         return {
             x: nextX,
@@ -485,8 +510,18 @@ const QRFrames = {
             return null;
         }
 
+        const referenceWidth = this.getFrameTextReferenceWidth();
         const customization = this.getFrameCustomization(frameType);
-        return this.clampFrameTextRect(frameType, customization.textRect || this.getDefaultFrameTextRect(frameType, width), width);
+        const referenceRect = this.clampFrameTextRect(
+            frameType,
+            customization.textRect || this.getDefaultFrameTextRect(frameType, referenceWidth),
+            referenceWidth
+        );
+        return this.clampFrameTextRect(
+            frameType,
+            this.scaleFrameTextRect(referenceRect, referenceWidth, width),
+            width
+        );
     },
 
     getFrameTextRectRange(frameType, rectOverride = null, width = 300) {
@@ -731,11 +766,14 @@ const QRFrames = {
             return null;
         }
 
+        const referenceWidth = this.getFrameTextReferenceWidth();
         const nextRect = this.clampFrameTextRect(frameType, {
             ...this.getFrameTextRect(frameType, width),
             ...partial
         }, width);
-        this.setFrameCustomization(frameType, { textRect: nextRect });
+        this.setFrameCustomization(frameType, {
+            textRect: this.scaleFrameTextRect(nextRect, width, referenceWidth)
+        });
         return nextRect;
     },
 
@@ -744,11 +782,12 @@ const QRFrames = {
             return null;
         }
 
+        const referenceWidth = this.getFrameTextReferenceWidth();
         const customization = this.getFrameCustomization(frameType);
-        customization.textRect = this.getDefaultFrameTextRect(frameType, width);
+        customization.textRect = this.getDefaultFrameTextRect(frameType, referenceWidth);
         this.frameCustomizations[this.getFrameCustomizationKey(frameType)] = customization;
         this.applyFrameCustomization(frameType);
-        return customization.textRect;
+        return this.getFrameTextRect(frameType, width);
     },
 
     resetFrameToDefaults(frameType = this.FRAME_TYPES.NONE) {
@@ -1460,7 +1499,25 @@ const QRFrames = {
             return '';
         }
 
-        const { x, y, width, height, fontSize, fontWeight, fontFamily, color, rotation = 0, align = 'center' } = layout;
+        const {
+            x: layoutX,
+            y: layoutY,
+            left,
+            top,
+            width,
+            height,
+            fontSize,
+            fontWeight,
+            fontFamily,
+            color,
+            rotation = 0,
+            align = 'center'
+        } = layout;
+        const x = Number.isFinite(layoutX) ? layoutX : left;
+        const y = Number.isFinite(layoutY) ? layoutY : top;
+        if (![x, y, width, height, fontSize].every(Number.isFinite)) {
+            return '';
+        }
         const lines = this.getFrameTextLines();
         if (!lines.length) {
             return '';
@@ -1486,7 +1543,25 @@ const QRFrames = {
             return;
         }
 
-        const { x, y, width, height, fontSize, fontWeight, fontFamily, color, rotation = 0, align = 'center' } = layout;
+        const {
+            x: layoutX,
+            y: layoutY,
+            left,
+            top,
+            width,
+            height,
+            fontSize,
+            fontWeight,
+            fontFamily,
+            color,
+            rotation = 0,
+            align = 'center'
+        } = layout;
+        const x = Number.isFinite(layoutX) ? layoutX : left;
+        const y = Number.isFinite(layoutY) ? layoutY : top;
+        if (![x, y, width, height, fontSize].every(Number.isFinite)) {
+            return;
+        }
         const lines = this.getFrameTextLines();
         if (!lines.length) {
             return;

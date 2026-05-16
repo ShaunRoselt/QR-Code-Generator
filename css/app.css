@@ -264,6 +264,11 @@ body {
     color: #ffffff;
 }
 
+.nav-item[hidden],
+.nav-divider[hidden] {
+    display: none !important;
+}
+
 .sidebar.collapsed .nav-item {
     margin: 0 0.25rem;
     position: relative;
@@ -1190,9 +1195,100 @@ body.kiosk-mode .qr-placeholder {
 }
 
 .settings-beta-btn {
-    min-width: 132px;
+    flex: 0 0 auto;
+}
+
+.settings-beta-btn i {
+    font-size: 0.95rem;
+}
+
+.settings-beta-btn svg {
+    width: 14px;
+    height: 14px;
+    display: block;
+    flex: 0 0 auto;
+}
+
+.settings-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    white-space: nowrap;
+    padding: 1rem;
+    z-index: 2000;
+}
+
+.settings-modal[hidden] {
+    display: none;
+}
+
+.settings-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+}
+
+.settings-modal-panel {
+    position: relative;
+    z-index: 1;
+    width: min(420px, 100%);
+    padding: 1.25rem;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-card);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+}
+
+.settings-modal-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+}
+
+.settings-modal-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--accent-primary) 14%, var(--bg-secondary));
+    color: var(--accent-primary);
+    flex: 0 0 auto;
+}
+
+.settings-modal-icon svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+    flex: 0 0 auto;
+}
+
+.settings-modal-copy {
+    min-width: 0;
+    flex: 1;
+}
+
+.settings-modal-title {
+    margin-bottom: 0.35rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.settings-modal-message {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.settings-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
 }
 
 /* Useful Links */
@@ -1248,7 +1344,7 @@ body.kiosk-mode .qr-placeholder {
     font-size: 1.1rem;
 }
 
-@container page-content (max-width: 768px) {
+@container page-content (max-width: 600px) {
     .setting-row {
         flex-direction: column;
         align-items: flex-start;
@@ -1259,8 +1355,12 @@ body.kiosk-mode .qr-placeholder {
         justify-content: flex-start;
     }
 
-    .app-details-actions .settings-beta-btn {
-        width: 100%;
+    .app-details-actions {
+        justify-content: flex-start;
+    }
+
+    .settings-modal-actions {
+        flex-direction: column-reverse;
     }
     
     .setting-select {
