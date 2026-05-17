@@ -1,6 +1,21 @@
 /* ===== Frame Editor ===== */
 .frame-editor-page {
     max-width: 1680px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    padding-bottom: 1rem;
+}
+
+.frame-editor-page .content-header {
+    flex: 0 0 auto;
+    margin-bottom: 0.5rem;
+}
+
+.main-content:has(.frame-editor-page) {
+    overflow: hidden;
 }
 
 .frame-editor-header-bar {
@@ -56,6 +71,30 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.frame-editor-header-zoom {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    position: relative;
+}
+
+.frame-editor-canvas-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    padding: 0.25rem;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background-color: var(--bg-secondary);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.03),
+        0 10px 22px rgba(15, 23, 42, 0.12);
+    flex: 0 0 auto;
+    overflow: hidden;
 }
 
 .frame-editor-header-kicker {
@@ -73,16 +112,19 @@
 }
 
 .frame-editor-layout-scroll {
-    overflow: visible;
-    overflow-y: visible;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .frame-editor-layout {
     display: grid;
     grid-template-columns: minmax(280px, 340px) minmax(0, 1fr) minmax(280px, 320px);
     gap: 0;
-    align-items: start;
+    align-items: stretch;
     transition: grid-template-columns 0.25s ease;
+    min-height: 0;
+    height: 100%;
 }
 
 .frame-editor-layout.frame-editor-layout-sidebar-collapsed {
@@ -105,16 +147,14 @@
     border-top: 0;
     border-radius: 0 0 14px 14px;
     min-height: 0;
+    height: 100%;
 }
 
 .frame-editor-sidebar-panel {
-    position: sticky;
-    top: 0;
     display: flex;
     flex-direction: column;
     gap: 1rem;
     padding: 1rem;
-    max-height: calc(100vh - 140px);
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
@@ -135,13 +175,10 @@
 }
 
 .frame-editor-right-sidebar-panel {
-    position: sticky;
-    top: 0;
     display: flex;
     flex-direction: column;
     gap: 1rem;
     padding: 1rem;
-    max-height: calc(100vh - 140px);
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     border-bottom-left-radius: 0;
@@ -376,15 +413,17 @@
 .frame-editor-workspace-panel {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
-    min-height: 780px;
-    padding: 1.5rem;
+    gap: 0;
+    min-height: 0;
+    padding: 0;
     border-left: 0;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
     min-width: 0;
+    overflow: hidden;
+    position: relative;
 }
 
 .frame-editor-layout.frame-editor-layout-sidebar-collapsed .frame-editor-workspace-panel {
@@ -543,86 +582,162 @@
 }
 
 .frame-editor-canvas-shell {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     min-height: 0;
+    width: 100%;
+    height: 100%;
     flex: 1;
 }
 
 .frame-editor-canvas-scroll {
     width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
+    min-height: 0;
+    flex: 1;
+    overflow: auto;
 }
 
 .frame-editor-canvas-stage {
     position: relative;
     width: max(100%, 880px);
+    min-width: 880px;
+    height: max(100%, 680px);
     min-height: 680px;
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    background-color: var(--bg-secondary);
+    border: 0;
+    border-radius: 0;
+    background-color: transparent;
     overflow: hidden;
     isolation: isolate;
     cursor: grab;
 }
 
 .frame-editor-canvas-stage.is-drop-target {
-    border-color: var(--accent-primary);
-    box-shadow: inset 0 0 0 1px rgba(102, 192, 244, 0.28);
+    box-shadow:
+        inset 0 0 0 1px var(--accent-primary),
+        inset 0 0 0 2px rgba(102, 192, 244, 0.28);
 }
 
 .frame-editor-canvas-stage.is-panning {
     cursor: grabbing;
 }
 
-.frame-editor-canvas-controls {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    z-index: 6;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.35rem;
-    border: 1px solid rgba(15, 23, 42, 0.12);
-    border-radius: 12px;
-    background-color: rgba(255, 255, 255, 0.92);
-    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
-    backdrop-filter: blur(8px);
-}
-
 .frame-editor-canvas-control,
-.frame-editor-canvas-zoom-readout {
+.frame-editor-canvas-zoom-field {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 38px;
-    border-radius: 9px;
-    font-size: 0.82rem;
+    min-height: 34px;
+    border-radius: 999px;
+    font-size: 0.8rem;
     font-weight: 700;
 }
 
 .frame-editor-canvas-control {
-    padding: 0 0.8rem;
+    padding: 0 0.85rem;
     border: 0;
     background: transparent;
     color: var(--text-primary);
     cursor: pointer;
-    transition: background-color 0.18s ease;
+    transition: background-color 0.18s ease, color 0.18s ease;
 }
 
 .frame-editor-canvas-control:hover {
-    background-color: rgba(15, 23, 42, 0.06);
+    background-color: var(--bg-card-hover);
 }
 
-.frame-editor-canvas-control-reset {
-    padding-inline: 0.9rem;
+.frame-editor-canvas-control:focus-visible {
+    outline: 2px solid rgba(102, 192, 244, 0.55);
+    outline-offset: -2px;
 }
 
-.frame-editor-canvas-zoom-readout {
-    min-width: 58px;
+.frame-editor-canvas-control-icon {
+    width: 34px;
+    padding: 0;
+}
+
+.frame-editor-canvas-zoom-field {
+    min-width: 92px;
+    padding: 0 0.75rem;
+    gap: 0.2rem;
+    background-color: var(--bg-card);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    transition:
+        box-shadow 0.18s ease,
+        background-color 0.18s ease;
+}
+
+.frame-editor-canvas-zoom-field:focus-within {
+    background-color: var(--bg-card-hover);
+    box-shadow:
+        0 0 0 2px rgba(102, 192, 244, 0.14),
+        inset 0 0 0 1px rgba(102, 192, 244, 0.12);
+}
+
+.frame-editor-canvas-zoom-input {
+    width: 3.4em;
+    min-width: 0;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--text-primary);
+    text-align: center;
+    font: inherit;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    appearance: textfield;
+}
+
+.frame-editor-canvas-zoom-input::-webkit-outer-spin-button,
+.frame-editor-canvas-zoom-input::-webkit-inner-spin-button {
+    appearance: none;
+    margin: 0;
+}
+
+.frame-editor-canvas-zoom-unit {
     color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.frame-editor-zoom-context-menu {
+    position: fixed;
+    z-index: 2000;
+    min-width: 180px;
+    padding: 0.35rem;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background-color: var(--bg-card);
+    box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
+}
+
+.frame-editor-zoom-context-menu[hidden] {
+    display: none;
+}
+
+.frame-editor-zoom-context-menu-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    min-height: 36px;
+    padding: 0.55rem 0.75rem;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.frame-editor-zoom-context-menu-item:hover,
+.frame-editor-zoom-context-menu-item:focus-visible {
+    background: var(--bg-hover);
+    outline: none;
 }
 
 .frame-editor-canvas-viewport,
@@ -636,6 +751,7 @@
 
 .frame-editor-canvas-viewport {
     overflow: hidden;
+    background: transparent;
 }
 
 .frame-editor-right-sidebar-tabs {
@@ -672,14 +788,6 @@
 .frame-editor-canvas-scene {
     transform-origin: top left;
     will-change: transform;
-}
-
-.frame-editor-canvas-grid {
-    background-image:
-        linear-gradient(rgba(102, 192, 244, 0.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(102, 192, 244, 0.08) 1px, transparent 1px);
-    background-size: 32px 32px;
-    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.45));
 }
 
 .frame-editor-block-popup-anchor {
@@ -988,11 +1096,6 @@
 
     .frame-editor-canvas-stage {
         min-height: 520px;
-    }
-
-    .frame-editor-canvas-controls {
-        top: 0.75rem;
-        right: 0.75rem;
     }
 
     .frame-editor-block-toolbar {
