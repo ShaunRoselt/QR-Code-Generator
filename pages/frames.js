@@ -32,6 +32,7 @@ const FramesMode = {
         searchTerm: '',
         selectedFrameKey: '',
         selectedBlockId: '',
+        workspaceView: 'grid',
         isSidebarCollapsed: false,
         preferLeftSidebarExpanded: false,
         isRightSidebarCollapsed: false,
@@ -71,6 +72,7 @@ const FramesMode = {
         const rightSidebarToggleLabel = this.state.isRightSidebarCollapsed
             ? I18n.translateString('Expand properties sidebar')
             : I18n.translateString('Collapse properties sidebar');
+        const isDeveloperMode = this.isDeveloperMode();
 
         return `
             <div class="qr-mode-page frame-editor-page">
@@ -91,6 +93,15 @@ const FramesMode = {
                         <span class="frame-editor-button-label">${I18n.translateString('Sidebar')}</span>
                     </button>
                     <div class="frame-editor-header-actions">
+                        <button
+                            type="button"
+                            class="frame-editor-sidebar-toggle"
+                            data-frame-editor-save-json
+                            title="${this.escapeHTML(I18n.translateString('Save frame as JSON'))}"
+                        >
+                            <i class="bi bi-floppy" aria-hidden="true"></i>
+                            <span class="frame-editor-button-label">${I18n.translateString('Save JSON')}</span>
+                        </button>
                         <div class="frame-editor-header-zoom" data-frame-editor-zoom-group>
                             <div class="frame-editor-canvas-controls" role="group" aria-label="${this.escapeHTML(I18n.translateString('Canvas controls'))}">
                                 <button
@@ -181,7 +192,8 @@ const FramesMode = {
                             data-frame-editor-workspace-panel
                             style="background-color: ${this.escapeHTML(this.state.canvasBackgroundColor)}; ${this.getCanvasGridStyle()}"
                         >
-                            ${this.renderWorkspace(selectedFrame, totalFrameCount, selectedBlock)}
+                            ${isDeveloperMode ? this.renderWorkspaceViewTabs() : ''}
+                            ${this.renderWorkspace(selectedFrame, totalFrameCount, selectedBlock, isDeveloperMode)}
                         </section>
 
                         <aside
@@ -195,6 +207,32 @@ const FramesMode = {
                     </div>
                 </div>
             </div>
+        `;
+    },
+
+    renderWorkspaceViewTabs() {
+        return `
+            <div class="frame-editor-workspace-tabs frame-editor-tabs" role="tablist" aria-label="${this.escapeHTML(I18n.translateString('Frame Editor workspace views'))}">
+                ${this.renderWorkspaceViewTabButton('grid', 'Grid', 'bi-grid-3x3-gap')}
+                ${this.renderWorkspaceViewTabButton('json', 'JSON', 'bi-braces')}
+            </div>
+        `;
+    },
+
+    renderWorkspaceViewTabButton(tabId, label, icon) {
+        const isActive = this.state.workspaceView === tabId;
+
+        return `
+            <button
+                type="button"
+                class="frame-editor-tab${isActive ? ' active' : ''}"
+                data-frame-editor-workspace-tab="${tabId}"
+                role="tab"
+                aria-selected="${isActive ? 'true' : 'false'}"
+            >
+                <i class="bi ${icon}" aria-hidden="true"></i>
+                <span>${this.escapeHTML(I18n.translateString(label))}</span>
+            </button>
         `;
     },
 
@@ -509,7 +547,7 @@ const FramesMode = {
         `;
     },
 
-    renderWorkspace(selectedFrame, totalFrameCount, selectedBlock) {
+    renderWorkspace(selectedFrame, totalFrameCount, selectedBlock, isDeveloperMode = false) {
         if (this.state.isLoading) {
             return `
                 <div class="frame-editor-workspace-empty">
@@ -528,6 +566,10 @@ const FramesMode = {
                     <p class="content-subtitle">${this.escapeHTML(this.state.errorMessage)}</p>
                 </div>
             `;
+        }
+
+        if (isDeveloperMode && this.state.workspaceView === 'json') {
+            return this.renderWorkspaceJsonView(selectedFrame);
         }
 
         return `
@@ -557,6 +599,14 @@ const FramesMode = {
                         </div>
                     </div>
                 </div>
+            </div>
+        `;
+    },
+
+    renderWorkspaceJsonView(selectedFrame) {
+        return `
+            <div class="frame-editor-json-view">
+                <pre class="frame-editor-json-content"><code>${this.escapeHTML(this.getCurrentFrameJson(selectedFrame))}</code></pre>
             </div>
         `;
     },
@@ -903,6 +953,21 @@ const FramesMode = {
             });
         });
 
+        root.querySelectorAll('[data-frame-editor-workspace-tab]').forEach(button => {
+            button.addEventListener('click', () => {
+                const nextWorkspaceView = button.dataset.frameEditorWorkspaceTab;
+                if (!nextWorkspaceView || nextWorkspaceView === this.state.workspaceView) {
+                    return;
+                }
+
+                this.state = {
+                    ...this.state,
+                    workspaceView: nextWorkspaceView
+                };
+                this.renderIntoRoot();
+            });
+        });
+
         root.querySelectorAll('[data-frame-editor-properties-tab]').forEach(button => {
             button.addEventListener('click', () => {
                 const nextTab = button.dataset.frameEditorPropertiesTab;
@@ -915,6 +980,12 @@ const FramesMode = {
                     rightSidebarTab: nextTab
                 };
                 this.renderIntoRoot();
+            });
+        });
+
+        root.querySelectorAll('[data-frame-editor-save-json]').forEach(button => {
+            button.addEventListener('click', () => {
+                this.saveFrameAsJson(root);
             });
         });
 
@@ -944,6 +1015,11 @@ const FramesMode = {
                     return;
                 }
 
+                const selectedFrame = this.getAllFrames(false).find(frame => frame.key === selectedFrameKey) || null;
+                if (selectedFrame?.frameType === QRFrames.FRAME_TYPES.CUSTOM && selectedFrame.customFrameId) {
+                    QRFrames.setActiveCustomFrame(selectedFrame.customFrameId);
+                }
+
                 this.state = {
                     ...this.state,
                     selectedFrameKey
@@ -959,7 +1035,7 @@ const FramesMode = {
                     return;
                 }
 
-                this.addBlock(blockType);
+                this.addBlock(blockType, null, root);
             });
 
             button.addEventListener('dragstart', event => {
@@ -1025,7 +1101,7 @@ const FramesMode = {
                 }
 
                 event.preventDefault();
-                this.addBlock(blockType, this.getCanvasPositionFromPointer(root, event.clientX, event.clientY));
+                this.addBlock(blockType, this.getCanvasPositionFromPointer(root, event.clientX, event.clientY), root);
             });
 
             stage.addEventListener('wheel', event => {
@@ -1226,16 +1302,15 @@ const FramesMode = {
             return;
         }
 
-        const stage = root.querySelector('[data-frame-editor-viewport]') || root.querySelector('[data-frame-editor-stage]');
         const blockId = blockElement.dataset.frameEditorCanvasBlock;
         const block = this.getBlockById(blockId);
-        if (!stage || !block) {
+        const canvasScroll = root.querySelector('[data-frame-editor-canvas-scroll]');
+        if (!block || !canvasScroll) {
             return;
         }
 
         event.preventDefault();
 
-        const stageRect = stage.getBoundingClientRect();
         const startPointer = {
             x: event.clientX,
             y: event.clientY
@@ -1260,10 +1335,13 @@ const FramesMode = {
             }
 
             nextPosition = this.clampCanvasBlockPosition(
-                stageRect,
-                blockElement,
-                block.xPct + (((deltaX / this.state.canvasZoom) / stageRect.width) * 100),
-                block.yPct + (((deltaY / this.state.canvasZoom) / stageRect.height) * 100)
+                root,
+                block,
+                {
+                    xPct: block.xPct + (((deltaX / this.state.canvasZoom) / Math.max(canvasScroll.clientWidth, 1)) * 100),
+                    yPct: block.yPct + (((deltaY / this.state.canvasZoom) / Math.max(canvasScroll.clientHeight, 1)) * 100)
+                },
+                blockElement
             );
             blockElement.style.left = `${nextPosition.xPct}%`;
             blockElement.style.top = `${nextPosition.yPct}%`;
@@ -1435,10 +1513,13 @@ const FramesMode = {
         }
 
         const clampedPosition = this.clampCanvasBlockPosition(
-            stage.getBoundingClientRect(),
-            blockElement,
-            block.xPct,
-            block.yPct
+            root,
+            block,
+            {
+                xPct: block.xPct,
+                yPct: block.yPct
+            },
+            blockElement
         );
         this.updateBlock(block.id, clampedPosition);
         blockElement.style.left = `${clampedPosition.xPct}%`;
@@ -1564,18 +1645,19 @@ const FramesMode = {
         this.applyCanvasLayout(root);
     },
 
-    addBlock(blockType, position = null) {
+    addBlock(blockType, position = null, root = this.getRoot()) {
         if (!this.isSupportedBlockType(blockType)) {
             return;
         }
 
-        const nextBlock = this.createBlock(blockType, position);
+        const nextBlock = this.createBlock(blockType, position || this.getVisibleCanvasCenterPosition(root));
         this.state = {
             ...this.state,
             selectedBlockId: nextBlock.id,
             canvasBlocks: [...this.state.canvasBlocks, nextBlock]
         };
         this.renderIntoRoot();
+        this.clampUpdatedBlockToCanvas(this.getRoot(), this.getBlockById(nextBlock.id));
     },
 
     createBlock(blockType, position = null) {
@@ -1654,6 +1736,7 @@ const FramesMode = {
             canvasBlocks: [...this.state.canvasBlocks, duplicatedBlock]
         };
         this.renderIntoRoot();
+        this.clampUpdatedBlockToCanvas(this.getRoot(), this.getBlockById(duplicatedBlock.id));
     },
 
     selectBlock(blockId) {
@@ -1722,10 +1805,113 @@ const FramesMode = {
         };
     },
 
-    clampCanvasBlockPosition(stageRect, blockElement, xPct, yPct) {
+    getVisibleCanvasContentBounds(root = this.getRoot()) {
+        const scroll = root?.querySelector?.('[data-frame-editor-canvas-scroll]');
+        const metrics = this.getCanvasLayoutMetrics(root);
+        if (!scroll || !metrics) {
+            return null;
+        }
+
+        const zoom = Math.max(this.state.canvasZoom, 0.01);
+        const left = (scroll.scrollLeft - metrics.sceneOffsetX) / zoom;
+        const top = (scroll.scrollTop - metrics.sceneOffsetY) / zoom;
+        const width = scroll.clientWidth / zoom;
+        const height = scroll.clientHeight / zoom;
+
         return {
-            xPct,
-            yPct
+            left,
+            top,
+            width,
+            height,
+            right: left + width,
+            bottom: top + height,
+            viewportWidth: metrics.viewportWidth,
+            viewportHeight: metrics.viewportHeight
+        };
+    },
+
+    getVisibleCanvasCenterPosition(root = this.getRoot()) {
+        const bounds = this.getVisibleCanvasContentBounds(root);
+        if (!bounds) {
+            return {
+                xPct: 50,
+                yPct: 50
+            };
+        }
+
+        return {
+            xPct: ((bounds.left + (bounds.width / 2)) / bounds.viewportWidth) * 100,
+            yPct: ((bounds.top + (bounds.height / 2)) / bounds.viewportHeight) * 100
+        };
+    },
+
+    getCanvasBlockFootprint(block, blockElement = null) {
+        if (blockElement) {
+            const blockRect = blockElement.getBoundingClientRect();
+            const zoom = Math.max(this.state.canvasZoom, 0.01);
+            return {
+                width: blockRect.width / zoom,
+                height: blockRect.height / zoom
+            };
+        }
+
+        if (!block) {
+            return {
+                width: 0,
+                height: 0
+            };
+        }
+
+        if (block.type === 'qr') {
+            return {
+                width: block.size,
+                height: block.size
+            };
+        }
+
+        const lineCount = Math.max(1, String(block.text || '').split('\n').length);
+        return {
+            width: block.width,
+            height: Math.max(54, (lineCount * block.fontSize * 1.2) + 28)
+        };
+    },
+
+    clampCanvasBlockPosition(root, block, position, blockElement = null) {
+        const bounds = this.getVisibleCanvasContentBounds(root);
+        const footprint = this.getCanvasBlockFootprint(block, blockElement);
+        if (!bounds) {
+            const fallbackXPct = Number(position.xPct);
+            const fallbackYPct = Number(position.yPct);
+            return {
+                xPct: Number.isFinite(fallbackXPct) ? fallbackXPct : 50,
+                yPct: Number.isFinite(fallbackYPct) ? fallbackYPct : 50
+            };
+        }
+
+        const viewportWidth = Math.max(bounds.viewportWidth, 1);
+        const viewportHeight = Math.max(bounds.viewportHeight, 1);
+        const proposedX = (Number(position.xPct) / 100) * viewportWidth;
+        const proposedY = (Number(position.yPct) / 100) * viewportHeight;
+        const halfWidth = footprint.width / 2;
+        const halfHeight = footprint.height / 2;
+        let minX = bounds.left + halfWidth;
+        let maxX = bounds.right - halfWidth;
+        let minY = bounds.top + halfHeight;
+        let maxY = bounds.bottom - halfHeight;
+
+        if (maxX < minX) {
+            minX = bounds.left + (bounds.width / 2);
+            maxX = minX;
+        }
+
+        if (maxY < minY) {
+            minY = bounds.top + (bounds.height / 2);
+            maxY = minY;
+        }
+
+        return {
+            xPct: (this.clamp(proposedX, minX, maxX) / viewportWidth) * 100,
+            yPct: (this.clamp(proposedY, minY, maxY) / viewportHeight) * 100
         };
     },
 
@@ -1747,6 +1933,126 @@ const FramesMode = {
 
     clamp(value, min, max) {
         return Math.min(max, Math.max(min, value));
+    },
+
+    isDeveloperMode() {
+        if (typeof window.AppRole?.isDeveloper === 'function') {
+            return window.AppRole.isDeveloper();
+        }
+
+        try {
+            return new URLSearchParams(window.location.search).get('role') === 'developer';
+        } catch (_) {
+            return false;
+        }
+    },
+
+    withSelectedFrameContext(selectedFrame, render) {
+        if (!selectedFrame || selectedFrame.frameType !== QRFrames.FRAME_TYPES.CUSTOM || !selectedFrame.customFrameId) {
+            return render();
+        }
+
+        const previousCustomFrameId = QRFrames.activeCustomFrameId;
+        const previousCustomFrame = QRFrames.customFrame;
+        QRFrames.setActiveCustomFrame(selectedFrame.customFrameId);
+
+        try {
+            return render();
+        } finally {
+            QRFrames.activeCustomFrameId = previousCustomFrameId || '';
+            QRFrames.customFrame = previousCustomFrame || null;
+        }
+    },
+
+    getSerializedCustomFrame(customFrameId = '') {
+        const frame = QRFrames.customFrames.find(candidate => candidate.id === customFrameId);
+        if (!frame) {
+            return null;
+        }
+
+        return {
+            id: frame.id,
+            name: frame.name,
+            naturalWidth: frame.naturalWidth,
+            naturalHeight: frame.naturalHeight,
+            qrRect: frame.qrRect,
+            dataUrl: frame.dataUrl
+        };
+    },
+
+    getCurrentFrameDocument(selectedFrame = this.getSelectedFrame(this.getAllFrames(false))) {
+        return this.withSelectedFrameContext(selectedFrame, () => ({
+            version: 1,
+            frame: selectedFrame
+                ? {
+                    key: selectedFrame.key,
+                    name: selectedFrame.name,
+                    frameType: selectedFrame.frameType,
+                    source: selectedFrame.frameType === QRFrames.FRAME_TYPES.CUSTOM ? 'custom' : 'preset',
+                    customFrameId: selectedFrame.customFrameId || null
+                }
+                : null,
+            frameCustomization: selectedFrame
+                ? QRFrames.getFrameCustomization(selectedFrame.frameType)
+                : null,
+            frameQRRect: selectedFrame
+                ? QRFrames.getFrameQRRect(selectedFrame.frameType)
+                : null,
+            customFrame: selectedFrame?.frameType === QRFrames.FRAME_TYPES.CUSTOM
+                ? this.getSerializedCustomFrame(selectedFrame.customFrameId)
+                : null,
+            canvas: {
+                backgroundColor: this.state.canvasBackgroundColor,
+                gridColor: this.state.canvasGridColor,
+                gridOpacity: this.state.canvasGridOpacity,
+                gridBaseSize: this.state.canvasGridBaseSize
+            },
+            blocks: this.state.canvasBlocks.map(block => ({ ...block }))
+        }));
+    },
+
+    getCurrentFrameJson(selectedFrame = this.getSelectedFrame(this.getAllFrames(false))) {
+        return JSON.stringify(this.getCurrentFrameDocument(selectedFrame), null, 2);
+    },
+
+    sanitizeFilename(value) {
+        const baseName = String(value || '').trim().toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+
+        return baseName || 'frame';
+    },
+
+    downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    },
+
+    showToast(message, tone = 'success') {
+        if (typeof window.QRShareLink?.showToast === 'function') {
+            window.QRShareLink.showToast(message, tone);
+        }
+    },
+
+    saveFrameAsJson() {
+        try {
+            const selectedFrame = this.getSelectedFrame(this.getAllFrames(false));
+            const filename = `${this.sanitizeFilename(selectedFrame?.name || 'frame')}.json`;
+            this.downloadBlob(
+                new Blob([this.getCurrentFrameJson(selectedFrame)], { type: 'application/json' }),
+                filename
+            );
+            this.showToast(I18n.translateString('Frame JSON saved.'));
+        } catch (error) {
+            console.error('Failed to save frame JSON.', error);
+            this.showToast(I18n.translateString('Failed to save frame JSON.'), 'error');
+        }
     },
 
     getAllFrames(includePreview = true) {
