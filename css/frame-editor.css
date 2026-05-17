@@ -6,7 +6,7 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
-    padding: 1rem; /* make bottom padding match other sides */
+    padding: 0.9rem 1rem; /* bottom matches other sides */
 }
 
 .frame-editor-page .content-header {
