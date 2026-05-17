@@ -91,6 +91,47 @@ const FramesMode = {
                         <span class="frame-editor-button-label">${I18n.translateString('Sidebar')}</span>
                     </button>
                     <div class="frame-editor-header-actions">
+                        <div class="frame-editor-header-zoom" data-frame-editor-zoom-group>
+                            <div class="frame-editor-canvas-controls" role="group" aria-label="${this.escapeHTML(I18n.translateString('Canvas controls'))}">
+                                <button
+                                    type="button"
+                                    class="frame-editor-canvas-control frame-editor-canvas-control-icon"
+                                    data-canvas-zoom="out"
+                                    title="${this.escapeHTML(I18n.translateString('Zoom out'))}"
+                                    aria-label="${this.escapeHTML(I18n.translateString('Zoom out'))}"
+                                >
+                                    <i class="bi bi-dash-lg" aria-hidden="true"></i>
+                                </button>
+                                <div class="frame-editor-canvas-zoom-field">
+                                    <input
+                                    type="text"
+                                        class="frame-editor-canvas-zoom-input"
+                                        data-canvas-zoom-input
+                                        inputmode="decimal"
+                                        pattern="[0-9]*[.,]?[0-9]*"
+                                        value="${this.escapeHTML(String(Math.round(this.state.canvasZoom * 100)))}"
+                                        aria-label="${this.escapeHTML(I18n.translateString('Zoom percentage'))}"
+                                        title="${this.escapeHTML(I18n.translateString('Zoom percentage'))}"
+                                    >
+                                    <span class="frame-editor-canvas-zoom-unit" aria-hidden="true">%</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="frame-editor-canvas-control frame-editor-canvas-control-icon"
+                                    data-canvas-zoom="in"
+                                    title="${this.escapeHTML(I18n.translateString('Zoom in'))}"
+                                    aria-label="${this.escapeHTML(I18n.translateString('Zoom in'))}"
+                                >
+                                    <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <div class="frame-editor-zoom-context-menu" data-frame-editor-zoom-menu hidden role="menu" aria-label="${this.escapeHTML(I18n.translateString('Canvas controls'))}">
+                                <button type="button" class="frame-editor-zoom-context-menu-item" data-canvas-zoom="reset" role="menuitem">
+                                    <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                                    <span>${I18n.translateString('Reset')}</span>
+                                </button>
+                            </div>
+                        </div>
                         <button
                             type="button"
                             class="frame-editor-sidebar-toggle"
@@ -135,7 +176,11 @@ const FramesMode = {
                             </div>
                         </aside>
 
-                        <section class="frame-editor-workspace-panel">
+                        <section
+                            class="frame-editor-workspace-panel"
+                            data-frame-editor-workspace-panel
+                            style="background-color: ${this.escapeHTML(this.state.canvasBackgroundColor)}; ${this.getCanvasGridStyle()}"
+                        >
                             ${this.renderWorkspace(selectedFrame, totalFrameCount, selectedBlock)}
                         </section>
 
@@ -369,6 +414,16 @@ const FramesMode = {
                                 ${this.renderSidebarToggleButton('textAlign', 'right', selectedBlock.textAlign === 'right', 'bi-text-right', 'Right')}
                             </div>
                         </div>
+                        <div class="frame-editor-inspector-actions">
+                            <button type="button" class="frame-editor-action-button" data-block-action="duplicate">
+                                <i class="bi bi-files" aria-hidden="true"></i>
+                                <span>${I18n.translateString('Duplicate')}</span>
+                            </button>
+                            <button type="button" class="frame-editor-action-button danger" data-block-action="delete">
+                                <i class="bi bi-trash3" aria-hidden="true"></i>
+                                <span>${I18n.translateString('Delete')}</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -392,6 +447,16 @@ const FramesMode = {
                         <span>${I18n.translateString('Dark color')}</span>
                         <input type="color" value="${this.escapeHTML(selectedBlock.colorDark)}" data-block-setting="colorDark">
                     </label>
+                    <div class="frame-editor-inspector-actions">
+                        <button type="button" class="frame-editor-action-button" data-block-action="duplicate">
+                            <i class="bi bi-files" aria-hidden="true"></i>
+                            <span>${I18n.translateString('Duplicate')}</span>
+                        </button>
+                        <button type="button" class="frame-editor-action-button danger" data-block-action="delete">
+                            <i class="bi bi-trash3" aria-hidden="true"></i>
+                            <span>${I18n.translateString('Delete')}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -466,33 +531,14 @@ const FramesMode = {
         }
 
         return `
-            <div class="frame-editor-canvas-shell">
-                <div class="frame-editor-canvas-scroll">
+                <div class="frame-editor-canvas-shell">
+                <div class="frame-editor-canvas-scroll" data-frame-editor-canvas-scroll>
                     <div
                         class="frame-editor-canvas-stage"
                         data-frame-editor-stage
-                        style="background-color: ${this.escapeHTML(this.state.canvasBackgroundColor)};"
                         aria-label="${this.escapeHTML(I18n.translateString('Frame editor canvas'))}"
                     >
-                        <div class="frame-editor-canvas-controls" role="group" aria-label="${this.escapeHTML(I18n.translateString('Canvas controls'))}">
-                            <button type="button" class="frame-editor-canvas-control" data-canvas-zoom="out" title="${this.escapeHTML(I18n.translateString('Zoom out'))}">
-                                <i class="bi bi-dash-lg" aria-hidden="true"></i>
-                            </button>
-                            <span class="frame-editor-canvas-zoom-readout">${this.escapeHTML(String(Math.round(this.state.canvasZoom * 100)))}%</span>
-                            <button type="button" class="frame-editor-canvas-control" data-canvas-zoom="in" title="${this.escapeHTML(I18n.translateString('Zoom in'))}">
-                                <i class="bi bi-plus-lg" aria-hidden="true"></i>
-                            </button>
-                            <button type="button" class="frame-editor-canvas-control frame-editor-canvas-control-reset" data-canvas-zoom="reset">
-                                ${I18n.translateString('Reset')}
-                            </button>
-                        </div>
-
                         <div class="frame-editor-canvas-viewport" data-frame-editor-viewport>
-                            <div
-                                class="frame-editor-canvas-grid"
-                                aria-hidden="true"
-                                style="${this.getCanvasGridStyle()}"
-                            ></div>
                             <div
                                 class="frame-editor-canvas-camera"
                                 data-frame-editor-camera
@@ -515,114 +561,9 @@ const FramesMode = {
         `;
     },
 
-    renderTextBlockPopup(block) {
-        return `
-            <div class="frame-editor-block-toolbar" role="toolbar" aria-label="${this.escapeHTML(I18n.translateString('Text block toolbar'))}">
-                ${this.renderPopupIconButton('fontSize', '-2', 'bi-type', 'A-', 'Decrease font size', 'data-block-adjust')}
-                <span class="frame-editor-toolbar-chip">${this.escapeHTML(String(block.fontSize))}px</span>
-                ${this.renderPopupIconButton('fontSize', '2', 'bi-type-h1', 'A+', 'Increase font size', 'data-block-adjust')}
-                <span class="frame-editor-toolbar-divider" aria-hidden="true"></span>
-                ${this.renderAlignmentButton('left', block.textAlign, 'bi-text-left')}
-                ${this.renderAlignmentButton('center', block.textAlign, 'bi-text-center')}
-                ${this.renderAlignmentButton('right', block.textAlign, 'bi-text-right')}
-                <span class="frame-editor-toolbar-divider" aria-hidden="true"></span>
-                <label class="frame-editor-toolbar-color" title="${this.escapeHTML(I18n.translateString('Text color'))}">
-                    <span>A</span>
-                    <input type="color" value="${this.escapeHTML(block.color)}" data-block-setting="color">
-                </label>
-                ${this.renderPopupToggleButton('fontWeight', block.fontWeight >= 700 ? '400' : '700', block.fontWeight >= 700, 'bi-type-bold', 'Bold')}
-                ${this.renderPopupToggleButton('fontStyle', block.fontStyle === 'italic' ? 'normal' : 'italic', block.fontStyle === 'italic', 'bi-type-italic', 'Italic')}
-                <span class="frame-editor-toolbar-divider" aria-hidden="true"></span>
-                ${this.renderPopupIconButton('duplicate', '', 'bi-files', '', 'Duplicate block', 'data-block-action')}
-                ${this.renderPopupIconButton('delete', '', 'bi-trash3', '', 'Delete block', 'data-block-action danger')}
-            </div>
-        `;
-    },
-
-    renderPopupToggleButton(setting, value, isActive, icon, label) {
-        return `
-            <button
-                type="button"
-                class="frame-editor-toolbar-button${isActive ? ' active' : ''}"
-                data-block-toggle="${setting}"
-                data-block-value="${value}"
-                aria-pressed="${isActive ? 'true' : 'false'}"
-                title="${this.escapeHTML(I18n.translateString(label))}"
-            >
-                <i class="bi ${icon}" aria-hidden="true"></i>
-            </button>
-        `;
-    },
-
-    renderAlignmentButton(value, activeValue, icon) {
-        return `
-            <button
-                type="button"
-                class="frame-editor-toolbar-button${activeValue === value ? ' active' : ''}"
-                data-block-toggle="textAlign"
-                data-block-value="${value}"
-                aria-pressed="${activeValue === value ? 'true' : 'false'}"
-                title="${this.escapeHTML(I18n.translateString(value.charAt(0).toUpperCase() + value.slice(1)))}"
-            >
-                <i class="bi ${icon}" aria-hidden="true"></i>
-            </button>
-        `;
-    },
-
-    renderPopupIconButton(key, value, icon, fallbackLabel, title, mode = 'data-block-action') {
-        const label = fallbackLabel ? `<span>${this.escapeHTML(fallbackLabel)}</span>` : '';
-        const dataAttribute = mode === 'data-block-adjust'
-            ? `data-block-adjust="${key}" data-block-delta="${value}"`
-            : `data-block-action="${key}"`;
-
-        return `
-            <button
-                type="button"
-                class="frame-editor-toolbar-button${String(mode).includes('danger') ? ' danger' : ''}"
-                ${dataAttribute}
-                title="${this.escapeHTML(I18n.translateString(title))}"
-            >
-                <i class="bi ${icon}" aria-hidden="true"></i>
-                ${label}
-            </button>
-        `;
-    },
-
-    renderQrBlockPopup(block) {
-        return `
-            <div class="frame-editor-block-toolbar frame-editor-block-toolbar-qr" role="toolbar" aria-label="${this.escapeHTML(I18n.translateString('QR block toolbar'))}">
-                <label class="frame-editor-toolbar-input" title="${this.escapeHTML(I18n.translateString('QR content'))}">
-                    <i class="bi bi-link-45deg" aria-hidden="true"></i>
-                    <input
-                        type="text"
-                        value="${this.escapeHTML(block.content)}"
-                        data-block-setting="content"
-                        placeholder="${this.escapeHTML(I18n.translateString('QR content'))}"
-                    >
-                </label>
-                ${this.renderPopupIconButton('size', '-12', 'bi-dash-lg', '', 'Decrease QR size', 'data-block-adjust')}
-                <span class="frame-editor-toolbar-chip">${this.escapeHTML(String(block.size))}px</span>
-                ${this.renderPopupIconButton('size', '12', 'bi-plus-lg', '', 'Increase QR size', 'data-block-adjust')}
-                <label class="frame-editor-toolbar-color" title="${this.escapeHTML(I18n.translateString('Dark color'))}">
-                    <span><i class="bi bi-circle-fill" aria-hidden="true"></i></span>
-                    <input type="color" value="${this.escapeHTML(block.colorDark)}" data-block-setting="colorDark">
-                </label>
-                <span class="frame-editor-toolbar-divider" aria-hidden="true"></span>
-                ${this.renderPopupIconButton('duplicate', '', 'bi-files', '', 'Duplicate block', 'data-block-action')}
-                ${this.renderPopupIconButton('delete', '', 'bi-trash3', '', 'Delete block', 'data-block-action danger')}
-            </div>
-        `;
-    },
-
     renderCanvasBlock(block) {
         const isActive = this.state.selectedBlockId === block.id;
         const width = block.type === 'text' ? block.width : block.size;
-        const popupPlacementClass = block.yPct < 18 ? ' is-below' : '';
-        const popupHorizontalClass = block.xPct < 24
-            ? ' is-left'
-            : block.xPct > 76
-                ? ' is-right'
-                : '';
         const style = [
             `left: ${block.xPct}%`,
             `top: ${block.yPct}%`,
@@ -643,22 +584,12 @@ const FramesMode = {
                     ? `<div class="frame-editor-canvas-block-badge">${this.escapeHTML(I18n.translateString('Text'))}</div>`
                     : ''}
                 ${this.renderCanvasBlockInner(block)}
-                ${isActive ? `
-                    <div class="frame-editor-block-popup-anchor${popupPlacementClass}${popupHorizontalClass}" data-frame-editor-popup>
-                        <div class="frame-editor-block-popup frame-editor-block-popup-${block.type}">
-                            ${block.type === 'text'
-                                ? this.renderTextBlockPopup(block)
-                                : this.renderQrBlockPopup(block)}
-                        </div>
-                    </div>
-                ` : ''}
             </div>
         `;
     },
 
     renderCanvasBlockInner(block) {
         if (block.type === 'text') {
-            const isActive = this.state.selectedBlockId === block.id;
             const inlineStyle = [
                 `font-size: ${block.fontSize}px`,
                 `font-weight: ${block.fontWeight}`,
@@ -672,8 +603,6 @@ const FramesMode = {
                     <div
                         class="frame-editor-text-block-content"
                         style="${inlineStyle}"
-                        ${isActive ? 'contenteditable="true"' : ''}
-                        ${isActive ? `data-block-inline-editor="text" data-block-id="${block.id}"` : ''}
                         spellcheck="false"
                     >
                         ${this.escapeHTML(block.text)}
@@ -704,13 +633,178 @@ const FramesMode = {
         });
     },
 
-    getCanvasGridStyle() {
+    getCanvasGridStyle(scrollLeft = this.canvasScrollLeft || 0, scrollTop = this.canvasScrollTop || 0) {
         const gridSize = Math.max(8, this.state.canvasGridBaseSize * this.state.canvasZoom);
-        const offsetX = ((this.state.canvasPanX % gridSize) + gridSize) % gridSize;
-        const offsetY = ((this.state.canvasPanY % gridSize) + gridSize) % gridSize;
+        const offsetX = (((Math.max(this.state.canvasPanX, 0) - scrollLeft) % gridSize) + gridSize) % gridSize;
+        const offsetY = (((Math.max(this.state.canvasPanY, 0) - scrollTop) % gridSize) + gridSize) % gridSize;
         const gridColor = this.hexToRgba(this.state.canvasGridColor, this.state.canvasGridOpacity);
 
         return `background-image: linear-gradient(${gridColor} 1px, transparent 1px), linear-gradient(90deg, ${gridColor} 1px, transparent 1px); background-size: ${gridSize}px ${gridSize}px; background-position: ${offsetX}px ${offsetY}px;`;
+    },
+
+    getEffectiveCanvasPan() {
+        return {
+            x: Number.isFinite(this.liveCanvasPanX) ? this.liveCanvasPanX : this.state.canvasPanX,
+            y: Number.isFinite(this.liveCanvasPanY) ? this.liveCanvasPanY : this.state.canvasPanY
+        };
+    },
+
+    getCanvasContentBounds(root, viewportWidth, viewportHeight) {
+        const viewport = root?.querySelector?.('[data-frame-editor-viewport]');
+        if (!viewport) {
+            return null;
+        }
+
+        const viewportRect = viewport.getBoundingClientRect();
+        let bounds = null;
+
+        root.querySelectorAll('[data-frame-editor-canvas-block]').forEach(element => {
+            const rect = element.getBoundingClientRect();
+            if (!rect.width || !rect.height) {
+                return;
+            }
+
+            const left = rect.left - viewportRect.left;
+            const top = rect.top - viewportRect.top;
+            const right = rect.right - viewportRect.left;
+            const bottom = rect.bottom - viewportRect.top;
+
+            if (!bounds) {
+                bounds = { left, top, right, bottom };
+                return;
+            }
+
+            bounds.left = Math.min(bounds.left, left);
+            bounds.top = Math.min(bounds.top, top);
+            bounds.right = Math.max(bounds.right, right);
+            bounds.bottom = Math.max(bounds.bottom, bottom);
+        });
+
+        return bounds;
+    },
+
+    getCanvasLayoutMetrics(root = this.getRoot()) {
+        const scroll = root?.querySelector?.('[data-frame-editor-canvas-scroll]');
+        if (!scroll) {
+            return null;
+        }
+
+        const viewportWidth = Math.max(0, scroll.clientWidth);
+        const viewportHeight = Math.max(0, scroll.clientHeight);
+        if (!viewportWidth || !viewportHeight) {
+            return null;
+        }
+
+        const effectivePan = this.getEffectiveCanvasPan();
+        const contentBounds = this.getCanvasContentBounds(root, viewportWidth, viewportHeight);
+        const epsilon = 1;
+        const minX = Math.min(0, contentBounds?.left ?? 0);
+        const minY = Math.min(0, contentBounds?.top ?? 0);
+        const maxX = Math.max(viewportWidth, contentBounds?.right ?? viewportWidth);
+        const maxY = Math.max(viewportHeight, contentBounds?.bottom ?? viewportHeight);
+        const viewportLeft = Math.abs(minX) <= epsilon ? 0 : -minX;
+        const viewportTop = Math.abs(minY) <= epsilon ? 0 : -minY;
+        const stageWidth = (maxX - minX) <= (viewportWidth + epsilon)
+            ? viewportWidth
+            : Math.ceil(maxX - minX);
+        const stageHeight = (maxY - minY) <= (viewportHeight + epsilon)
+            ? viewportHeight
+            : Math.ceil(maxY - minY);
+
+        return {
+            viewportWidth,
+            viewportHeight,
+            viewportLeft,
+            viewportTop,
+            sceneOffsetX: viewportLeft + effectivePan.x,
+            sceneOffsetY: viewportTop + effectivePan.y,
+            stageWidth,
+            stageHeight,
+            defaultScrollLeft: viewportLeft,
+            defaultScrollTop: viewportTop
+        };
+    },
+
+    captureCanvasScrollState(root = this.getRoot()) {
+        const scroll = root?.querySelector?.('[data-frame-editor-canvas-scroll]');
+        if (!scroll) {
+            return;
+        }
+
+        this.canvasScrollLeft = scroll.scrollLeft;
+        this.canvasScrollTop = scroll.scrollTop;
+    },
+
+    queueCanvasScrollCompensation(root = this.getRoot()) {
+        this.captureCanvasScrollState(root);
+        const metrics = this.getCanvasLayoutMetrics(root);
+        this.pendingCanvasScrollReference = metrics
+            ? {
+                left: metrics.defaultScrollLeft,
+                top: metrics.defaultScrollTop
+            }
+            : null;
+    },
+
+    applyCanvasGridStyle(root = this.getRoot()) {
+        const workspace = root?.querySelector?.('[data-frame-editor-workspace-panel]');
+        const scroll = root?.querySelector?.('[data-frame-editor-canvas-scroll]');
+        const metrics = this.getCanvasLayoutMetrics(root);
+        if (!workspace || !scroll || !metrics) {
+            return;
+        }
+
+        const gridSize = Math.max(8, this.state.canvasGridBaseSize * this.state.canvasZoom);
+        const gridColor = this.hexToRgba(this.state.canvasGridColor, this.state.canvasGridOpacity);
+        const offsetX = (((metrics.sceneOffsetX - scroll.scrollLeft) % gridSize) + gridSize) % gridSize;
+        const offsetY = (((metrics.sceneOffsetY - scroll.scrollTop) % gridSize) + gridSize) % gridSize;
+
+        workspace.style.backgroundColor = this.state.canvasBackgroundColor;
+        workspace.style.backgroundImage = `linear-gradient(${gridColor} 1px, transparent 1px), linear-gradient(90deg, ${gridColor} 1px, transparent 1px)`;
+        workspace.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+        workspace.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
+    },
+
+    applyCanvasLayout(root = this.getRoot()) {
+        const scroll = root?.querySelector?.('[data-frame-editor-canvas-scroll]');
+        const stage = root?.querySelector?.('[data-frame-editor-stage]');
+        const viewport = root?.querySelector?.('[data-frame-editor-viewport]');
+        const metrics = this.getCanvasLayoutMetrics(root);
+        if (!scroll || !stage || !viewport || !metrics) {
+            return;
+        }
+
+        stage.style.width = `${metrics.stageWidth}px`;
+        stage.style.height = `${metrics.stageHeight}px`;
+        viewport.style.left = `${metrics.viewportLeft}px`;
+        viewport.style.top = `${metrics.viewportTop}px`;
+        viewport.style.width = `${metrics.viewportWidth}px`;
+        viewport.style.height = `${metrics.viewportHeight}px`;
+
+        let nextScrollLeft = Number.isFinite(this.canvasScrollLeft)
+            ? this.canvasScrollLeft
+            : metrics.defaultScrollLeft;
+        let nextScrollTop = Number.isFinite(this.canvasScrollTop)
+            ? this.canvasScrollTop
+            : metrics.defaultScrollTop;
+
+        if (this.pendingCanvasScrollReference) {
+            nextScrollLeft += metrics.defaultScrollLeft - this.pendingCanvasScrollReference.left;
+            nextScrollTop += metrics.defaultScrollTop - this.pendingCanvasScrollReference.top;
+            this.pendingCanvasScrollReference = null;
+        }
+
+        nextScrollLeft = this.clamp(nextScrollLeft, 0, Math.max(0, metrics.stageWidth - metrics.viewportWidth));
+        nextScrollTop = this.clamp(nextScrollTop, 0, Math.max(0, metrics.stageHeight - metrics.viewportHeight));
+
+        this.isSyncingCanvasScroll = true;
+        scroll.scrollLeft = nextScrollLeft;
+        scroll.scrollTop = nextScrollTop;
+        this.isSyncingCanvasScroll = false;
+
+        this.canvasScrollLeft = nextScrollLeft;
+        this.canvasScrollTop = nextScrollTop;
+        this.applyCanvasGridStyle(root);
     },
 
     getRoot() {
@@ -892,7 +986,7 @@ const FramesMode = {
                     return;
                 }
 
-                if (event.target.closest('[data-frame-editor-canvas-block]') || event.target.closest('[data-frame-editor-popup]')) {
+                if (event.target.closest('[data-frame-editor-canvas-block]')) {
                     return;
                 }
 
@@ -931,18 +1025,52 @@ const FramesMode = {
                 }
 
                 event.preventDefault();
-                this.addBlock(blockType, this.getCanvasPositionFromPointer(stage, event.clientX, event.clientY));
+                this.addBlock(blockType, this.getCanvasPositionFromPointer(root, event.clientX, event.clientY));
             });
 
             stage.addEventListener('wheel', event => {
-                if (!event.target.closest('[data-frame-editor-popup]')) {
-                    event.preventDefault();
-                    this.adjustCanvasZoom(event.deltaY < 0 ? 0.12 : -0.12, {
-                        x: event.clientX,
-                        y: event.clientY
-                    }, root);
-                }
+                event.preventDefault();
+                this.adjustCanvasZoom(event.deltaY < 0 ? 0.12 : -0.12, {
+                    x: event.clientX,
+                    y: event.clientY
+                }, root);
             }, { passive: false });
+        }
+
+        const canvasScroll = root.querySelector('[data-frame-editor-canvas-scroll]');
+        if (canvasScroll) {
+            canvasScroll.addEventListener('scroll', () => {
+                if (this.isSyncingCanvasScroll) {
+                    return;
+                }
+
+                this.canvasScrollLeft = canvasScroll.scrollLeft;
+                this.canvasScrollTop = canvasScroll.scrollTop;
+                this.applyCanvasGridStyle(root);
+            }, { passive: true });
+        }
+
+        const zoomGroup = root.querySelector('[data-frame-editor-zoom-group]');
+        if (zoomGroup) {
+            zoomGroup.addEventListener('contextmenu', event => {
+                if (event.target.closest('[data-frame-editor-zoom-menu]')) {
+                    return;
+                }
+
+                event.preventDefault();
+                this.showCanvasZoomContextMenu(event.clientX, event.clientY, root);
+            });
+
+            zoomGroup.addEventListener('keydown', event => {
+                const openedWithKeyboard = event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10');
+                if (!openedWithKeyboard) {
+                    return;
+                }
+
+                const bounds = zoomGroup.getBoundingClientRect();
+                event.preventDefault();
+                this.showCanvasZoomContextMenu(bounds.right - 8, bounds.bottom + 4, root);
+            });
         }
 
         root.querySelectorAll('[data-canvas-zoom]').forEach(button => {
@@ -960,6 +1088,41 @@ const FramesMode = {
                     this.resetCanvasView();
                 }
             });
+        });
+
+        root.querySelectorAll('[data-canvas-zoom-input]').forEach(input => {
+            const commitZoom = () => this.handleCanvasZoomInput(input, root);
+
+            input.addEventListener('keydown', event => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    commitZoom();
+                    return;
+                }
+
+                if (event.key === 'Escape') {
+                    input.value = String(Math.round(this.state.canvasZoom * 100));
+                    input.blur();
+                    this.hideCanvasZoomContextMenu(root);
+                }
+            });
+
+            input.addEventListener('change', commitZoom);
+        });
+
+        root.addEventListener('pointerdown', event => {
+            const menu = root.querySelector('[data-frame-editor-zoom-menu]');
+            if (!menu || menu.hidden || menu.contains(event.target)) {
+                return;
+            }
+
+            this.hideCanvasZoomContextMenu(root);
+        });
+
+        root.addEventListener('keydown', event => {
+            if (event.key === 'Escape') {
+                this.hideCanvasZoomContextMenu(root);
+            }
         });
 
         root.querySelectorAll('[data-frame-editor-canvas-block]').forEach(blockElement => {
@@ -1001,8 +1164,6 @@ const FramesMode = {
             });
         });
 
-        this.bindInlineEditors(root);
-
         root.querySelectorAll('[data-block-setting]').forEach(control => {
             const onSettingChange = event => {
                 this.handleInspectorSettingInput(root, event.currentTarget);
@@ -1038,18 +1199,6 @@ const FramesMode = {
             });
         });
 
-        root.querySelectorAll('[data-block-adjust]').forEach(button => {
-            button.addEventListener('click', () => {
-                const setting = button.dataset.blockAdjust;
-                const delta = Number(button.dataset.blockDelta || 0);
-                if (!setting || !delta) {
-                    return;
-                }
-
-                this.adjustSelectedBlockNumeric(setting, delta);
-            });
-        });
-
         root.querySelectorAll('[data-block-action]').forEach(button => {
             button.addEventListener('click', () => {
                 const action = button.dataset.blockAction;
@@ -1077,11 +1226,7 @@ const FramesMode = {
             return;
         }
 
-        if (event.target.closest('[data-frame-editor-popup]') || event.target.closest('[data-block-inline-editor]')) {
-            return;
-        }
-
-        const stage = root.querySelector('[data-frame-editor-stage]');
+        const stage = root.querySelector('[data-frame-editor-viewport]') || root.querySelector('[data-frame-editor-stage]');
         const blockId = blockElement.dataset.frameEditorCanvasBlock;
         const block = this.getBlockById(blockId);
         if (!stage || !block) {
@@ -1122,6 +1267,7 @@ const FramesMode = {
             );
             blockElement.style.left = `${nextPosition.xPct}%`;
             blockElement.style.top = `${nextPosition.yPct}%`;
+            this.applyCanvasLayout(root);
         };
 
         const finishDrag = () => {
@@ -1153,7 +1299,7 @@ const FramesMode = {
             return;
         }
 
-        if (event.target.closest('[data-frame-editor-canvas-block]') || event.target.closest('[data-frame-editor-popup]') || event.target.closest('[data-block-inline-editor]')) {
+        if (event.target.closest('[data-frame-editor-canvas-block]')) {
             return;
         }
 
@@ -1186,7 +1332,10 @@ const FramesMode = {
                 return;
             }
 
-            camera.style.transform = `translate(${startPan.x + deltaX}px, ${startPan.y + deltaY}px)`;
+            this.liveCanvasPanX = startPan.x + deltaX;
+            this.liveCanvasPanY = startPan.y + deltaY;
+            camera.style.transform = `translate(${this.liveCanvasPanX}px, ${this.liveCanvasPanY}px)`;
+            this.applyCanvasLayout(root);
         };
 
         const finishPan = moveEvent => {
@@ -1196,17 +1345,24 @@ const FramesMode = {
             stage.classList.remove('is-panning');
 
             if (!didPan) {
+                this.liveCanvasPanX = null;
+                this.liveCanvasPanY = null;
                 return;
             }
 
             const deltaX = moveEvent.clientX - startPointer.x;
             const deltaY = moveEvent.clientY - startPointer.y;
             this.stagePanSuppressClick = true;
+            this.liveCanvasPanX = startPan.x + deltaX;
+            this.liveCanvasPanY = startPan.y + deltaY;
+            this.queueCanvasScrollCompensation(root);
             this.state = {
                 ...this.state,
-                canvasPanX: startPan.x + deltaX,
-                canvasPanY: startPan.y + deltaY
+                canvasPanX: this.liveCanvasPanX,
+                canvasPanY: this.liveCanvasPanY
             };
+            this.liveCanvasPanX = null;
+            this.liveCanvasPanY = null;
             this.renderIntoRoot();
         };
 
@@ -1258,29 +1414,13 @@ const FramesMode = {
         blockElement.style.left = `${block.xPct}%`;
         blockElement.style.top = `${block.yPct}%`;
         blockElement.style.width = `${width}px`;
-        const isActive = this.state.selectedBlockId === block.id;
-        const popupPlacementClass = block.yPct < 18 ? ' is-below' : '';
-        const popupHorizontalClass = block.xPct < 24
-            ? ' is-left'
-            : block.xPct > 76
-                ? ' is-right'
-                : '';
         blockElement.innerHTML = `
             ${block.type === 'text'
                 ? `<div class="frame-editor-canvas-block-badge">${this.escapeHTML(I18n.translateString('Text'))}</div>`
                 : ''}
             ${this.renderCanvasBlockInner(block)}
-            ${isActive ? `
-                <div class="frame-editor-block-popup-anchor${popupPlacementClass}${popupHorizontalClass}" data-frame-editor-popup>
-                    <div class="frame-editor-block-popup frame-editor-block-popup-${block.type}">
-                        ${block.type === 'text'
-                            ? this.renderTextBlockPopup(block)
-                            : this.renderQrBlockPopup(block)}
-                    </div>
-                </div>
-            ` : ''}
         `;
-        this.bindInlineEditors(root);
+        this.applyCanvasLayout(root);
     },
 
     clampUpdatedBlockToCanvas(root, block) {
@@ -1288,7 +1428,7 @@ const FramesMode = {
             return;
         }
 
-        const stage = root.querySelector('[data-frame-editor-stage]');
+        const stage = root.querySelector('[data-frame-editor-viewport]') || root.querySelector('[data-frame-editor-stage]');
         const blockElement = root.querySelector(`[data-frame-editor-canvas-block="${block.id}"]`);
         if (!stage || !blockElement) {
             return;
@@ -1303,65 +1443,7 @@ const FramesMode = {
         this.updateBlock(block.id, clampedPosition);
         blockElement.style.left = `${clampedPosition.xPct}%`;
         blockElement.style.top = `${clampedPosition.yPct}%`;
-    },
-
-    bindInlineEditors(root) {
-        root.querySelectorAll('[data-block-inline-editor="text"]').forEach(editor => {
-            if (editor.dataset.inlineEditorBound === 'true') {
-                return;
-            }
-
-            editor.addEventListener('pointerdown', event => {
-                event.stopPropagation();
-            });
-            editor.addEventListener('click', event => {
-                event.stopPropagation();
-            });
-            editor.addEventListener('keydown', event => {
-                event.stopPropagation();
-            });
-            editor.addEventListener('input', event => {
-                const target = event.currentTarget;
-                const blockId = target.dataset.blockId;
-                if (!blockId) {
-                    return;
-                }
-
-                const normalizedText = this.normalizeBlockText(target.textContent);
-                if (target.textContent !== normalizedText) {
-                    target.textContent = normalizedText;
-                }
-
-                this.updateBlock(blockId, {
-                    text: normalizedText
-                });
-            });
-
-            editor.dataset.inlineEditorBound = 'true';
-        });
-    },
-
-    adjustSelectedBlockNumeric(setting, delta) {
-        const selectedBlock = this.getSelectedBlock();
-        if (!selectedBlock) {
-            return;
-        }
-
-        const limits = {
-            fontSize: { min: 18, max: 72 },
-            size: { min: 120, max: 300 }
-        };
-        const currentValue = Number(selectedBlock[setting]);
-        const nextValue = this.clamp(
-            currentValue + delta,
-            limits[setting]?.min ?? currentValue + delta,
-            limits[setting]?.max ?? currentValue + delta
-        );
-
-        this.updateBlock(selectedBlock.id, {
-            [setting]: nextValue
-        });
-        this.renderIntoRoot();
+        this.applyCanvasLayout(root);
     },
 
     handleCanvasSettingInput(control) {
@@ -1378,32 +1460,53 @@ const FramesMode = {
         this.renderIntoRoot();
     },
 
-    adjustCanvasZoom(delta, anchorPoint = null, root = this.getRoot()) {
-        const viewport = root?.querySelector?.('[data-frame-editor-viewport]');
-        const oldZoom = this.state.canvasZoom;
-        const nextZoom = Number(this.clamp(oldZoom + delta, 0.5, 2.5).toFixed(2));
-        if (!viewport || nextZoom === oldZoom) {
+    handleCanvasZoomInput(control, root = this.getRoot()) {
+        const rawValue = String(control.value || '').trim().replace(/%$/, '');
+        const parsedValue = Number.parseFloat(rawValue);
+        if (!Number.isFinite(parsedValue)) {
+            control.value = String(Math.round(this.state.canvasZoom * 100));
             return;
         }
 
-        const rect = viewport.getBoundingClientRect();
+        const nextZoom = parsedValue / 100;
+        this.setCanvasZoom(nextZoom, null, root);
+    },
+
+    setCanvasZoom(nextZoom, anchorPoint = null, root = this.getRoot()) {
+        const scroll = root?.querySelector?.('[data-frame-editor-canvas-scroll]');
+        const metrics = this.getCanvasLayoutMetrics(root);
+        const oldZoom = this.state.canvasZoom;
+        const normalizedZoom = Number(this.clamp(nextZoom, 0.5, 2.5).toFixed(2));
+        if (!scroll || !metrics || normalizedZoom === oldZoom) {
+            return;
+        }
+
+        const rect = scroll.getBoundingClientRect();
         const anchorX = anchorPoint ? anchorPoint.x - rect.left : rect.width / 2;
         const anchorY = anchorPoint ? anchorPoint.y - rect.top : rect.height / 2;
-        const contentX = (anchorX - this.state.canvasPanX) / oldZoom;
-        const contentY = (anchorY - this.state.canvasPanY) / oldZoom;
-        const nextPanX = anchorX - (contentX * nextZoom);
-        const nextPanY = anchorY - (contentY * nextZoom);
+        const stageAnchorX = scroll.scrollLeft + anchorX;
+        const stageAnchorY = scroll.scrollTop + anchorY;
+        const contentX = (stageAnchorX - metrics.sceneOffsetX) / oldZoom;
+        const contentY = (stageAnchorY - metrics.sceneOffsetY) / oldZoom;
+        const nextPanX = stageAnchorX - (contentX * normalizedZoom);
+        const nextPanY = stageAnchorY - (contentY * normalizedZoom);
 
+        this.queueCanvasScrollCompensation(root);
         this.state = {
             ...this.state,
-            canvasZoom: nextZoom,
+            canvasZoom: normalizedZoom,
             canvasPanX: nextPanX,
             canvasPanY: nextPanY
         };
         this.renderIntoRoot();
     },
 
-    resetCanvasView() {
+    adjustCanvasZoom(delta, anchorPoint = null, root = this.getRoot()) {
+        this.setCanvasZoom(this.state.canvasZoom + delta, anchorPoint, root);
+    },
+
+    resetCanvasView(root = this.getRoot()) {
+        this.queueCanvasScrollCompensation(root);
         this.state = {
             ...this.state,
             canvasZoom: 1,
@@ -1411,6 +1514,35 @@ const FramesMode = {
             canvasPanY: 0
         };
         this.renderIntoRoot();
+        this.hideCanvasZoomContextMenu(root);
+    },
+
+    showCanvasZoomContextMenu(clientX, clientY, root = this.getRoot()) {
+        const menu = root?.querySelector?.('[data-frame-editor-zoom-menu]');
+        if (!menu) {
+            return;
+        }
+
+        menu.hidden = false;
+        menu.style.left = '0px';
+        menu.style.top = '0px';
+
+        const menuRect = menu.getBoundingClientRect();
+        const padding = 12;
+        const left = Math.min(Math.max(padding, clientX), Math.max(padding, window.innerWidth - menuRect.width - padding));
+        const top = Math.min(Math.max(padding, clientY), Math.max(padding, window.innerHeight - menuRect.height - padding));
+
+        menu.style.left = `${left}px`;
+        menu.style.top = `${top}px`;
+    },
+
+    hideCanvasZoomContextMenu(root = this.getRoot()) {
+        const menu = root?.querySelector?.('[data-frame-editor-zoom-menu]');
+        if (!menu) {
+            return;
+        }
+
+        menu.hidden = true;
     },
 
     syncViewportLayout(root = this.getRoot()) {
@@ -1420,15 +1552,16 @@ const FramesMode = {
 
         const viewportWidth = root.getBoundingClientRect().width;
         const nextAutoCollapse = viewportWidth < (this.state.isRightSidebarCollapsed ? 1220 : 1480);
-        if (nextAutoCollapse === this.state.autoCollapseLeftSidebar) {
+        if (nextAutoCollapse !== this.state.autoCollapseLeftSidebar) {
+            this.state = {
+                ...this.state,
+                autoCollapseLeftSidebar: nextAutoCollapse
+            };
+            this.renderIntoRoot();
             return;
         }
 
-        this.state = {
-            ...this.state,
-            autoCollapseLeftSidebar: nextAutoCollapse
-        };
-        this.renderIntoRoot();
+        this.applyCanvasLayout(root);
     },
 
     addBlock(blockType, position = null) {
@@ -1570,11 +1703,22 @@ const FramesMode = {
         return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
     },
 
-    getCanvasPositionFromPointer(stage, clientX, clientY) {
-        const rect = stage.getBoundingClientRect();
+    getCanvasPositionFromPointer(root, clientX, clientY) {
+        const scroll = root?.querySelector?.('[data-frame-editor-canvas-scroll]');
+        const metrics = this.getCanvasLayoutMetrics(root);
+        if (!scroll || !metrics) {
+            return {
+                xPct: 50,
+                yPct: 50
+            };
+        }
+
+        const rect = scroll.getBoundingClientRect();
+        const stageX = scroll.scrollLeft + (clientX - rect.left);
+        const stageY = scroll.scrollTop + (clientY - rect.top);
         return {
-            xPct: (((clientX - rect.left - this.state.canvasPanX) / this.state.canvasZoom) / rect.width) * 100,
-            yPct: (((clientY - rect.top - this.state.canvasPanY) / this.state.canvasZoom) / rect.height) * 100
+            xPct: (((stageX - metrics.sceneOffsetX) / this.state.canvasZoom) / metrics.viewportWidth) * 100,
+            yPct: (((stageY - metrics.sceneOffsetY) / this.state.canvasZoom) / metrics.viewportHeight) * 100
         };
     },
 
@@ -1603,13 +1747,6 @@ const FramesMode = {
 
     clamp(value, min, max) {
         return Math.min(max, Math.max(min, value));
-    },
-
-    normalizeBlockText(value) {
-        return String(value ?? '')
-            .replace(/\r\n?/g, '\n')
-            .replace(/\u00a0/g, ' ')
-            .slice(0, 240);
     },
 
     getAllFrames(includePreview = true) {

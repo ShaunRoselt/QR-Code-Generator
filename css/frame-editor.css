@@ -6,7 +6,7 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
-    padding: 0.9rem 1rem; /* bottom matches other sides */
+    padding: 0;
 }
 
 .frame-editor-page .content-header {
@@ -593,16 +593,17 @@
 .frame-editor-canvas-scroll {
     width: 100%;
     min-height: 0;
+    min-width: 0;
     flex: 1;
     overflow: auto;
 }
 
 .frame-editor-canvas-stage {
     position: relative;
-    width: max(100%, 880px);
-    min-width: 880px;
-    height: max(100%, 680px);
-    min-height: 680px;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    min-height: 0;
     border: 0;
     border-radius: 0;
     background-color: transparent;
@@ -750,7 +751,7 @@
 }
 
 .frame-editor-canvas-viewport {
-    overflow: hidden;
+    overflow: visible;
     background: transparent;
 }
 
@@ -788,185 +789,6 @@
 .frame-editor-canvas-scene {
     transform-origin: top left;
     will-change: transform;
-}
-
-.frame-editor-block-popup-anchor {
-    position: absolute;
-    left: 50%;
-    bottom: calc(100% + 18px);
-    z-index: 5;
-    transform: translateX(-50%);
-}
-
-.frame-editor-block-popup-anchor.is-below {
-    top: calc(100% + 18px);
-    bottom: auto;
-}
-
-.frame-editor-block-popup-anchor.is-left {
-    left: 0;
-    transform: none;
-}
-
-.frame-editor-block-popup-anchor.is-right {
-    left: auto;
-    right: 0;
-    transform: none;
-}
-
-.frame-editor-block-popup {
-    position: relative;
-    display: inline-flex;
-    max-width: min(560px, calc(100vw - 4rem));
-    pointer-events: auto;
-}
-
-.frame-editor-block-popup::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    bottom: -8px;
-    width: 14px;
-    height: 14px;
-    background-color: #ffffff;
-    border-right: 1px solid rgba(15, 23, 42, 0.12);
-    border-bottom: 1px solid rgba(15, 23, 42, 0.12);
-    transform: translateX(-50%) rotate(45deg);
-}
-
-.frame-editor-block-popup-anchor.is-left .frame-editor-block-popup::after {
-    left: 18px;
-    transform: translateX(0) rotate(45deg);
-}
-
-.frame-editor-block-popup-anchor.is-right .frame-editor-block-popup::after {
-    left: auto;
-    right: 18px;
-    transform: translateX(0) rotate(45deg);
-}
-
-.frame-editor-block-popup-anchor.is-below .frame-editor-block-popup::after {
-    top: -8px;
-    bottom: auto;
-    border-right: 0;
-    border-bottom: 0;
-    border-left: 1px solid rgba(15, 23, 42, 0.12);
-    border-top: 1px solid rgba(15, 23, 42, 0.12);
-}
-
-.frame-editor-block-toolbar {
-    display: inline-flex;
-    align-items: center;
-    gap: 0;
-    min-height: 48px;
-    padding: 0;
-    border: 1px solid rgba(15, 23, 42, 0.12);
-    border-radius: 12px;
-    background-color: #ffffff;
-    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.14);
-    overflow: hidden;
-}
-
-.frame-editor-block-toolbar-qr {
-    max-width: min(560px, calc(100vw - 4rem));
-}
-
-.frame-editor-toolbar-button,
-.frame-editor-toolbar-chip,
-.frame-editor-toolbar-color,
-.frame-editor-toolbar-input {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 48px;
-    border: 0;
-    background: transparent;
-    color: #1f2937;
-}
-
-.frame-editor-toolbar-button,
-.frame-editor-toolbar-color,
-.frame-editor-toolbar-input {
-    padding: 0 0.9rem;
-}
-
-.frame-editor-toolbar-button {
-    gap: 0.45rem;
-    cursor: pointer;
-    font: inherit;
-    font-weight: 600;
-    transition: background-color 0.18s ease, color 0.18s ease;
-}
-
-.frame-editor-toolbar-button:hover,
-.frame-editor-toolbar-color:hover,
-.frame-editor-toolbar-input:focus-within {
-    background-color: rgba(15, 23, 42, 0.04);
-}
-
-.frame-editor-toolbar-button.active {
-    background-color: rgba(37, 99, 235, 0.1);
-    color: #2563eb;
-}
-
-.frame-editor-toolbar-button.danger {
-    color: #dc2626;
-}
-
-.frame-editor-toolbar-chip {
-    padding: 0 0.75rem;
-    font-size: 0.84rem;
-    font-weight: 700;
-    white-space: nowrap;
-}
-
-.frame-editor-toolbar-divider {
-    width: 1px;
-    align-self: stretch;
-    background-color: rgba(15, 23, 42, 0.12);
-}
-
-.frame-editor-toolbar-color {
-    cursor: pointer;
-    overflow: hidden;
-}
-
-.frame-editor-toolbar-color span {
-    font-size: 1rem;
-    font-weight: 700;
-}
-
-.frame-editor-toolbar-color.light span {
-    color: #94a3b8;
-}
-
-.frame-editor-toolbar-color input {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-}
-
-.frame-editor-toolbar-input {
-    flex: 1 1 auto;
-    justify-content: flex-start;
-    gap: 0.55rem;
-    min-width: 220px;
-}
-
-.frame-editor-toolbar-input i {
-    color: #64748b;
-}
-
-.frame-editor-toolbar-input input {
-    width: 100%;
-    min-width: 0;
-    border: 0;
-    outline: 0;
-    background: transparent;
-    color: #1f2937;
-    font: inherit;
 }
 
 .frame-editor-canvas-block-layer {
@@ -1029,22 +851,20 @@
 }
 
 .frame-editor-text-block-surface {
+    display: flex;
+    width: 100%;
     background-color: rgba(255, 255, 255, 0.92);
-    padding: 1rem 1.15rem;
+    padding: 0.8rem 0.95rem;
     border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .frame-editor-text-block-content {
+    flex: 1 1 auto;
+    width: 100%;
     min-height: 1.5em;
     line-height: 1.2;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
-}
-
-.frame-editor-text-block-content[contenteditable="true"] {
-    cursor: text;
-    user-select: text;
-    outline: none;
 }
 
 .frame-editor-qr-block-surface {
@@ -1072,18 +892,6 @@
 }
 
 @container page-content (max-width: 920px) {
-    .frame-editor-canvas-stage {
-        min-height: 600px;
-    }
-
-    .frame-editor-block-toolbar {
-        max-width: min(92vw, 520px);
-    }
-
-    .frame-editor-block-toolbar-qr {
-        flex-wrap: wrap;
-    }
-
     .frame-editor-right-sidebar-panel {
         padding: 0.85rem;
     }
@@ -1092,18 +900,6 @@
 @container page-content (max-width: 640px) {
     .frame-editor-header-bar {
         gap: 0.75rem;
-    }
-
-    .frame-editor-canvas-stage {
-        min-height: 520px;
-    }
-
-    .frame-editor-block-toolbar {
-        max-width: min(92vw, 360px);
-    }
-
-    .frame-editor-toolbar-input {
-        min-width: 180px;
     }
 
     .frame-editor-right-sidebar-tabs .frame-editor-tab span {
