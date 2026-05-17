@@ -24,6 +24,15 @@ function buildNativeQRCodeSVG({
     const requestedTransparentBackground = qrOptions.transparentBackground === true
         || qrOptions.colorLight === 'rgba(255, 255, 255, 0)'
         || qrOptions.colorLight === 'transparent';
+    const darkColor = qrOptions.colorDark || '#000000';
+    const lightColor = requestedTransparentBackground
+        ? 'transparent'
+        : (qrOptions.colorLight || '#ffffff');
+
+    svgElement.querySelectorAll('path').forEach(path => {
+        path.setAttribute('fill', darkColor);
+    });
+
     if (requestedTransparentBackground) {
         svgElement.querySelectorAll('rect').forEach(rect => {
             const fill = rect.getAttribute('fill');
@@ -31,6 +40,12 @@ function buildNativeQRCodeSVG({
                 rect.remove();
             }
         });
+        svgElement.setAttribute('fill', 'transparent');
+    } else {
+        svgElement.querySelectorAll('rect').forEach(rect => {
+            rect.setAttribute('fill', lightColor);
+        });
+        svgElement.setAttribute('fill', lightColor);
     }
 
     svgElement.setAttribute('width', String(size));

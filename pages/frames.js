@@ -495,6 +495,14 @@ const FramesMode = {
                                         ${this.renderTextOptionButton('textDecoration', 'line-through', 'S', selectedBlock.textDecoration === 'line-through')}
                                     </div>
                                 </div>
+                                <div class="frame-editor-field">
+                                    <span>${I18n.translateString('Alignment')}</span>
+                                    <div class="frame-editor-inline-options">
+                                        ${this.renderTextOptionButton('textAlign', 'left', 'L', (selectedBlock.textAlign || 'left') === 'left')}
+                                        ${this.renderTextOptionButton('textAlign', 'center', 'C', selectedBlock.textAlign === 'center')}
+                                        ${this.renderTextOptionButton('textAlign', 'right', 'R', selectedBlock.textAlign === 'right')}
+                                    </div>
+                                </div>
                                 <div class="frame-editor-field frame-editor-field-wide">
                                     <span>${I18n.translateString('Letter case')}</span>
                                     <div class="frame-editor-inline-options frame-editor-inline-options-wide">
@@ -528,6 +536,9 @@ const FramesMode = {
                             ${this.renderTextMeasurementField('Border width', 'borderWidth', selectedBlock.borderWidth ?? 0, 0, 20, 1)}
                             ${this.renderTextMeasurementField('Radius', 'borderRadius', selectedBlock.borderRadius ?? 0, 0, 48, 1)}
                         </div>
+                        <div class="frame-editor-text-property-group">
+                            ${this.renderBlockTransformControls(selectedBlock)}
+                        </div>
                         <div class="frame-editor-inspector-actions">
                             <button type="button" class="frame-editor-action-button" data-block-action="duplicate">
                                 <i class="bi bi-files" aria-hidden="true"></i>
@@ -553,14 +564,32 @@ const FramesMode = {
                         <span>${I18n.translateString('QR content')}</span>
                         <input type="text" value="${this.escapeHTML(selectedBlock.content)}" data-block-setting="content">
                     </label>
-                    <label class="frame-editor-field">
-                        <span>${I18n.translateString('Size')}</span>
-                        <input type="range" min="120" max="300" step="4" value="${this.escapeHTML(String(selectedBlock.size))}" data-block-setting="size">
-                    </label>
-                    <label class="frame-editor-field">
-                        <span>${I18n.translateString('Dark color')}</span>
-                        <input type="color" value="${this.escapeHTML(selectedBlock.colorDark)}" data-block-setting="colorDark">
-                    </label>
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderTextPropertyGroupHeading('Colour')}
+                        <div class="frame-editor-text-color-list">
+                            ${this.renderTextColorControl('Dark', 'colorDark', selectedBlock.colorDark || '#111111')}
+                            ${this.renderTextColorControl('Background', 'backgroundColorRaw', this.getTextBlockColorInputValue(selectedBlock.backgroundColor), true, this.isTransparentTextBlockBackground(selectedBlock))}
+                        </div>
+                    </div>
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderTextPropertyGroupHeading('Dimensions')}
+                        ${this.renderTextMeasurementField('Size', 'size', selectedBlock.size ?? 180, 80, 360, 4)}
+                    </div>
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderTextPaddingControls(selectedBlock)}
+                    </div>
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderTextPropertyGroupHeading('Border')}
+                        <label class="frame-editor-field frame-editor-field-wide">
+                            <span>${I18n.translateString('Border color')}</span>
+                            <input type="color" value="${this.escapeHTML(this.getTextBlockColorInputValue(selectedBlock.borderColor, selectedBlock.colorDark || this.getTextBlockDefaultColor()))}" data-block-setting="borderColor">
+                        </label>
+                        ${this.renderTextMeasurementField('Border width', 'borderWidth', selectedBlock.borderWidth ?? 0, 0, 20, 1)}
+                        ${this.renderTextMeasurementField('Radius', 'borderRadius', selectedBlock.borderRadius ?? 0, 0, 48, 1)}
+                    </div>
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderBlockTransformControls(selectedBlock)}
+                    </div>
                     <div class="frame-editor-inspector-actions">
                         <button type="button" class="frame-editor-action-button" data-block-action="duplicate">
                             <i class="bi bi-files" aria-hidden="true"></i>
@@ -686,6 +715,13 @@ const FramesMode = {
                     <input type="range" min="${min}" max="${max}" step="${step}" value="${this.escapeHTML(String(normalizedValue))}" data-block-setting="${setting}">
                 </div>
             </label>
+        `;
+    },
+
+    renderBlockTransformControls(block) {
+        return `
+            ${this.renderTextPropertyGroupHeading('Transform')}
+            ${this.renderTextMeasurementField('Rotation', 'rotation', block.rotation ?? 0, -180, 180, 1)}
         `;
     },
 
@@ -863,6 +899,25 @@ const FramesMode = {
         };
     },
 
+    getBlockRotation(block) {
+        return this.normalizeBlockRotation(block?.rotation || 0);
+    },
+
+    normalizeBlockRotation(value) {
+        let rotation = Number.isFinite(Number(value)) ? Number(value) : 0;
+        while (rotation <= -180) {
+            rotation += 360;
+        }
+        while (rotation > 180) {
+            rotation -= 360;
+        }
+        return Number(rotation.toFixed(1));
+    },
+
+    getCanvasBlockTransform(rotation = 0) {
+        return `translate(-50%, -50%) rotate(${this.normalizeBlockRotation(rotation)}deg)`;
+    },
+
     getTextBlockFontSizePreset(block) {
         const options = this.TEXT_BLOCK_FONT_SIZE_OPTIONS;
         const currentSize = Number(block?.fontSize);
@@ -973,13 +1028,12 @@ const FramesMode = {
 
     renderCanvasBlock(block) {
         const isActive = this.state.selectedBlockId === block.id;
-        const width = block.type === 'text'
-            ? this.getTextBlockLayout(block).width
-            : block.size;
+        const width = this.getCanvasBlockLayout(block).width;
         const style = [
             `left: ${block.xPct}%`,
             `top: ${block.yPct}%`,
-            `width: ${width}px`
+            `width: ${width}px`,
+            `transform: ${this.getCanvasBlockTransform(block.rotation)}`
         ].join('; ');
 
         return `
@@ -1023,23 +1077,39 @@ const FramesMode = {
 
             return `
                 <div class="frame-editor-text-block-surface" style="${surfaceStyle}"><div class="frame-editor-text-block-content" style="${inlineStyle}" spellcheck="false">${this.renderTextBlockContentMarkup(block)}</div></div>
-                ${this.state.selectedBlockId === block.id ? this.renderTextBlockResizeHandles() : ''}
+                ${this.state.selectedBlockId === block.id ? this.renderCanvasBlockHandles() : ''}
             `;
         }
 
+        const layout = this.getQrBlockLayout(block);
+        const padding = this.getTextBlockPadding(block);
+        const qrSurfaceStyle = [
+            `padding: ${padding.top}px ${padding.right}px ${padding.bottom}px ${padding.left}px`,
+            `border-width: ${layout.borderWidth}px`,
+            'border-style: solid',
+            `border-color: ${(Number(block.borderWidth) || 0) > 0 ? (block.borderColor || block.colorDark || this.getTextBlockDefaultColor()) : 'transparent'}`,
+            `border-radius: ${Math.max(0, Number(block.borderRadius) || 0)}px`,
+            `background-color: ${this.isTransparentTextBlockBackground(block) ? 'transparent' : block.backgroundColor}`
+        ].join('; ');
+
         return `
-            <div class="frame-editor-qr-block-surface" style="width: ${block.size}px; height: ${block.size}px;">
-                ${this.getCanvasQrMarkup(block)}
+            <div class="frame-editor-qr-block-surface" style="${qrSurfaceStyle}">
+                <div class="frame-editor-qr-block-content" style="width: ${this.getQrBlockSize(block)}px; height: ${this.getQrBlockSize(block)}px;">
+                    ${this.getCanvasQrMarkup(block)}
+                </div>
             </div>
+            ${this.state.selectedBlockId === block.id ? this.renderCanvasBlockHandles() : ''}
         `;
     },
 
     getCanvasQrMarkup(block) {
+        const size = this.getQrBlockSize(block);
         return buildNativeQRCodeSVG({
             text: block.content || this.PREVIEW_QR_TEXT,
-            size: block.size,
+            size,
             qrOptions: {
                 ...this.PREVIEW_QR_OPTIONS,
+                margin: 0,
                 colorDark: block.colorDark,
                 colorLight: 'transparent',
                 transparentBackground: true,
@@ -1067,6 +1137,25 @@ const FramesMode = {
         }
 
         return `<span class="frame-editor-text-block-drop-cap">${this.escapeHTML(firstCharacter)}</span>${escapeWithLineBreaks(characters.join(''))}`;
+    },
+
+    renderCanvasBlockHandles() {
+        return `
+            ${this.renderBlockRotateHandle()}
+            ${this.renderTextBlockResizeHandles()}
+        `;
+    },
+
+    renderBlockRotateHandle() {
+        return `
+            <button
+                type="button"
+                class="frame-editor-block-rotate-handle"
+                data-frame-editor-rotate-handle
+                tabindex="-1"
+                aria-hidden="true"
+            ></button>
+        `;
     },
 
     renderTextBlockResizeHandles() {
@@ -1145,6 +1234,34 @@ const FramesMode = {
         };
     },
 
+    getQrBlockLayout(block) {
+        const padding = this.getTextBlockPadding(block);
+        const borderWidth = Math.max(0, Number(block?.borderWidth) || 0);
+        const size = this.getQrBlockSize(block);
+        return {
+            width: Math.ceil(size + padding.left + padding.right + (borderWidth * 2)),
+            height: Math.ceil(size + padding.top + padding.bottom + (borderWidth * 2)),
+            borderWidth
+        };
+    },
+
+    getQrBlockSize(block) {
+        return Math.max(80, Number(block?.size) || 180);
+    },
+
+    getCanvasBlockLayout(block) {
+        if (!block) {
+            return {
+                width: 0,
+                height: 0
+            };
+        }
+
+        return block.type === 'qr'
+            ? this.getQrBlockLayout(block)
+            : this.getTextBlockLayout(block);
+    },
+
     getTextBlockLineHeight(block) {
         const lineCount = String(block?.text || '').includes('\n') ? String(block.text).split('\n').length : 1;
         if (lineCount <= 1) {
@@ -1206,6 +1323,16 @@ const FramesMode = {
         return bounds;
     },
 
+    getRotatedFootprint(width, height, rotation = 0) {
+        const radians = Math.abs(this.normalizeBlockRotation(rotation)) * (Math.PI / 180);
+        const sin = Math.abs(Math.sin(radians));
+        const cos = Math.abs(Math.cos(radians));
+        return {
+            width: (width * cos) + (height * sin),
+            height: (width * sin) + (height * cos)
+        };
+    },
+
     getCanvasLayoutMetrics(root = this.getRoot()) {
         const scroll = root?.querySelector?.('[data-frame-editor-canvas-scroll]');
         if (!scroll) {
@@ -1219,32 +1346,18 @@ const FramesMode = {
         }
 
         const effectivePan = this.getEffectiveCanvasPan();
-        const contentBounds = this.getCanvasContentBounds(root, viewportWidth, viewportHeight);
-        const epsilon = 1;
-        const minX = Math.min(0, contentBounds?.left ?? 0);
-        const minY = Math.min(0, contentBounds?.top ?? 0);
-        const maxX = Math.max(viewportWidth, contentBounds?.right ?? viewportWidth);
-        const maxY = Math.max(viewportHeight, contentBounds?.bottom ?? viewportHeight);
-        const viewportLeft = Math.abs(minX) <= epsilon ? 0 : -minX;
-        const viewportTop = Math.abs(minY) <= epsilon ? 0 : -minY;
-        const stageWidth = (maxX - minX) <= (viewportWidth + epsilon)
-            ? viewportWidth
-            : Math.ceil(maxX - minX);
-        const stageHeight = (maxY - minY) <= (viewportHeight + epsilon)
-            ? viewportHeight
-            : Math.ceil(maxY - minY);
 
         return {
             viewportWidth,
             viewportHeight,
-            viewportLeft,
-            viewportTop,
-            sceneOffsetX: viewportLeft + effectivePan.x,
-            sceneOffsetY: viewportTop + effectivePan.y,
-            stageWidth,
-            stageHeight,
-            defaultScrollLeft: viewportLeft,
-            defaultScrollTop: viewportTop
+            viewportLeft: 0,
+            viewportTop: 0,
+            sceneOffsetX: effectivePan.x,
+            sceneOffsetY: effectivePan.y,
+            stageWidth: viewportWidth,
+            stageHeight: viewportHeight,
+            defaultScrollLeft: 0,
+            defaultScrollTop: 0
         };
     },
 
@@ -1698,6 +1811,12 @@ const FramesMode = {
         });
 
         root.addEventListener('pointerdown', event => {
+            const rotateHandle = event.target.closest('[data-frame-editor-rotate-handle]');
+            if (rotateHandle && root.contains(rotateHandle)) {
+                this.beginCanvasBlockRotate(root, rotateHandle, event);
+                return;
+            }
+
             const handle = event.target.closest('[data-frame-editor-padding-handle]');
             if (!handle || !root.contains(handle)) {
                 return;
@@ -1714,7 +1833,7 @@ const FramesMode = {
 
         root.querySelectorAll('[data-frame-editor-canvas-block]').forEach(blockElement => {
             blockElement.addEventListener('pointerdown', event => {
-                if (event.target.closest('[data-frame-editor-padding-handle]')) {
+                if (event.target.closest('[data-frame-editor-padding-handle]') || event.target.closest('[data-frame-editor-rotate-handle]')) {
                     return;
                 }
                 this.beginCanvasBlockDrag(root, blockElement, event);
@@ -1915,7 +2034,7 @@ const FramesMode = {
         const blockId = blockElement?.dataset.frameEditorCanvasBlock;
         const block = this.getBlockById(blockId);
         const canvasScroll = root.querySelector('[data-frame-editor-canvas-scroll]');
-        if (!handle || !blockElement || !block || block.type !== 'text' || !canvasScroll) {
+        if (!handle || !blockElement || !block || !canvasScroll) {
             return;
         }
 
@@ -1963,10 +2082,11 @@ const FramesMode = {
                 ...resizePreview.patch,
                 ...resizePreview.position
             };
+            const layout = this.getCanvasBlockLayout(previewBlock);
 
             blockElement.style.left = `${previewBlock.xPct}%`;
             blockElement.style.top = `${previewBlock.yPct}%`;
-            blockElement.style.width = `${this.getTextBlockLayout(previewBlock).width}px`;
+            blockElement.style.width = `${layout.width}px`;
             blockElement.innerHTML = this.renderCanvasBlockInner(previewBlock);
             this.syncInspectorBlockControls(root, resizePreview.patch);
         };
@@ -1998,6 +2118,80 @@ const FramesMode = {
         window.addEventListener('pointercancel', onPointerUp);
     },
 
+    beginCanvasBlockRotate(root, handleElement, event) {
+        if (event.button !== 0) {
+            return;
+        }
+
+        const blockElement = handleElement.closest('[data-frame-editor-canvas-block]');
+        const blockId = blockElement?.dataset.frameEditorCanvasBlock;
+        const block = this.getBlockById(blockId);
+        if (!blockElement || !block) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const surfaceElement = () => blockElement.querySelector('.frame-editor-text-block-surface, .frame-editor-qr-block-surface') || blockElement;
+        const getCenterPoint = () => {
+            const rect = surfaceElement().getBoundingClientRect();
+            return {
+                x: rect.left + (rect.width / 2),
+                y: rect.top + (rect.height / 2)
+            };
+        };
+        const getPointerAngle = moveEvent => {
+            const center = getCenterPoint();
+            return Math.atan2(moveEvent.clientY - center.y, moveEvent.clientX - center.x) * (180 / Math.PI);
+        };
+
+        const startRotation = this.getBlockRotation(block);
+        const startAngle = getPointerAngle(event);
+        let nextRotation = startRotation;
+        let didRotate = false;
+
+        const onPointerMove = moveEvent => {
+            const currentAngle = getPointerAngle(moveEvent);
+            nextRotation = this.normalizeBlockRotation(startRotation + (currentAngle - startAngle));
+            if (!didRotate && Math.abs(nextRotation - startRotation) >= 1) {
+                didRotate = true;
+                blockElement.classList.add('is-rotating');
+            }
+
+            blockElement.style.transform = this.getCanvasBlockTransform(nextRotation);
+            this.syncInspectorBlockControls(root, {
+                rotation: nextRotation
+            });
+        };
+
+        const finishRotate = () => {
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerUp);
+            blockElement.classList.remove('is-rotating');
+
+            if (!didRotate) {
+                return;
+            }
+
+            this.updateBlock(block.id, {
+                rotation: nextRotation
+            });
+            const updatedBlock = this.getBlockById(block.id);
+            this.syncCanvasBlock(root, updatedBlock);
+            this.clampUpdatedBlockToCanvas(root, updatedBlock);
+        };
+
+        const onPointerUp = () => {
+            finishRotate();
+        };
+
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
+    },
+
     getTextBlockResizePreview(root, block, handle, deltaX, deltaY, canvasScroll) {
         const padding = this.getTextBlockPadding(block);
         const nextPadding = { ...padding };
@@ -2005,11 +2199,16 @@ const FramesMode = {
             xPct: block.xPct,
             yPct: block.yPct
         };
+        const rotationRadians = this.getBlockRotation(block) * (Math.PI / 180);
+        const cosine = Math.cos(rotationRadians);
+        const sine = Math.sin(rotationRadians);
+        const localDeltaX = (deltaX * cosine) + (deltaY * sine);
+        const localDeltaY = (-deltaX * sine) + (deltaY * cosine);
         const deltasBySide = {
-            left: -deltaX,
-            right: deltaX,
-            top: -deltaY,
-            bottom: deltaY
+            left: -localDeltaX,
+            right: localDeltaX,
+            top: -localDeltaY,
+            bottom: localDeltaY
         };
         const affectedSides = handle.split('-').filter(Boolean);
 
@@ -2019,15 +2218,22 @@ const FramesMode = {
             const appliedDelta = nextValue - padding[side];
             nextPadding[side] = nextValue;
 
+            let localShiftX = 0;
+            let localShiftY = 0;
             if (side === 'left') {
-                nextPosition.xPct -= (appliedDelta / 2 / Math.max(canvasScroll.clientWidth, 1)) * 100;
+                localShiftX -= appliedDelta / 2;
             } else if (side === 'right') {
-                nextPosition.xPct += (appliedDelta / 2 / Math.max(canvasScroll.clientWidth, 1)) * 100;
+                localShiftX += appliedDelta / 2;
             } else if (side === 'top') {
-                nextPosition.yPct -= (appliedDelta / 2 / Math.max(canvasScroll.clientHeight, 1)) * 100;
+                localShiftY -= appliedDelta / 2;
             } else if (side === 'bottom') {
-                nextPosition.yPct += (appliedDelta / 2 / Math.max(canvasScroll.clientHeight, 1)) * 100;
+                localShiftY += appliedDelta / 2;
             }
+
+            const globalShiftX = (localShiftX * cosine) - (localShiftY * sine);
+            const globalShiftY = (localShiftX * sine) + (localShiftY * cosine);
+            nextPosition.xPct += (globalShiftX / Math.max(canvasScroll.clientWidth, 1)) * 100;
+            nextPosition.yPct += (globalShiftY / Math.max(canvasScroll.clientHeight, 1)) * 100;
         });
 
         const patch = this.buildTextBlockPaddingPatch(nextPadding);
@@ -2147,7 +2353,7 @@ const FramesMode = {
             return;
         }
 
-        const numericSettings = new Set(['fontSize', 'width', 'size', 'lineHeight', 'letterSpacing', 'paddingX', 'paddingY', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderWidth', 'borderRadius']);
+        const numericSettings = new Set(['fontSize', 'width', 'size', 'lineHeight', 'letterSpacing', 'paddingX', 'paddingY', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderWidth', 'borderRadius', 'rotation']);
         let nextValue;
 
         if (setting === 'backgroundColorRaw') {
@@ -2158,6 +2364,10 @@ const FramesMode = {
             nextValue = numericSettings.has(setting)
                 ? Number(control.value)
                 : control.value;
+        }
+
+        if (setting === 'rotation') {
+            nextValue = this.normalizeBlockRotation(nextValue);
         }
 
         const patch = setting === 'backgroundColorRaw'
@@ -2209,13 +2419,11 @@ const FramesMode = {
             return;
         }
 
-        const width = block.type === 'text' ? block.width : block.size;
-        const resolvedWidth = block.type === 'text'
-            ? this.getTextBlockLayout(block).width
-            : width;
+        const resolvedWidth = this.getCanvasBlockLayout(block).width;
         blockElement.style.left = `${block.xPct}%`;
         blockElement.style.top = `${block.yPct}%`;
         blockElement.style.width = `${resolvedWidth}px`;
+        blockElement.style.transform = this.getCanvasBlockTransform(block.rotation);
         blockElement.innerHTML = this.renderCanvasBlockInner(block);
         this.applyCanvasLayout(root);
     },
@@ -2362,6 +2570,7 @@ const FramesMode = {
         }
 
         this.applyCanvasLayout(root);
+        this.clampAllBlocksToCanvas(root);
     },
 
     addBlock(blockType, position = null, root = this.getRoot()) {
@@ -2408,6 +2617,7 @@ const FramesMode = {
                 borderWidth: 0,
                 borderRadius: 0,
                 borderColor: this.getTextBlockDefaultColor(),
+                rotation: 0,
                 lineHeight: 1.5,
                 letterSpacing: 0,
                 textDecoration: 'none',
@@ -2425,7 +2635,19 @@ const FramesMode = {
             yPct,
             size: 180,
             colorDark: '#111111',
-            colorLight: 'transparent'
+            colorLight: 'transparent',
+            backgroundColor: 'transparent',
+            paddingTop: 0,
+            paddingRight: 0,
+            paddingBottom: 0,
+            paddingLeft: 0,
+            paddingX: 0,
+            paddingY: 0,
+            paddingLinked: true,
+            borderWidth: 0,
+            borderRadius: 0,
+            borderColor: this.getTextBlockDefaultColor(),
+            rotation: 0
         };
     },
 
@@ -2583,7 +2805,8 @@ const FramesMode = {
 
     getCanvasBlockFootprint(block, blockElement = null) {
         if (blockElement) {
-            const blockRect = blockElement.getBoundingClientRect();
+            const measuredElement = blockElement.querySelector('.frame-editor-text-block-surface, .frame-editor-qr-block-surface') || blockElement;
+            const blockRect = measuredElement.getBoundingClientRect();
             const zoom = Math.max(this.state.canvasZoom, 0.01);
             return {
                 width: blockRect.width / zoom,
@@ -2598,20 +2821,14 @@ const FramesMode = {
             };
         }
 
-        if (block.type === 'qr') {
-            return {
-                width: block.size,
-                height: block.size
-            };
-        }
-
-        return this.getTextBlockLayout(block);
+        const layout = this.getCanvasBlockLayout(block);
+        return this.getRotatedFootprint(layout.width, layout.height, block.rotation);
     },
 
     clampCanvasBlockPosition(root, block, position, blockElement = null) {
-        const bounds = this.getVisibleCanvasContentBounds(root);
+        const metrics = this.getCanvasLayoutMetrics(root);
         const footprint = this.getCanvasBlockFootprint(block, blockElement);
-        if (!bounds) {
+        if (!metrics) {
             const fallbackXPct = Number(position.xPct);
             const fallbackYPct = Number(position.yPct);
             return {
@@ -2620,24 +2837,24 @@ const FramesMode = {
             };
         }
 
-        const viewportWidth = Math.max(bounds.viewportWidth, 1);
-        const viewportHeight = Math.max(bounds.viewportHeight, 1);
+        const viewportWidth = Math.max(metrics.viewportWidth, 1);
+        const viewportHeight = Math.max(metrics.viewportHeight, 1);
         const proposedX = (Number(position.xPct) / 100) * viewportWidth;
         const proposedY = (Number(position.yPct) / 100) * viewportHeight;
         const halfWidth = footprint.width / 2;
         const halfHeight = footprint.height / 2;
-        let minX = bounds.left + halfWidth;
-        let maxX = bounds.right - halfWidth;
-        let minY = bounds.top + halfHeight;
-        let maxY = bounds.bottom - halfHeight;
+        let minX = halfWidth;
+        let maxX = viewportWidth - halfWidth;
+        let minY = halfHeight;
+        let maxY = viewportHeight - halfHeight;
 
         if (maxX < minX) {
-            minX = bounds.left + (bounds.width / 2);
+            minX = viewportWidth / 2;
             maxX = minX;
         }
 
         if (maxY < minY) {
-            minY = bounds.top + (bounds.height / 2);
+            minY = viewportHeight / 2;
             maxY = minY;
         }
 
@@ -2645,6 +2862,24 @@ const FramesMode = {
             xPct: (this.clamp(proposedX, minX, maxX) / viewportWidth) * 100,
             yPct: (this.clamp(proposedY, minY, maxY) / viewportHeight) * 100
         };
+    },
+
+    clampAllBlocksToCanvas(root = this.getRoot()) {
+        if (!root || !this.state.canvasBlocks?.length) {
+            return;
+        }
+
+        this.state.canvasBlocks.forEach(block => {
+            const blockElement = root.querySelector(`[data-frame-editor-canvas-block="${block.id}"]`);
+            const clamped = this.clampCanvasBlockPosition(root, block, { xPct: block.xPct, yPct: block.yPct }, blockElement || undefined);
+            if (Math.abs(clamped.xPct - block.xPct) > 0.01 || Math.abs(clamped.yPct - block.yPct) > 0.01) {
+                this.updateBlock(block.id, clamped);
+                if (blockElement) {
+                    blockElement.style.left = `${clamped.xPct}%`;
+                    blockElement.style.top = `${clamped.yPct}%`;
+                }
+            }
+        });
     },
 
     isSupportedBlockType(blockType) {
@@ -2672,16 +2907,16 @@ const FramesMode = {
             if (setting === 'fontSizePreset') {
                 return this.getTextBlockFontSizePatch(value);
             }
+        }
 
-            if (setting === 'backgroundColor') {
-                return {
-                    backgroundColor: value === 'transparent' ? 'transparent' : value
-                };
-            }
+        if (setting === 'backgroundColor') {
+            return {
+                backgroundColor: value === 'transparent' ? 'transparent' : value
+            };
+        }
 
-            if (setting === 'paddingLinked') {
-                return this.getLinkedTextBlockPaddingTogglePatch(block, value);
-            }
+        if (setting === 'paddingLinked') {
+            return this.getLinkedTextBlockPaddingTogglePatch(block, value);
         }
 
         return {

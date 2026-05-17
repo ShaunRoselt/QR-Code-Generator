@@ -925,7 +925,7 @@
     min-height: 0;
     min-width: 0;
     flex: 1;
-    overflow: auto;
+    overflow: hidden;
 }
 
 .frame-editor-canvas-stage {
@@ -1153,6 +1153,14 @@
     cursor: default;
 }
 
+.frame-editor-canvas-block.is-rotating {
+    cursor: default;
+}
+
+.frame-editor-canvas-block.is-rotating .frame-editor-block-rotate-handle {
+    cursor: grabbing;
+}
+
 .frame-editor-canvas-block.active .frame-editor-qr-block-surface {
     box-shadow:
         0 0 0 2px rgba(102, 192, 244, 0.65),
@@ -1213,6 +1221,34 @@
     border-radius: 999px;
     background-color: rgba(102, 192, 244, 0.95);
     box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.16);
+}
+
+.frame-editor-block-rotate-handle {
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background-color: rgba(102, 192, 244, 0.98);
+    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.16);
+    transform: translateX(-50%);
+    cursor: grab;
+    touch-action: none;
+    z-index: 5;
+}
+
+.frame-editor-block-rotate-handle::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -14px;
+    width: 2px;
+    height: 14px;
+    background-color: rgba(102, 192, 244, 0.7);
+    transform: translateX(-50%);
 }
 
 .frame-editor-text-block-resize-handle-top,
@@ -1299,14 +1335,19 @@
 }
 
 .frame-editor-qr-block-surface {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-    border: 0;
+    border: 1px solid transparent;
     border-radius: 0;
     background-color: transparent;
     box-shadow: none;
+    box-sizing: border-box;
+}
+
+.frame-editor-qr-block-content {
+    display: block;
 }
 
 .frame-editor-qr-block-surface img,
