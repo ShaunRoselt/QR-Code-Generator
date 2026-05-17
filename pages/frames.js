@@ -24,7 +24,32 @@ const FramesMode = {
             name: 'Text Block',
             description: 'Place editable text anywhere in the layout.',
             icon: 'bi-type-h2'
+        },
+        {
+            type: 'shape',
+            name: 'Shape Block',
+            description: 'Add vector-style shapes anywhere on the canvas.',
+            icon: 'bi-square'
+        },
+        {
+            type: 'image',
+            name: 'Image Block',
+            description: 'Upload and place custom images on the canvas.',
+            icon: 'bi-image'
         }
+    ]),
+    SHAPE_BLOCK_OPTIONS: Object.freeze([
+        { id: 'rectangle', label: 'Rectangle' },
+        { id: 'circle', label: 'Circle' },
+        { id: 'triangle', label: 'Triangle' },
+        { id: 'diamond', label: 'Diamond' },
+        { id: 'hexagon', label: 'Hexagon' },
+        { id: 'star', label: 'Star' }
+    ]),
+    IMAGE_FIT_OPTIONS: Object.freeze([
+        { id: 'contain', label: 'Contain' },
+        { id: 'cover', label: 'Cover' },
+        { id: 'fill', label: 'Fill' }
     ]),
     TEXT_BLOCK_FONT_SIZE_OPTIONS: Object.freeze([
         { id: 's', label: 'S', size: 24 },
@@ -39,6 +64,8 @@ const FramesMode = {
         { id: 'bold-italic', label: 'Bold Italic', fontWeight: 700, fontStyle: 'italic' }
     ]),
     TEXT_BLOCK_PADDING_MAX: 160,
+    MIN_CANVAS_ZOOM: 0.05,
+    MAX_CANVAS_ZOOM: 2.5,
 
     state: {
         activeTab: 'frames',
@@ -114,6 +141,16 @@ const FramesMode = {
                         >
                             <i class="bi bi-floppy" aria-hidden="true"></i>
                             <span class="frame-editor-button-label">${I18n.translateString('Save JSON')}</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="frame-editor-sidebar-toggle"
+                            data-canvas-action="fit-blocks"
+                            title="${this.escapeHTML(I18n.translateString('Fit blocks in view'))}"
+                            aria-label="${this.escapeHTML(I18n.translateString('Fit blocks in view'))}"
+                        >
+                            <i class="bi bi-arrows-angle-expand" aria-hidden="true"></i>
+                            <span class="frame-editor-button-label">${I18n.translateString('Fit blocks')}</span>
                         </button>
                         <div class="frame-editor-header-zoom" data-frame-editor-zoom-group>
                             <div class="frame-editor-canvas-controls" role="group" aria-label="${this.escapeHTML(I18n.translateString('Canvas controls'))}">
@@ -203,7 +240,7 @@ const FramesMode = {
                         <section
                             class="frame-editor-workspace-panel"
                             data-frame-editor-workspace-panel
-                            style="background-color: ${this.escapeHTML(this.state.canvasBackgroundColor)}; ${this.getCanvasGridStyle()}"
+                            style="${isDeveloperMode && this.state.workspaceView === 'json' ? '' : `background-color: ${this.escapeHTML(this.state.canvasBackgroundColor)}; ${this.getCanvasGridStyle()}`}"
                         >
                             ${isDeveloperMode ? this.renderWorkspaceViewTabs() : ''}
                             ${this.renderWorkspace(selectedFrame, totalFrameCount, selectedBlock, isDeveloperMode)}
@@ -554,6 +591,14 @@ const FramesMode = {
             `;
         }
 
+        if (selectedBlock.type === 'shape') {
+            return this.renderShapeBlockInspector(selectedBlock);
+        }
+
+        if (selectedBlock.type === 'image') {
+            return this.renderImageBlockInspector(selectedBlock);
+        }
+
         return `
             <div class="frame-editor-sidebar-panel-section">
                 <div class="frame-editor-sidebar-summary">
@@ -633,6 +678,129 @@ const FramesMode = {
                         <span>${I18n.translateString('Reset view')}</span>
                     </button>
                 </div>
+            </div>
+        `;
+    },
+
+    renderShapeBlockInspector(selectedBlock) {
+        const selectedShapeType = selectedBlock.shapeType || 'rectangle';
+        return `
+            <div class="frame-editor-sidebar-panel-section">
+                <div class="frame-editor-sidebar-summary">
+                    <span class="frame-editor-sidebar-title">${I18n.translateString('Shape Block')}</span>
+                </div>
+                <div class="frame-editor-sidebar-form">
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderTextPropertyGroupHeading('Shape')}
+                        <label class="frame-editor-field frame-editor-field-wide">
+                            <span>${I18n.translateString('Shape type')}</span>
+                            <select class="frame-editor-select" data-block-setting="shapeType">
+                                ${this.SHAPE_BLOCK_OPTIONS.map(option => `
+                                    <option value="${option.id}" ${selectedShapeType === option.id ? 'selected' : ''}>${this.escapeHTML(I18n.translateString(option.label))}</option>
+                                `).join('')}
+                            </select>
+                        </label>
+                    </div>
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderTextPropertyGroupHeading('Colour')}
+                        <div class="frame-editor-text-color-list">
+                            ${this.renderTextColorControl('Fill', 'color', selectedBlock.color || this.getTextBlockDefaultColor())}
+                        </div>
+                    </div>
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderTextPropertyGroupHeading('Dimensions')}
+                        ${this.renderTextMeasurementField('Width', 'width', selectedBlock.width ?? 160, 48, 640, 4)}
+                        ${this.renderTextMeasurementField('Height', 'height', selectedBlock.height ?? 160, 48, 640, 4)}
+                    </div>
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderTextPropertyGroupHeading('Border')}
+                        <label class="frame-editor-field frame-editor-field-wide">
+                            <span>${I18n.translateString('Border color')}</span>
+                            <input type="color" value="${this.escapeHTML(this.getTextBlockColorInputValue(selectedBlock.borderColor, this.getTextBlockDefaultColor()))}" data-block-setting="borderColor">
+                        </label>
+                        ${this.renderTextMeasurementField('Border width', 'borderWidth', selectedBlock.borderWidth ?? 0, 0, 20, 1)}
+                        ${this.renderTextMeasurementField('Radius', 'borderRadius', selectedBlock.borderRadius ?? 0, 0, 120, 1)}
+                    </div>
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderBlockTransformControls(selectedBlock)}
+                    </div>
+                    ${this.renderBlockActionButtons()}
+                </div>
+            </div>
+        `;
+    },
+
+    renderImageBlockInspector(selectedBlock) {
+        const hasImage = Boolean(selectedBlock.src);
+        const fileLabel = selectedBlock.imageName || I18n.translateString('No image selected');
+        const uploadLabel = hasImage ? 'Replace image' : 'Upload image';
+
+        return `
+            <div class="frame-editor-sidebar-panel-section">
+                <div class="frame-editor-sidebar-summary">
+                    <span class="frame-editor-sidebar-title">${I18n.translateString('Image Block')}</span>
+                </div>
+                <div class="frame-editor-sidebar-form">
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderTextPropertyGroupHeading('Image')}
+                        <label class="frame-editor-field frame-editor-field-wide">
+                            <span>${I18n.translateString('Selected file')}</span>
+                            <input type="text" value="${this.escapeHTML(fileLabel)}" readonly aria-label="${this.escapeHTML(I18n.translateString('Selected file'))}">
+                        </label>
+                        <label class="frame-editor-upload-button frame-editor-action-button">
+                            <i class="bi bi-upload" aria-hidden="true"></i>
+                            <span>${this.escapeHTML(I18n.translateString(uploadLabel))}</span>
+                            <input class="frame-editor-visually-hidden" type="file" accept="image/*" data-block-image-upload>
+                        </label>
+                    </div>
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderTextPropertyGroupHeading('Display')}
+                        <label class="frame-editor-field frame-editor-field-wide">
+                            <span>${I18n.translateString('Image fit')}</span>
+                            <select class="frame-editor-select" data-block-setting="objectFit">
+                                ${this.IMAGE_FIT_OPTIONS.map(option => `
+                                    <option value="${option.id}" ${(selectedBlock.objectFit || 'contain') === option.id ? 'selected' : ''}>${this.escapeHTML(I18n.translateString(option.label))}</option>
+                                `).join('')}
+                            </select>
+                        </label>
+                        <div class="frame-editor-text-color-list">
+                            ${this.renderTextColorControl('Background', 'backgroundColorRaw', this.getTextBlockColorInputValue(selectedBlock.backgroundColor), true, this.isTransparentTextBlockBackground(selectedBlock))}
+                        </div>
+                    </div>
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderTextPropertyGroupHeading('Dimensions')}
+                        ${this.renderTextMeasurementField('Width', 'width', selectedBlock.width ?? 180, 48, 960, 4)}
+                        ${this.renderTextMeasurementField('Height', 'height', selectedBlock.height ?? 180, 48, 960, 4)}
+                    </div>
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderTextPropertyGroupHeading('Border')}
+                        <label class="frame-editor-field frame-editor-field-wide">
+                            <span>${I18n.translateString('Border color')}</span>
+                            <input type="color" value="${this.escapeHTML(this.getTextBlockColorInputValue(selectedBlock.borderColor, this.getTextBlockDefaultColor()))}" data-block-setting="borderColor">
+                        </label>
+                        ${this.renderTextMeasurementField('Border width', 'borderWidth', selectedBlock.borderWidth ?? 0, 0, 20, 1)}
+                        ${this.renderTextMeasurementField('Radius', 'borderRadius', selectedBlock.borderRadius ?? 0, 0, 120, 1)}
+                    </div>
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderBlockTransformControls(selectedBlock)}
+                    </div>
+                    ${this.renderBlockActionButtons()}
+                </div>
+            </div>
+        `;
+    },
+
+    renderBlockActionButtons() {
+        return `
+            <div class="frame-editor-inspector-actions">
+                <button type="button" class="frame-editor-action-button" data-block-action="duplicate">
+                    <i class="bi bi-files" aria-hidden="true"></i>
+                    <span>${I18n.translateString('Duplicate')}</span>
+                </button>
+                <button type="button" class="frame-editor-action-button danger" data-block-action="delete">
+                    <i class="bi bi-trash3" aria-hidden="true"></i>
+                    <span>${I18n.translateString('Delete')}</span>
+                </button>
             </div>
         `;
     },
@@ -1019,11 +1187,50 @@ const FramesMode = {
     },
 
     renderWorkspaceJsonView(selectedFrame) {
+        const jsonText = this.getCurrentFrameJson(selectedFrame);
+        const jsonMetadata = this.getJsonViewMetadata(jsonText);
+
         return `
             <div class="frame-editor-json-view">
-                <pre class="frame-editor-json-content"><code>${this.escapeHTML(this.getCurrentFrameJson(selectedFrame))}</code></pre>
+                <div class="frame-editor-json-shell">
+                    <div class="frame-editor-json-header">
+                        <div class="frame-editor-json-header-copy">
+                            <strong>${I18n.translateString('Frame JSON')}</strong>
+                            <small>${I18n.translateString('Full-frame JSON export with line numbers.')}</small>
+                        </div>
+                        <div class="frame-editor-json-stats" aria-label="${this.escapeHTML(I18n.translateString('JSON metadata'))}">
+                            <span class="frame-editor-json-stat">${jsonMetadata.lineCount} ${I18n.translateString('lines')}</span>
+                            <span class="frame-editor-json-stat">${this.escapeHTML(jsonMetadata.sizeLabel)}</span>
+                        </div>
+                    </div>
+                    <div class="frame-editor-json-scroll">
+                        <pre class="frame-editor-json-content"><code class="language-json" data-json-rendered="true">${this.renderJsonLines(jsonText)}</code></pre>
+                    </div>
+                </div>
             </div>
         `;
+    },
+
+    renderJsonLines(jsonText) {
+        const lines = String(jsonText || '').split(/\r?\n/);
+
+        return lines.map((line, index) => `<span class="frame-editor-json-line"><span class="frame-editor-json-line-number" aria-hidden="true">${index + 1}</span><span class="frame-editor-json-line-code">${this.highlightJsonLine(line) || '&#8203;'}</span></span>`).join('');
+    },
+
+    highlightJsonLine(line) {
+        if (!line) {
+            return '';
+        }
+
+        if (window.hljs && typeof window.hljs.highlight === 'function') {
+            try {
+                return window.hljs.highlight(line, { language: 'json', ignoreIllegals: true }).value;
+            } catch (error) {
+                console.warn('Failed to highlight JSON line.', error);
+            }
+        }
+
+        return this.escapeHTML(line);
     },
 
     renderCanvasBlock(block) {
@@ -1044,11 +1251,24 @@ const FramesMode = {
                 style="${style}"
                 tabindex="0"
                 role="button"
-                aria-label="${this.escapeHTML(I18n.translateString(block.type === 'text' ? 'Text Block' : 'QR Code Block'))}"
+                aria-label="${this.escapeHTML(I18n.translateString(this.getBlockLabel(block)))}"
             >
                 ${this.renderCanvasBlockInner(block)}
             </div>
         `;
+    },
+
+    getBlockLabel(block) {
+        if (block?.type === 'text') {
+            return 'Text Block';
+        }
+        if (block?.type === 'shape') {
+            return 'Shape Block';
+        }
+        if (block?.type === 'image') {
+            return 'Image Block';
+        }
+        return 'QR Code Block';
     },
 
     renderCanvasBlockInner(block) {
@@ -1077,7 +1297,67 @@ const FramesMode = {
 
             return `
                 <div class="frame-editor-text-block-surface" style="${surfaceStyle}"><div class="frame-editor-text-block-content" style="${inlineStyle}" spellcheck="false">${this.renderTextBlockContentMarkup(block)}</div></div>
-                ${this.state.selectedBlockId === block.id ? this.renderCanvasBlockHandles() : ''}
+                ${this.state.selectedBlockId === block.id ? this.renderCanvasBlockHandles(block) : ''}
+            `;
+        }
+
+        if (block.type === 'shape') {
+            const layout = this.getShapeBlockLayout(block);
+            const borderWidth = Math.max(0, Number(block.borderWidth) || 0);
+            const borderColor = borderWidth > 0 ? (block.borderColor || this.getTextBlockDefaultColor()) : 'transparent';
+            const fillColor = block.color || this.getTextBlockDefaultColor();
+            const shapeStyle = [
+                `width: ${layout.width}px`,
+                `height: ${layout.height}px`,
+                `background-color: ${borderWidth > 0 ? borderColor : fillColor}`,
+                this.getShapeBorderRadiusStyle(block),
+                this.getShapeClipPathStyle(block),
+                'overflow: hidden'
+            ].join('; ');
+            const innerInset = borderWidth > 0 ? Math.min(borderWidth, Math.floor(Math.min(layout.width, layout.height) / 2)) : 0;
+            const fillStyle = innerInset > 0 ? [
+                `inset: ${innerInset}px`,
+                `background-color: ${fillColor}`,
+                this.getShapeBorderRadiusStyle(block),
+                this.getShapeClipPathStyle(block)
+            ].join('; ') : '';
+
+            return `
+                <div class="frame-editor-shape-block-surface" style="${shapeStyle}">
+                    ${innerInset > 0 ? `<div class="frame-editor-shape-block-fill" style="${fillStyle}"></div>` : ''}
+                </div>
+                ${this.state.selectedBlockId === block.id ? this.renderCanvasBlockHandles(block) : ''}
+            `;
+        }
+
+        if (block.type === 'image') {
+            const layout = this.getImageBlockLayout(block);
+            const imageSurfaceStyle = [
+                `border-width: ${layout.borderWidth}px`,
+                'border-style: solid',
+                `border-color: ${(Number(block.borderWidth) || 0) > 0 ? (block.borderColor || this.getTextBlockDefaultColor()) : 'transparent'}`,
+                `border-radius: ${Math.max(0, Number(block.borderRadius) || 0)}px`,
+                `background-color: ${this.isTransparentTextBlockBackground(block) ? 'transparent' : block.backgroundColor}`
+            ].join('; ');
+            const imageContentStyle = [
+                `width: ${layout.imageWidth}px`,
+                `height: ${layout.imageHeight}px`
+            ].join('; ');
+
+            return `
+                <div class="frame-editor-image-block-surface" style="${imageSurfaceStyle}">
+                    <div class="frame-editor-image-block-content" style="${imageContentStyle}">
+                        ${block.src
+                            ? `<img src="${this.escapeHTML(block.src)}" alt="" draggable="false" style="object-fit: ${this.escapeHTML(block.objectFit || 'contain')};">`
+                            : `
+                                <div class="frame-editor-image-block-placeholder">
+                                    <i class="bi bi-image" aria-hidden="true"></i>
+                                    <span>${this.escapeHTML(I18n.translateString('Upload image'))}</span>
+                                </div>
+                            `}
+                    </div>
+                </div>
+                ${this.state.selectedBlockId === block.id ? this.renderCanvasBlockHandles(block) : ''}
             `;
         }
 
@@ -1098,7 +1378,7 @@ const FramesMode = {
                     ${this.getCanvasQrMarkup(block)}
                 </div>
             </div>
-            ${this.state.selectedBlockId === block.id ? this.renderCanvasBlockHandles() : ''}
+            ${this.state.selectedBlockId === block.id ? this.renderCanvasBlockHandles(block) : ''}
         `;
     },
 
@@ -1139,7 +1419,18 @@ const FramesMode = {
         return `<span class="frame-editor-text-block-drop-cap">${this.escapeHTML(firstCharacter)}</span>${escapeWithLineBreaks(characters.join(''))}`;
     },
 
-    renderCanvasBlockHandles() {
+    renderCanvasBlockHandles(block) {
+        if (!block) {
+            return '';
+        }
+
+        if (block.type === 'shape' || block.type === 'image') {
+            return `
+                ${this.renderBlockRotateHandle()}
+                ${this.renderShapeImageResizeHandles()}
+            `;
+        }
+
         return `
             ${this.renderBlockRotateHandle()}
             ${this.renderTextBlockResizeHandles()}
@@ -1164,6 +1455,18 @@ const FramesMode = {
                 type="button"
                 class="frame-editor-text-block-resize-handle frame-editor-text-block-resize-handle-${side}"
                 data-frame-editor-padding-handle="${side}"
+                tabindex="-1"
+                aria-hidden="true"
+            ></button>
+        `).join('');
+    },
+
+    renderShapeImageResizeHandles() {
+        return ['top', 'right', 'bottom', 'left', 'top-left', 'top-right', 'bottom-right', 'bottom-left'].map(side => `
+            <button
+                type="button"
+                class="frame-editor-block-resize-handle frame-editor-block-resize-handle-${side}"
+                data-frame-editor-resize-handle="${side}"
                 tabindex="-1"
                 aria-hidden="true"
             ></button>
@@ -1249,6 +1552,51 @@ const FramesMode = {
         return Math.max(80, Number(block?.size) || 180);
     },
 
+    getShapeBlockLayout(block) {
+        return {
+            width: Math.max(48, Number(block?.width) || 160),
+            height: Math.max(48, Number(block?.height) || 160)
+        };
+    },
+
+    getImageBlockLayout(block) {
+        const borderWidth = Math.max(0, Number(block?.borderWidth) || 0);
+        const imageWidth = Math.max(48, Number(block?.width) || 180);
+        const imageHeight = Math.max(48, Number(block?.height) || 180);
+        return {
+            width: Math.ceil(imageWidth + (borderWidth * 2)),
+            height: Math.ceil(imageHeight + (borderWidth * 2)),
+            imageWidth: Math.ceil(imageWidth),
+            imageHeight: Math.ceil(imageHeight),
+            borderWidth
+        };
+    },
+
+    getShapeClipPath(shapeType) {
+        const clipPaths = {
+            triangle: 'polygon(50% 0%, 100% 100%, 0% 100%)',
+            diamond: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+            hexagon: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
+            star: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
+        };
+        return clipPaths[shapeType] || '';
+    },
+
+    getShapeClipPathStyle(block) {
+        const clipPath = this.getShapeClipPath(block?.shapeType);
+        return clipPath ? `clip-path: ${clipPath}` : '';
+    },
+
+    getShapeBorderRadiusStyle(block) {
+        if (block?.shapeType === 'circle') {
+            return 'border-radius: 999px';
+        }
+        if (!block?.shapeType || block.shapeType === 'rectangle') {
+            return `border-radius: ${Math.max(0, Number(block?.borderRadius) || 0)}px`;
+        }
+        return '';
+    },
+
     getCanvasBlockLayout(block) {
         if (!block) {
             return {
@@ -1257,9 +1605,16 @@ const FramesMode = {
             };
         }
 
-        return block.type === 'qr'
-            ? this.getQrBlockLayout(block)
-            : this.getTextBlockLayout(block);
+        if (block.type === 'qr') {
+            return this.getQrBlockLayout(block);
+        }
+        if (block.type === 'shape') {
+            return this.getShapeBlockLayout(block);
+        }
+        if (block.type === 'image') {
+            return this.getImageBlockLayout(block);
+        }
+        return this.getTextBlockLayout(block);
     },
 
     getTextBlockLineHeight(block) {
@@ -1386,7 +1741,14 @@ const FramesMode = {
         const workspace = root?.querySelector?.('[data-frame-editor-workspace-panel]');
         const scroll = root?.querySelector?.('[data-frame-editor-canvas-scroll]');
         const metrics = this.getCanvasLayoutMetrics(root);
-        if (!workspace || !scroll || !metrics) {
+        if (!workspace) {
+            return;
+        }
+        if (!scroll || !metrics) {
+            workspace.style.removeProperty('background-color');
+            workspace.style.removeProperty('background-image');
+            workspace.style.removeProperty('background-size');
+            workspace.style.removeProperty('background-position');
             return;
         }
 
@@ -1457,22 +1819,32 @@ const FramesMode = {
         root.innerHTML = this.render();
         this.bindEvents(root);
         this.restorePanelScrollState(root, scrollState);
+        this.highlightJsonView(root);
         this.syncViewportLayout(root);
         this.restorePanelScrollState(root, scrollState);
+    },
+
+    highlightJsonView(root = this.getRoot()) {
+        const code = root?.querySelector?.('.frame-editor-json-content code.language-json:not([data-json-rendered="true"])');
+        if (!code || !window.hljs || typeof window.hljs.highlightElement !== 'function') {
+            return;
+        }
+
+        window.hljs.highlightElement(code);
     },
 
     capturePanelScrollState(root = this.getRoot()) {
         return {
             leftSidebarScrollTop: root?.querySelector?.('.frame-editor-sidebar-body')?.scrollTop ?? null,
             rightSidebarScrollTop: root?.querySelector?.('.frame-editor-right-sidebar-body')?.scrollTop ?? null,
-            jsonViewScrollTop: root?.querySelector?.('.frame-editor-json-view')?.scrollTop ?? null
+            jsonViewScrollTop: root?.querySelector?.('.frame-editor-json-scroll')?.scrollTop ?? null
         };
     },
 
     restorePanelScrollState(root = this.getRoot(), scrollState = {}) {
         const leftSidebarBody = root?.querySelector?.('.frame-editor-sidebar-body');
         const rightSidebarBody = root?.querySelector?.('.frame-editor-right-sidebar-body');
-        const jsonView = root?.querySelector?.('.frame-editor-json-view');
+        const jsonView = root?.querySelector?.('.frame-editor-json-scroll');
 
         if (leftSidebarBody && Number.isFinite(scrollState.leftSidebarScrollTop)) {
             leftSidebarBody.scrollTop = scrollState.leftSidebarScrollTop;
@@ -1817,6 +2189,12 @@ const FramesMode = {
                 return;
             }
 
+            const resizeHandle = event.target.closest('[data-frame-editor-resize-handle]');
+            if (resizeHandle && root.contains(resizeHandle)) {
+                this.beginCanvasBlockResize(root, resizeHandle, event);
+                return;
+            }
+
             const handle = event.target.closest('[data-frame-editor-padding-handle]');
             if (!handle || !root.contains(handle)) {
                 return;
@@ -1833,7 +2211,11 @@ const FramesMode = {
 
         root.querySelectorAll('[data-frame-editor-canvas-block]').forEach(blockElement => {
             blockElement.addEventListener('pointerdown', event => {
-                if (event.target.closest('[data-frame-editor-padding-handle]') || event.target.closest('[data-frame-editor-rotate-handle]')) {
+                if (
+                    event.target.closest('[data-frame-editor-padding-handle]')
+                    || event.target.closest('[data-frame-editor-resize-handle]')
+                    || event.target.closest('[data-frame-editor-rotate-handle]')
+                ) {
                     return;
                 }
                 this.beginCanvasBlockDrag(root, blockElement, event);
@@ -1940,10 +2322,21 @@ const FramesMode = {
             });
         });
 
+        root.querySelectorAll('[data-block-image-upload]').forEach(input => {
+            input.addEventListener('change', event => {
+                this.handleImageBlockUpload(root, event.currentTarget);
+            });
+        });
+
         root.querySelectorAll('[data-canvas-action]').forEach(button => {
             button.addEventListener('click', () => {
                 if (button.dataset.canvasAction === 'reset-view') {
                     this.resetCanvasView();
+                    return;
+                }
+
+                if (button.dataset.canvasAction === 'fit-blocks') {
+                    this.fitCanvasToBlocks(root);
                 }
             });
         });
@@ -2118,6 +2511,146 @@ const FramesMode = {
         window.addEventListener('pointercancel', onPointerUp);
     },
 
+    beginCanvasBlockResize(root, handleElement, event) {
+        if (event.button !== 0) {
+            return;
+        }
+
+        const handle = handleElement.dataset.frameEditorResizeHandle;
+        const blockElement = handleElement.closest('[data-frame-editor-canvas-block]');
+        const blockId = blockElement?.dataset.frameEditorCanvasBlock;
+        const block = this.getBlockById(blockId);
+        const canvasScroll = root.querySelector('[data-frame-editor-canvas-scroll]');
+        const metrics = this.getCanvasLayoutMetrics(root);
+        if (!handle || !blockElement || !block || !canvasScroll || !metrics || (block.type !== 'shape' && block.type !== 'image')) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const zoom = Math.max(this.state.canvasZoom, 0.01);
+        const surfaceElement = blockElement.querySelector('.frame-editor-shape-block-surface, .frame-editor-image-block-surface') || blockElement;
+        const surfaceRect = surfaceElement.getBoundingClientRect();
+        const startOuterWidth = surfaceRect.width / zoom;
+        const startOuterHeight = surfaceRect.height / zoom;
+        const startCenter = {
+            x: (block.xPct / 100) * metrics.viewportWidth,
+            y: (block.yPct / 100) * metrics.viewportHeight
+        };
+        const startEdges = {
+            left: startCenter.x - (startOuterWidth / 2),
+            right: startCenter.x + (startOuterWidth / 2),
+            top: startCenter.y - (startOuterHeight / 2),
+            bottom: startCenter.y + (startOuterHeight / 2)
+        };
+        const minBorder = block.type === 'image' ? (Math.max(0, Number(block.borderWidth) || 0) * 2) : 0;
+        const minOuterWidth = Math.max(48 + minBorder, 48);
+        const minOuterHeight = Math.max(48 + minBorder, 48);
+        let didResize = false;
+        let nextPatch = null;
+        let nextPosition = {
+            xPct: block.xPct,
+            yPct: block.yPct
+        };
+
+        const updatePreview = (outerWidth, outerHeight, centerX, centerY) => {
+            const previewBlock = {
+                ...block,
+                ...nextPatch,
+                ...nextPosition
+            };
+            const layout = this.getCanvasBlockLayout(previewBlock);
+            blockElement.style.left = `${previewBlock.xPct}%`;
+            blockElement.style.top = `${previewBlock.yPct}%`;
+            blockElement.style.width = `${layout.width}px`;
+            blockElement.style.transform = this.getCanvasBlockTransform(previewBlock.rotation);
+            blockElement.innerHTML = this.renderCanvasBlockInner(previewBlock);
+            this.syncInspectorBlockControls(root, nextPatch);
+            this.applyCanvasLayout(root);
+        };
+
+        const onPointerMove = moveEvent => {
+            const deltaX = (moveEvent.clientX - event.clientX) / zoom;
+            const deltaY = (moveEvent.clientY - event.clientY) / zoom;
+
+            if (!didResize && Math.hypot(deltaX, deltaY) >= 2) {
+                didResize = true;
+                blockElement.classList.add('is-resizing');
+            }
+
+            if (!didResize) {
+                return;
+            }
+
+            let nextLeft = startEdges.left;
+            let nextRight = startEdges.right;
+            let nextTop = startEdges.top;
+            let nextBottom = startEdges.bottom;
+
+            if (handle.includes('left')) {
+                nextLeft = Math.min(startEdges.left + deltaX, startEdges.right - minOuterWidth);
+            } else if (handle.includes('right')) {
+                nextRight = Math.max(startEdges.right + deltaX, startEdges.left + minOuterWidth);
+            }
+
+            if (handle.includes('top')) {
+                nextTop = Math.min(startEdges.top + deltaY, startEdges.bottom - minOuterHeight);
+            } else if (handle.includes('bottom')) {
+                nextBottom = Math.max(startEdges.bottom + deltaY, startEdges.top + minOuterHeight);
+            }
+
+            const outerWidth = Math.max(minOuterWidth, nextRight - nextLeft);
+            const outerHeight = Math.max(minOuterHeight, nextBottom - nextTop);
+            const centerX = nextLeft + (outerWidth / 2);
+            const centerY = nextTop + (outerHeight / 2);
+            const borderWidth = Math.max(0, Number(block.borderWidth) || 0);
+
+            nextPatch = block.type === 'image'
+                ? {
+                    width: Math.max(48, Math.round(outerWidth - (borderWidth * 2))),
+                    height: Math.max(48, Math.round(outerHeight - (borderWidth * 2)))
+                }
+                : {
+                    width: Math.max(48, Math.round(outerWidth)),
+                    height: Math.max(48, Math.round(outerHeight))
+                };
+
+            nextPosition = {
+                xPct: Number(((centerX / metrics.viewportWidth) * 100).toFixed(4)),
+                yPct: Number(((centerY / metrics.viewportHeight) * 100).toFixed(4))
+            };
+
+            updatePreview(outerWidth, outerHeight, centerX, centerY);
+        };
+
+        const finishResize = () => {
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerUp);
+            blockElement.classList.remove('is-resizing');
+
+            if (!didResize || !nextPatch) {
+                return;
+            }
+
+            this.updateBlock(block.id, {
+                ...nextPatch,
+                ...nextPosition
+            });
+            this.renderIntoRoot();
+            this.clampUpdatedBlockToCanvas(this.getRoot(), this.getBlockById(block.id));
+        };
+
+        const onPointerUp = () => {
+            finishResize();
+        };
+
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
+    },
+
     beginCanvasBlockRotate(root, handleElement, event) {
         if (event.button !== 0) {
             return;
@@ -2133,7 +2666,7 @@ const FramesMode = {
         event.preventDefault();
         event.stopPropagation();
 
-        const surfaceElement = () => blockElement.querySelector('.frame-editor-text-block-surface, .frame-editor-qr-block-surface') || blockElement;
+        const surfaceElement = () => blockElement.querySelector('.frame-editor-text-block-surface, .frame-editor-qr-block-surface, .frame-editor-shape-block-surface, .frame-editor-image-block-surface') || blockElement;
         const getCenterPoint = () => {
             const rect = surfaceElement().getBoundingClientRect();
             return {
@@ -2353,7 +2886,7 @@ const FramesMode = {
             return;
         }
 
-        const numericSettings = new Set(['fontSize', 'width', 'size', 'lineHeight', 'letterSpacing', 'paddingX', 'paddingY', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderWidth', 'borderRadius', 'rotation']);
+        const numericSettings = new Set(['fontSize', 'width', 'height', 'size', 'lineHeight', 'letterSpacing', 'paddingX', 'paddingY', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderWidth', 'borderRadius', 'rotation']);
         let nextValue;
 
         if (setting === 'backgroundColorRaw') {
@@ -2379,6 +2912,64 @@ const FramesMode = {
         const updatedBlock = this.getBlockById(block.id);
         this.syncCanvasBlock(root, updatedBlock);
         this.clampUpdatedBlockToCanvas(root, updatedBlock);
+    },
+
+    handleImageBlockUpload(root, input) {
+        const block = this.getSelectedBlock();
+        const file = input?.files?.[0];
+        if (!block || block.type !== 'image' || !file || !String(file.type || '').startsWith('image/')) {
+            return;
+        }
+
+        const blockId = block.id;
+        const reader = new FileReader();
+        reader.addEventListener('load', () => {
+            const result = typeof reader.result === 'string' ? reader.result : '';
+            if (!result) {
+                return;
+            }
+
+            const previewImage = new Image();
+            previewImage.addEventListener('load', () => {
+                const nextSize = this.getImageUploadDimensions(previewImage.naturalWidth, previewImage.naturalHeight);
+                this.updateBlock(blockId, {
+                    src: result,
+                    imageName: file.name,
+                    width: nextSize.width,
+                    height: nextSize.height
+                });
+                this.renderIntoRoot();
+                this.clampUpdatedBlockToCanvas(this.getRoot(), this.getBlockById(blockId));
+            });
+            previewImage.addEventListener('error', () => {
+                this.updateBlock(blockId, {
+                    src: result,
+                    imageName: file.name
+                });
+                this.renderIntoRoot();
+                this.clampUpdatedBlockToCanvas(this.getRoot(), this.getBlockById(blockId));
+            });
+            previewImage.src = result;
+        });
+        reader.readAsDataURL(file);
+    },
+
+    getImageUploadDimensions(naturalWidth, naturalHeight) {
+        if (!Number.isFinite(naturalWidth) || !Number.isFinite(naturalHeight) || naturalWidth <= 0 || naturalHeight <= 0) {
+            return {
+                width: 180,
+                height: 180
+            };
+        }
+
+        const longestSide = Math.max(naturalWidth, naturalHeight);
+        const targetLongestSide = this.clamp(longestSide, 120, 240);
+        const scale = targetLongestSide / longestSide;
+
+        return {
+            width: Math.max(24, Math.round(naturalWidth * scale)),
+            height: Math.max(24, Math.round(naturalHeight * scale))
+        };
     },
 
     syncInspectorBlockControls(root, patch = {}) {
@@ -2484,7 +3075,7 @@ const FramesMode = {
         const scroll = root?.querySelector?.('[data-frame-editor-canvas-scroll]');
         const metrics = this.getCanvasLayoutMetrics(root);
         const oldZoom = this.state.canvasZoom;
-        const normalizedZoom = Number(this.clamp(nextZoom, 0.5, 2.5).toFixed(2));
+        const normalizedZoom = Number(this.clamp(nextZoom, this.MIN_CANVAS_ZOOM, this.MAX_CANVAS_ZOOM).toFixed(2));
         if (!scroll || !metrics || normalizedZoom === oldZoom) {
             return;
         }
@@ -2520,6 +3111,39 @@ const FramesMode = {
             canvasZoom: 1,
             canvasPanX: 0,
             canvasPanY: 0
+        };
+        this.renderIntoRoot();
+        this.hideCanvasZoomContextMenu(root);
+    },
+
+    fitCanvasToBlocks(root = this.getRoot()) {
+        const metrics = this.getCanvasLayoutMetrics(root);
+        const bounds = this.getCanvasBlockContentBounds(root);
+        if (!metrics || !bounds) {
+            this.resetCanvasView(root);
+            return;
+        }
+
+        const horizontalPadding = Math.min(Math.max(metrics.viewportWidth * 0.08, 32), 96);
+        const verticalPadding = Math.min(Math.max(metrics.viewportHeight * 0.08, 32), 96);
+        const availableWidth = Math.max(metrics.viewportWidth - (horizontalPadding * 2), 1);
+        const availableHeight = Math.max(metrics.viewportHeight - (verticalPadding * 2), 1);
+        const contentWidth = Math.max(bounds.right - bounds.left, 1);
+        const contentHeight = Math.max(bounds.bottom - bounds.top, 1);
+        const nextZoom = Number(this.clamp(
+            Math.min(availableWidth / contentWidth, availableHeight / contentHeight),
+            this.MIN_CANVAS_ZOOM,
+            this.MAX_CANVAS_ZOOM
+        ).toFixed(2));
+        const centerX = bounds.left + (contentWidth / 2);
+        const centerY = bounds.top + (contentHeight / 2);
+
+        this.queueCanvasScrollCompensation(root);
+        this.state = {
+            ...this.state,
+            canvasZoom: nextZoom,
+            canvasPanX: (metrics.viewportWidth / 2) - (centerX * nextZoom),
+            canvasPanY: (metrics.viewportHeight / 2) - (centerY * nextZoom)
         };
         this.renderIntoRoot();
         this.hideCanvasZoomContextMenu(root);
@@ -2591,7 +3215,10 @@ const FramesMode = {
     createBlock(blockType, position = null) {
         const basePosition = position || {};
         const xPct = Number.isFinite(basePosition.xPct) ? basePosition.xPct : 50;
-        const yPct = Number.isFinite(basePosition.yPct) ? basePosition.yPct : (blockType === 'text' ? 28 : 52);
+        const defaultYPct = blockType === 'text'
+            ? 28
+            : (blockType === 'shape' ? 40 : 52);
+        const yPct = Number.isFinite(basePosition.yPct) ? basePosition.yPct : defaultYPct;
 
         if (blockType === 'text') {
             return {
@@ -2624,6 +3251,40 @@ const FramesMode = {
                 textTransform: 'none',
                 dropCap: false,
                 textAlign: 'left'
+            };
+        }
+
+        if (blockType === 'shape') {
+            return {
+                id: this.getNextBlockId(),
+                type: 'shape',
+                shapeType: 'rectangle',
+                xPct,
+                yPct,
+                width: 160,
+                height: 160,
+                color: this.getTextBlockDefaultColor(),
+                borderRadius: 18,
+                rotation: 0
+            };
+        }
+
+        if (blockType === 'image') {
+            return {
+                id: this.getNextBlockId(),
+                type: 'image',
+                xPct,
+                yPct,
+                src: '',
+                imageName: '',
+                width: 180,
+                height: 180,
+                objectFit: 'contain',
+                backgroundColor: 'transparent',
+                borderWidth: 0,
+                borderRadius: 0,
+                borderColor: this.getTextBlockDefaultColor(),
+                rotation: 0
             };
         }
 
@@ -2803,9 +3464,43 @@ const FramesMode = {
         };
     },
 
+    getCanvasBlockContentBounds(root = this.getRoot()) {
+        const metrics = this.getCanvasLayoutMetrics(root);
+        if (!metrics || !this.state.canvasBlocks?.length) {
+            return null;
+        }
+
+        let bounds = null;
+        this.state.canvasBlocks.forEach(block => {
+            const footprint = this.getCanvasBlockFootprint(block);
+            if (!footprint.width || !footprint.height) {
+                return;
+            }
+
+            const centerX = (block.xPct / 100) * metrics.viewportWidth;
+            const centerY = (block.yPct / 100) * metrics.viewportHeight;
+            const left = centerX - (footprint.width / 2);
+            const top = centerY - (footprint.height / 2);
+            const right = centerX + (footprint.width / 2);
+            const bottom = centerY + (footprint.height / 2);
+
+            if (!bounds) {
+                bounds = { left, top, right, bottom };
+                return;
+            }
+
+            bounds.left = Math.min(bounds.left, left);
+            bounds.top = Math.min(bounds.top, top);
+            bounds.right = Math.max(bounds.right, right);
+            bounds.bottom = Math.max(bounds.bottom, bottom);
+        });
+
+        return bounds;
+    },
+
     getCanvasBlockFootprint(block, blockElement = null) {
         if (blockElement) {
-            const measuredElement = blockElement.querySelector('.frame-editor-text-block-surface, .frame-editor-qr-block-surface') || blockElement;
+            const measuredElement = blockElement.querySelector('.frame-editor-text-block-surface, .frame-editor-qr-block-surface, .frame-editor-shape-block-surface, .frame-editor-image-block-surface') || blockElement;
             const blockRect = measuredElement.getBoundingClientRect();
             const zoom = Math.max(this.state.canvasZoom, 0.01);
             return {
@@ -2826,41 +3521,17 @@ const FramesMode = {
     },
 
     clampCanvasBlockPosition(root, block, position, blockElement = null) {
-        const metrics = this.getCanvasLayoutMetrics(root);
-        const footprint = this.getCanvasBlockFootprint(block, blockElement);
-        if (!metrics) {
-            const fallbackXPct = Number(position.xPct);
-            const fallbackYPct = Number(position.yPct);
-            return {
-                xPct: Number.isFinite(fallbackXPct) ? fallbackXPct : 50,
-                yPct: Number.isFinite(fallbackYPct) ? fallbackYPct : 50
-            };
-        }
-
-        const viewportWidth = Math.max(metrics.viewportWidth, 1);
-        const viewportHeight = Math.max(metrics.viewportHeight, 1);
-        const proposedX = (Number(position.xPct) / 100) * viewportWidth;
-        const proposedY = (Number(position.yPct) / 100) * viewportHeight;
-        const halfWidth = footprint.width / 2;
-        const halfHeight = footprint.height / 2;
-        let minX = halfWidth;
-        let maxX = viewportWidth - halfWidth;
-        let minY = halfHeight;
-        let maxY = viewportHeight - halfHeight;
-
-        if (maxX < minX) {
-            minX = viewportWidth / 2;
-            maxX = minX;
-        }
-
-        if (maxY < minY) {
-            minY = viewportHeight / 2;
-            maxY = minY;
-        }
-
+        const nextXPct = Number(position?.xPct);
+        const nextYPct = Number(position?.yPct);
+        const fallbackXPct = Number(block?.xPct);
+        const fallbackYPct = Number(block?.yPct);
         return {
-            xPct: (this.clamp(proposedX, minX, maxX) / viewportWidth) * 100,
-            yPct: (this.clamp(proposedY, minY, maxY) / viewportHeight) * 100
+            xPct: Number.isFinite(nextXPct)
+                ? Number(nextXPct.toFixed(4))
+                : (Number.isFinite(fallbackXPct) ? fallbackXPct : 50),
+            yPct: Number.isFinite(nextYPct)
+                ? Number(nextYPct.toFixed(4))
+                : (Number.isFinite(fallbackYPct) ? fallbackYPct : 50)
         };
     },
 
@@ -3018,6 +3689,51 @@ const FramesMode = {
 
     getCurrentFrameJson(selectedFrame = this.getSelectedFrame(this.getAllFrames(false))) {
         return JSON.stringify(this.getCurrentFrameDocument(selectedFrame), null, 2);
+    },
+
+    getJsonViewMetadata(jsonText) {
+        const text = String(jsonText || '');
+        const byteLength = this.getUtf8ByteLength(text);
+
+        return {
+            lineCount: text ? text.split(/\r?\n/).length : 0,
+            byteLength,
+            sizeLabel: this.formatJsonByteSize(byteLength)
+        };
+    },
+
+    getUtf8ByteLength(text) {
+        const value = String(text || '');
+
+        if (typeof TextEncoder !== 'undefined') {
+            return new TextEncoder().encode(value).length;
+        }
+
+        if (typeof Blob === 'function') {
+            return new Blob([value]).size;
+        }
+
+        return value.length;
+    },
+
+    formatJsonByteSize(byteLength) {
+        const normalized = Number.isFinite(byteLength) && byteLength > 0 ? byteLength : 0;
+        if (normalized < 1024) {
+            return `${normalized.toLocaleString()} B`;
+        }
+
+        const units = ['KB', 'MB', 'GB'];
+        let size = normalized / 1024;
+        let unitIndex = 0;
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex += 1;
+        }
+
+        const rounded = size >= 10 || Number.isInteger(size)
+            ? size.toFixed(0)
+            : size.toFixed(1);
+        return `${rounded} ${units[unitIndex]} (${normalized.toLocaleString()} B)`;
     },
 
     sanitizeFilename(value) {
