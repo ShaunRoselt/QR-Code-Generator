@@ -26,6 +26,19 @@ const FramesMode = {
             icon: 'bi-type-h2'
         }
     ]),
+    TEXT_BLOCK_FONT_SIZE_OPTIONS: Object.freeze([
+        { id: 's', label: 'S', size: 24 },
+        { id: 'm', label: 'M', size: 32 },
+        { id: 'l', label: 'L', size: 40 },
+        { id: 'xl', label: 'XL', size: 52 }
+    ]),
+    TEXT_BLOCK_APPEARANCE_OPTIONS: Object.freeze([
+        { id: 'default', label: 'Default', fontWeight: 400, fontStyle: 'normal' },
+        { id: 'bold', label: 'Bold', fontWeight: 700, fontStyle: 'normal' },
+        { id: 'italic', label: 'Italic', fontWeight: 400, fontStyle: 'italic' },
+        { id: 'bold-italic', label: 'Bold Italic', fontWeight: 700, fontStyle: 'italic' }
+    ]),
+    TEXT_BLOCK_PADDING_MAX: 160,
 
     state: {
         activeTab: 'frames',
@@ -430,27 +443,90 @@ const FramesMode = {
                             <span>${I18n.translateString('Text')}</span>
                             <textarea rows="3" data-block-setting="text">${this.escapeHTML(selectedBlock.text)}</textarea>
                         </label>
-                        <label class="frame-editor-field">
-                            <span>${I18n.translateString('Font size')}</span>
-                            <input type="range" min="18" max="72" step="1" value="${this.escapeHTML(String(selectedBlock.fontSize))}" data-block-setting="fontSize">
-                        </label>
-                        <label class="frame-editor-field">
-                            <span>${I18n.translateString('Width')}</span>
-                            <input type="range" min="180" max="520" step="10" value="${this.escapeHTML(String(selectedBlock.width))}" data-block-setting="width">
-                        </label>
-                        <label class="frame-editor-field">
-                            <span>${I18n.translateString('Color')}</span>
-                            <input type="color" value="${this.escapeHTML(selectedBlock.color)}" data-block-setting="color">
-                        </label>
-                        <div class="frame-editor-field frame-editor-field-wide">
-                            <span>${I18n.translateString('Formatting')}</span>
-                            <div class="frame-editor-toggle-group">
-                                ${this.renderSidebarToggleButton('fontWeight', selectedBlock.fontWeight >= 700 ? '400' : '700', selectedBlock.fontWeight >= 700, 'bi-type-bold', 'Bold')}
-                                ${this.renderSidebarToggleButton('fontStyle', selectedBlock.fontStyle === 'italic' ? 'normal' : 'italic', selectedBlock.fontStyle === 'italic', 'bi-type-italic', 'Italic')}
-                                ${this.renderSidebarToggleButton('textAlign', 'left', selectedBlock.textAlign === 'left', 'bi-text-left', 'Left')}
-                                ${this.renderSidebarToggleButton('textAlign', 'center', selectedBlock.textAlign === 'center', 'bi-text-center', 'Center')}
-                                ${this.renderSidebarToggleButton('textAlign', 'right', selectedBlock.textAlign === 'right', 'bi-text-right', 'Right')}
+                        <div class="frame-editor-text-property-group">
+                            ${this.renderTextPropertyGroupHeading('Colour')}
+                            <div class="frame-editor-text-color-list">
+                                ${this.renderTextColorControl('Text', 'color', selectedBlock.color)}
+                                ${this.renderTextColorControl('Background', 'backgroundColorRaw', this.getTextBlockColorInputValue(selectedBlock.backgroundColor), true, this.isTransparentTextBlockBackground(selectedBlock))}
                             </div>
+                        </div>
+                        <div class="frame-editor-text-property-group">
+                            ${this.renderTextPropertyGroupHeading('Typography')}
+                            <div class="frame-editor-field frame-editor-field-wide">
+                                <span>${I18n.translateString('Font size')}</span>
+                                <div class="frame-editor-segmented-control">
+                                    ${this.TEXT_BLOCK_FONT_SIZE_OPTIONS.map(option => this.renderTextOptionButton(
+                                        'fontSizePreset',
+                                        option.id,
+                                        option.label,
+                                        this.getTextBlockFontSizePreset(selectedBlock) === option.id
+                                    )).join('')}
+                                </div>
+                            </div>
+                            <div class="frame-editor-inspector-grid frame-editor-text-grid">
+                                <label class="frame-editor-field">
+                                    <span>${I18n.translateString('Appearance')}</span>
+                                    <select class="frame-editor-select" data-block-setting="appearance">
+                                        ${this.TEXT_BLOCK_APPEARANCE_OPTIONS.map(option => `
+                                            <option value="${option.id}" ${this.getTextBlockAppearance(selectedBlock) === option.id ? 'selected' : ''}>${this.escapeHTML(I18n.translateString(option.label))}</option>
+                                        `).join('')}
+                                    </select>
+                                </label>
+                                <div class="frame-editor-field">
+                                    <span>${I18n.translateString('Line height')}</span>
+                                    <div class="frame-editor-stepper">
+                                        <span class="frame-editor-stepper-value">${this.formatTextBlockLineHeight(selectedBlock.lineHeight)}</span>
+                                        <button type="button" class="frame-editor-stepper-button" data-block-adjust="lineHeight" data-block-adjust-direction="increase" aria-label="${this.escapeHTML(I18n.translateString('Increase line height'))}">+</button>
+                                        <button type="button" class="frame-editor-stepper-button" data-block-adjust="lineHeight" data-block-adjust-direction="decrease" aria-label="${this.escapeHTML(I18n.translateString('Decrease line height'))}">−</button>
+                                    </div>
+                                </div>
+                                <label class="frame-editor-field">
+                                    <span>${I18n.translateString('Letter spacing')}</span>
+                                    <div class="frame-editor-unit-input">
+                                        <input type="number" min="-10" max="40" step="0.5" value="${this.escapeHTML(String(selectedBlock.letterSpacing || 0))}" data-block-setting="letterSpacing">
+                                        <span>px</span>
+                                    </div>
+                                </label>
+                                <div class="frame-editor-field">
+                                    <span>${I18n.translateString('Decoration')}</span>
+                                    <div class="frame-editor-inline-options">
+                                        ${this.renderTextOptionButton('textDecoration', 'none', '−', (selectedBlock.textDecoration || 'none') === 'none')}
+                                        ${this.renderTextOptionButton('textDecoration', 'underline', 'U', selectedBlock.textDecoration === 'underline')}
+                                        ${this.renderTextOptionButton('textDecoration', 'line-through', 'S', selectedBlock.textDecoration === 'line-through')}
+                                    </div>
+                                </div>
+                                <div class="frame-editor-field frame-editor-field-wide">
+                                    <span>${I18n.translateString('Letter case')}</span>
+                                    <div class="frame-editor-inline-options frame-editor-inline-options-wide">
+                                        ${this.renderTextOptionButton('textTransform', 'none', '−', (selectedBlock.textTransform || 'none') === 'none')}
+                                        ${this.renderTextOptionButton('textTransform', 'uppercase', 'AB', selectedBlock.textTransform === 'uppercase')}
+                                        ${this.renderTextOptionButton('textTransform', 'lowercase', 'ab', selectedBlock.textTransform === 'lowercase')}
+                                        ${this.renderTextOptionButton('textTransform', 'capitalize', 'Ab', selectedBlock.textTransform === 'capitalize')}
+                                    </div>
+                                </div>
+                                <label class="frame-editor-switch-row frame-editor-field-wide">
+                                    <span class="frame-editor-switch-control">
+                                        <input type="checkbox" data-block-setting="dropCap" ${selectedBlock.dropCap ? 'checked' : ''}>
+                                        <span class="frame-editor-switch-slider" aria-hidden="true"></span>
+                                    </span>
+                                    <span class="frame-editor-switch-copy">
+                                        <strong>${I18n.translateString('Drop Cap')}</strong>
+                                        <small>${I18n.translateString('Show a large initial letter.')}</small>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="frame-editor-text-property-group">
+                            ${this.renderTextPaddingControls(selectedBlock)}
+                        </div>
+                        <div class="frame-editor-text-property-group">
+                            ${this.renderTextPropertyGroupHeading('Border')}
+                            <label class="frame-editor-field frame-editor-field-wide">
+                                <span>${I18n.translateString('Border color')}</span>
+                                <input type="color" value="${this.escapeHTML(this.getTextBlockColorInputValue(selectedBlock.borderColor, selectedBlock.color || this.getTextBlockDefaultColor()))}" data-block-setting="borderColor">
+                            </label>
+                            ${this.renderTextMeasurementField('Border width', 'borderWidth', selectedBlock.borderWidth ?? 0, 0, 20, 1)}
+                            ${this.renderTextMeasurementField('Radius', 'borderRadius', selectedBlock.borderRadius ?? 0, 0, 48, 1)}
                         </div>
                         <div class="frame-editor-inspector-actions">
                             <button type="button" class="frame-editor-action-button" data-block-action="duplicate">
@@ -547,6 +623,290 @@ const FramesMode = {
         `;
     },
 
+    renderTextPropertyGroupHeading(label, actions = '') {
+        return `
+            <div class="frame-editor-text-group-heading">
+                <span>${this.escapeHTML(I18n.translateString(label))}</span>
+                ${actions || '<i class="bi bi-three-dots-vertical" aria-hidden="true"></i>'}
+            </div>
+        `;
+    },
+
+    renderTextColorControl(label, setting, value, supportsTransparent = false, isTransparent = false) {
+        const normalizedValue = this.escapeHTML(value || '#000000');
+        return `
+            <label class="frame-editor-text-color-row">
+                <span class="frame-editor-text-color-label">
+                    <span class="frame-editor-color-chip${isTransparent ? ' is-transparent' : ''}" style="${isTransparent ? '' : `background-color: ${normalizedValue};`}"></span>
+                    <span>${this.escapeHTML(I18n.translateString(label))}</span>
+                </span>
+                <span class="frame-editor-text-color-actions">
+                    ${supportsTransparent ? `
+                        <button
+                            type="button"
+                            class="frame-editor-icon-button${isTransparent ? ' active' : ''}"
+                            data-block-toggle="backgroundColor"
+                            data-block-value="transparent"
+                            aria-label="${this.escapeHTML(I18n.translateString('Use transparent background'))}"
+                            title="${this.escapeHTML(I18n.translateString('Use transparent background'))}"
+                        >
+                            <i class="bi bi-slash-circle" aria-hidden="true"></i>
+                        </button>
+                    ` : ''}
+                    <input type="color" value="${normalizedValue}" data-block-setting="${setting}">
+                </span>
+            </label>
+        `;
+    },
+
+    renderTextOptionButton(setting, value, label, isActive) {
+        return `
+            <button
+                type="button"
+                class="frame-editor-option-button${isActive ? ' active' : ''}"
+                data-block-toggle="${setting}"
+                data-block-value="${this.escapeHTML(String(value))}"
+                aria-pressed="${isActive ? 'true' : 'false'}"
+            >
+                <span>${this.escapeHTML(I18n.translateString(label))}</span>
+            </button>
+        `;
+    },
+
+    renderTextMeasurementField(label, setting, value, min, max, step = 1) {
+        const normalizedValue = Number.isFinite(Number(value)) ? Number(value) : min;
+        return `
+            <label class="frame-editor-field frame-editor-field-wide">
+                <span>${this.escapeHTML(I18n.translateString(label))}</span>
+                <div class="frame-editor-measurement-field">
+                    <div class="frame-editor-unit-input">
+                        <input type="number" min="${min}" max="${max}" step="${step}" value="${this.escapeHTML(String(normalizedValue))}" data-block-setting="${setting}">
+                        <span>px</span>
+                    </div>
+                    <input type="range" min="${min}" max="${max}" step="${step}" value="${this.escapeHTML(String(normalizedValue))}" data-block-setting="${setting}">
+                </div>
+            </label>
+        `;
+    },
+
+    renderTextPaddingControls(block) {
+        const padding = this.getTextBlockPadding(block);
+        const isLinked = block?.paddingLinked !== false;
+        const nextLinkedValue = isLinked ? 'false' : 'true';
+        const linkLabel = isLinked ? 'Unlink sides' : 'Link sides';
+        const linkedPaddingX = Math.max(padding.left, padding.right);
+        const linkedPaddingY = Math.max(padding.top, padding.bottom);
+
+        return `
+            ${this.renderTextPropertyGroupHeading('Padding', `
+                <button
+                    type="button"
+                    class="frame-editor-icon-button${isLinked ? ' active' : ''}"
+                    data-block-toggle="paddingLinked"
+                    data-block-value="${nextLinkedValue}"
+                    aria-pressed="${isLinked ? 'true' : 'false'}"
+                    title="${this.escapeHTML(I18n.translateString(linkLabel))}"
+                    aria-label="${this.escapeHTML(I18n.translateString(linkLabel))}"
+                >
+                    <i class="bi ${isLinked ? 'bi-link-45deg' : 'bi-unlink'}" aria-hidden="true"></i>
+                </button>
+            `)}
+            <div class="frame-editor-padding-controls">
+                ${isLinked
+                    ? `
+                        ${this.renderTextPaddingField('Horizontal', 'paddingX', linkedPaddingX, 'bi-arrow-left-right')}
+                        ${this.renderTextPaddingField('Vertical', 'paddingY', linkedPaddingY, 'bi-arrow-down-up')}
+                    `
+                    : `
+                        ${this.renderTextPaddingField('Top', 'paddingTop', padding.top, 'bi-arrow-up')}
+                        ${this.renderTextPaddingField('Right', 'paddingRight', padding.right, 'bi-arrow-right')}
+                        ${this.renderTextPaddingField('Bottom', 'paddingBottom', padding.bottom, 'bi-arrow-down')}
+                        ${this.renderTextPaddingField('Left', 'paddingLeft', padding.left, 'bi-arrow-left')}
+                    `}
+            </div>
+        `;
+    },
+
+    renderTextPaddingField(label, setting, value, icon) {
+        const normalizedValue = Number.isFinite(Number(value)) ? Number(value) : 0;
+        return `
+            <label class="frame-editor-field frame-editor-field-wide frame-editor-padding-field">
+                <span class="frame-editor-padding-field-label">
+                    <i class="bi ${icon}" aria-hidden="true"></i>
+                    <span>${this.escapeHTML(I18n.translateString(label))}</span>
+                </span>
+                <div class="frame-editor-measurement-field">
+                    <div class="frame-editor-unit-input">
+                        <input type="number" min="0" max="${this.TEXT_BLOCK_PADDING_MAX}" step="1" value="${this.escapeHTML(String(normalizedValue))}" data-block-setting="${setting}">
+                        <span>px</span>
+                    </div>
+                    <input type="range" min="0" max="${this.TEXT_BLOCK_PADDING_MAX}" step="1" value="${this.escapeHTML(String(normalizedValue))}" data-block-setting="${setting}">
+                </div>
+            </label>
+        `;
+    },
+
+    getTextBlockAppearance(block) {
+        const fontWeight = Number(block?.fontWeight) >= 700 ? 700 : 400;
+        const fontStyle = block?.fontStyle === 'italic' ? 'italic' : 'normal';
+        const match = this.TEXT_BLOCK_APPEARANCE_OPTIONS.find(option => option.fontWeight === fontWeight && option.fontStyle === fontStyle);
+        return match?.id || 'default';
+    },
+
+    getTextBlockAppearancePatch(appearanceId) {
+        const appearance = this.TEXT_BLOCK_APPEARANCE_OPTIONS.find(option => option.id === appearanceId) || this.TEXT_BLOCK_APPEARANCE_OPTIONS[0];
+        return {
+            fontWeight: appearance.fontWeight,
+            fontStyle: appearance.fontStyle
+        };
+    },
+
+    getTextBlockPadding(block) {
+        const horizontalPadding = Math.max(0, Number(block?.paddingX) || 0);
+        const verticalPadding = Math.max(0, Number(block?.paddingY) || 0);
+        const resolvePaddingValue = (value, fallback) => {
+            const numericValue = Number(value);
+            return Number.isFinite(numericValue) ? Math.max(0, numericValue) : fallback;
+        };
+
+        return {
+            top: resolvePaddingValue(block?.paddingTop, verticalPadding),
+            right: resolvePaddingValue(block?.paddingRight, horizontalPadding),
+            bottom: resolvePaddingValue(block?.paddingBottom, verticalPadding),
+            left: resolvePaddingValue(block?.paddingLeft, horizontalPadding)
+        };
+    },
+
+    buildTextBlockPaddingPatch(padding) {
+        const nextPadding = {
+            top: Math.max(0, Number(padding?.top) || 0),
+            right: Math.max(0, Number(padding?.right) || 0),
+            bottom: Math.max(0, Number(padding?.bottom) || 0),
+            left: Math.max(0, Number(padding?.left) || 0)
+        };
+
+        return {
+            paddingTop: nextPadding.top,
+            paddingRight: nextPadding.right,
+            paddingBottom: nextPadding.bottom,
+            paddingLeft: nextPadding.left,
+            paddingX: Math.max(nextPadding.left, nextPadding.right),
+            paddingY: Math.max(nextPadding.top, nextPadding.bottom)
+        };
+    },
+
+    getTextBlockPaddingSideFromSetting(setting) {
+        const sideMap = {
+            paddingTop: 'top',
+            paddingRight: 'right',
+            paddingBottom: 'bottom',
+            paddingLeft: 'left'
+        };
+
+        return sideMap[setting] || '';
+    },
+
+    getMirroredTextBlockPaddingPatch(block, setting, value) {
+        const side = this.getTextBlockPaddingSideFromSetting(setting);
+        const normalizedValue = this.clamp(Number(value) || 0, 0, this.TEXT_BLOCK_PADDING_MAX);
+        const padding = this.getTextBlockPadding(block);
+
+        if (setting === 'paddingX') {
+            padding.left = normalizedValue;
+            padding.right = normalizedValue;
+            return this.buildTextBlockPaddingPatch(padding);
+        }
+
+        if (setting === 'paddingY') {
+            padding.top = normalizedValue;
+            padding.bottom = normalizedValue;
+            return this.buildTextBlockPaddingPatch(padding);
+        }
+
+        if (!side) {
+            return null;
+        }
+
+        if (block?.paddingLinked === false) {
+            padding[side] = normalizedValue;
+            return this.buildTextBlockPaddingPatch(padding);
+        }
+
+        if (side === 'left' || side === 'right') {
+            padding.left = normalizedValue;
+            padding.right = normalizedValue;
+        } else {
+            padding.top = normalizedValue;
+            padding.bottom = normalizedValue;
+        }
+
+        return this.buildTextBlockPaddingPatch(padding);
+    },
+
+    getLinkedTextBlockPaddingTogglePatch(block, nextValue) {
+        const shouldLink = nextValue === 'true';
+        if (!shouldLink) {
+            return {
+                paddingLinked: false
+            };
+        }
+
+        const padding = this.getTextBlockPadding(block);
+        return {
+            paddingLinked: true,
+            ...this.buildTextBlockPaddingPatch({
+                top: Math.max(padding.top, padding.bottom),
+                right: Math.max(padding.left, padding.right),
+                bottom: Math.max(padding.top, padding.bottom),
+                left: Math.max(padding.left, padding.right)
+            })
+        };
+    },
+
+    getTextBlockFontSizePreset(block) {
+        const options = this.TEXT_BLOCK_FONT_SIZE_OPTIONS;
+        const currentSize = Number(block?.fontSize);
+        const exactMatch = options.find(option => option.size === currentSize);
+        if (exactMatch) {
+            return exactMatch.id;
+        }
+
+        return options.reduce((closest, option) => {
+            if (!closest) {
+                return option;
+            }
+
+            return Math.abs(option.size - currentSize) < Math.abs(closest.size - currentSize)
+                ? option
+                : closest;
+        }, null)?.id || 'm';
+    },
+
+    getTextBlockFontSizePatch(presetId) {
+        const option = this.TEXT_BLOCK_FONT_SIZE_OPTIONS.find(candidate => candidate.id === presetId) || this.TEXT_BLOCK_FONT_SIZE_OPTIONS[1];
+        return {
+            fontSizePreset: option.id,
+            fontSize: option.size
+        };
+    },
+
+    isTransparentTextBlockBackground(block) {
+        return !block?.backgroundColor || block.backgroundColor === 'transparent';
+    },
+
+    getTextBlockColorInputValue(colorValue, fallback = '#111111') {
+        if (!colorValue || colorValue === 'transparent') {
+            return fallback;
+        }
+
+        return colorValue;
+    },
+
+    formatTextBlockLineHeight(lineHeight) {
+        const normalizedValue = Number.isFinite(Number(lineHeight)) ? Number(lineHeight) : 1.5;
+        return normalizedValue.toFixed(1).replace(/\.0$/, '');
+    },
+
     renderWorkspace(selectedFrame, totalFrameCount, selectedBlock, isDeveloperMode = false) {
         if (this.state.isLoading) {
             return `
@@ -613,7 +973,9 @@ const FramesMode = {
 
     renderCanvasBlock(block) {
         const isActive = this.state.selectedBlockId === block.id;
-        const width = block.type === 'text' ? block.width : block.size;
+        const width = block.type === 'text'
+            ? this.getTextBlockLayout(block).width
+            : block.size;
         const style = [
             `left: ${block.xPct}%`,
             `top: ${block.yPct}%`,
@@ -630,9 +992,6 @@ const FramesMode = {
                 role="button"
                 aria-label="${this.escapeHTML(I18n.translateString(block.type === 'text' ? 'Text Block' : 'QR Code Block'))}"
             >
-                ${block.type === 'text'
-                    ? `<div class="frame-editor-canvas-block-badge">${this.escapeHTML(I18n.translateString('Text'))}</div>`
-                    : ''}
                 ${this.renderCanvasBlockInner(block)}
             </div>
         `;
@@ -640,24 +999,31 @@ const FramesMode = {
 
     renderCanvasBlockInner(block) {
         if (block.type === 'text') {
+            const layout = this.getTextBlockLayout(block);
+            const padding = this.getTextBlockPadding(block);
+            const surfaceStyle = [
+                `background-color: ${this.isTransparentTextBlockBackground(block) ? 'transparent' : block.backgroundColor}`,
+                `border-color: ${(Number(block.borderWidth) || 0) > 0 ? (block.borderColor || block.color || this.getTextBlockDefaultColor()) : 'transparent'}`,
+                'border-style: solid',
+                `border-width: ${layout.borderWidth}px`,
+                `padding: ${padding.top}px ${padding.right}px ${padding.bottom}px ${padding.left}px`,
+                `border-radius: ${Math.max(0, Number(block.borderRadius) || 0)}px`
+            ].join('; ');
             const inlineStyle = [
                 `font-size: ${block.fontSize}px`,
                 `font-weight: ${block.fontWeight}`,
                 `font-style: ${block.fontStyle}`,
                 `color: ${block.color}`,
-                `text-align: ${block.textAlign || 'left'}`
+                `text-align: ${block.textAlign || 'left'}`,
+                `line-height: ${this.getTextBlockLineHeight(block)}`,
+                `letter-spacing: ${(Number(block.letterSpacing) || 0)}px`,
+                `text-decoration: ${block.textDecoration || 'none'}`,
+                `text-transform: ${block.textTransform || 'none'}`
             ].join('; ');
 
             return `
-                <div class="frame-editor-text-block-surface">
-                    <div
-                        class="frame-editor-text-block-content"
-                        style="${inlineStyle}"
-                        spellcheck="false"
-                    >
-                        ${this.escapeHTML(block.text)}
-                    </div>
-                </div>
+                <div class="frame-editor-text-block-surface" style="${surfaceStyle}"><div class="frame-editor-text-block-content" style="${inlineStyle}" spellcheck="false">${this.renderTextBlockContentMarkup(block)}</div></div>
+                ${this.state.selectedBlockId === block.id ? this.renderTextBlockResizeHandles() : ''}
             `;
         }
 
@@ -683,6 +1049,112 @@ const FramesMode = {
         });
     },
 
+    renderTextBlockContentMarkup(block) {
+        const text = this.getDisplayTextForBlock(block);
+        if (!text) {
+            return '&nbsp;';
+        }
+
+        const escapeWithLineBreaks = value => this.escapeHTML(value).replace(/\n/g, '<br>');
+        if (!block?.dropCap) {
+            return escapeWithLineBreaks(text);
+        }
+
+        const characters = Array.from(text);
+        const firstCharacter = characters.shift() || '';
+        if (!firstCharacter || firstCharacter === '\n') {
+            return escapeWithLineBreaks(text);
+        }
+
+        return `<span class="frame-editor-text-block-drop-cap">${this.escapeHTML(firstCharacter)}</span>${escapeWithLineBreaks(characters.join(''))}`;
+    },
+
+    renderTextBlockResizeHandles() {
+        return ['top', 'right', 'bottom', 'left', 'top-left', 'top-right', 'bottom-right', 'bottom-left'].map(side => `
+            <button
+                type="button"
+                class="frame-editor-text-block-resize-handle frame-editor-text-block-resize-handle-${side}"
+                data-frame-editor-padding-handle="${side}"
+                tabindex="-1"
+                aria-hidden="true"
+            ></button>
+        `).join('');
+    },
+
+    getDisplayTextForBlock(block) {
+        const text = String(block?.text || '');
+        const textTransform = block?.textTransform || 'none';
+        if (textTransform === 'uppercase') {
+            return text.toUpperCase();
+        }
+        if (textTransform === 'lowercase') {
+            return text.toLowerCase();
+        }
+        if (textTransform === 'capitalize') {
+            return text.replace(/\b([a-z])/gi, match => match.toUpperCase());
+        }
+        return text;
+    },
+
+    getTextMeasureContext() {
+        if (!this.textMeasureCanvas) {
+            this.textMeasureCanvas = document.createElement('canvas');
+        }
+
+        return this.textMeasureCanvas.getContext('2d');
+    },
+
+    getTextBlockLayout(block) {
+        const fontSize = Number(block?.fontSize) || 32;
+        const fontWeight = Number(block?.fontWeight) >= 700 ? 700 : 400;
+        const fontStyle = block?.fontStyle === 'italic' ? 'italic' : 'normal';
+        const lineHeight = this.getTextBlockLineHeight(block);
+        const letterSpacing = Number(block?.letterSpacing) || 0;
+        const text = this.getDisplayTextForBlock(block);
+        const lines = text ? text.split('\n') : [''];
+        const padding = this.getTextBlockPadding(block);
+        const borderWidth = Math.max(0, Number(block?.borderWidth) || 0);
+        const effectiveLineHeight = lineHeight;
+        const measureContext = this.getTextMeasureContext();
+
+        if (measureContext) {
+            measureContext.font = `${fontStyle} ${fontWeight} ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+        }
+
+        const maxLineWidth = lines.reduce((maxWidth, line) => {
+            const normalizedLine = line || ' ';
+            const glyphCount = Math.max(0, Array.from(normalizedLine).length - 1);
+            const measuredWidth = measureContext
+                ? measureContext.measureText(normalizedLine).width
+                : (normalizedLine.length * fontSize * 0.6);
+            return Math.max(maxWidth, measuredWidth + (glyphCount * letterSpacing));
+        }, 0);
+
+        const dropCapWidth = block?.dropCap ? fontSize * 1.1 : 0;
+        const contentWidth = Math.max(fontSize * 0.7, maxLineWidth + dropCapWidth);
+        const contentHeight = Math.max(fontSize, lines.length * fontSize * effectiveLineHeight, block?.dropCap ? fontSize * 2.4 : 0);
+
+        return {
+            width: Math.ceil(contentWidth + padding.left + padding.right + (borderWidth * 2)),
+            height: Math.ceil(contentHeight + padding.top + padding.bottom + (borderWidth * 2)),
+            paddingTop: padding.top,
+            paddingRight: padding.right,
+            paddingBottom: padding.bottom,
+            paddingLeft: padding.left,
+            borderWidth
+        };
+    },
+
+    getTextBlockLineHeight(block) {
+        const lineCount = String(block?.text || '').includes('\n') ? String(block.text).split('\n').length : 1;
+        if (lineCount <= 1) {
+            return 1;
+        }
+
+        const lineHeight = Number(block?.lineHeight) || 1.5;
+        return Math.max(1.1, lineHeight);
+    },
+
     getCanvasGridStyle(scrollLeft = this.canvasScrollLeft || 0, scrollTop = this.canvasScrollTop || 0) {
         const gridSize = Math.max(8, this.state.canvasGridBaseSize * this.state.canvasZoom);
         const offsetX = (((Math.max(this.state.canvasPanX, 0) - scrollLeft) % gridSize) + gridSize) % gridSize;
@@ -700,24 +1172,25 @@ const FramesMode = {
     },
 
     getCanvasContentBounds(root, viewportWidth, viewportHeight) {
-        const viewport = root?.querySelector?.('[data-frame-editor-viewport]');
-        if (!viewport) {
+        if (!root) {
             return null;
         }
-
-        const viewportRect = viewport.getBoundingClientRect();
         let bounds = null;
+        const { x: panX, y: panY } = this.getEffectiveCanvasPan();
+        const zoom = Math.max(this.state.canvasZoom, 0.01);
 
-        root.querySelectorAll('[data-frame-editor-canvas-block]').forEach(element => {
-            const rect = element.getBoundingClientRect();
-            if (!rect.width || !rect.height) {
+        this.state.canvasBlocks.forEach(block => {
+            const footprint = this.getCanvasBlockFootprint(block);
+            if (!footprint.width || !footprint.height) {
                 return;
             }
 
-            const left = rect.left - viewportRect.left;
-            const top = rect.top - viewportRect.top;
-            const right = rect.right - viewportRect.left;
-            const bottom = rect.bottom - viewportRect.top;
+            const centerX = (block.xPct / 100) * viewportWidth;
+            const centerY = (block.yPct / 100) * viewportHeight;
+            const left = panX + ((centerX - (footprint.width / 2)) * zoom);
+            const top = panY + ((centerY - (footprint.height / 2)) * zoom);
+            const right = panX + ((centerX + (footprint.width / 2)) * zoom);
+            const bottom = panY + ((centerY + (footprint.height / 2)) * zoom);
 
             if (!bounds) {
                 bounds = { left, top, right, bottom };
@@ -867,9 +1340,38 @@ const FramesMode = {
             return;
         }
 
+        const scrollState = this.capturePanelScrollState(root);
         root.innerHTML = this.render();
         this.bindEvents(root);
+        this.restorePanelScrollState(root, scrollState);
         this.syncViewportLayout(root);
+        this.restorePanelScrollState(root, scrollState);
+    },
+
+    capturePanelScrollState(root = this.getRoot()) {
+        return {
+            leftSidebarScrollTop: root?.querySelector?.('.frame-editor-sidebar-body')?.scrollTop ?? null,
+            rightSidebarScrollTop: root?.querySelector?.('.frame-editor-right-sidebar-body')?.scrollTop ?? null,
+            jsonViewScrollTop: root?.querySelector?.('.frame-editor-json-view')?.scrollTop ?? null
+        };
+    },
+
+    restorePanelScrollState(root = this.getRoot(), scrollState = {}) {
+        const leftSidebarBody = root?.querySelector?.('.frame-editor-sidebar-body');
+        const rightSidebarBody = root?.querySelector?.('.frame-editor-right-sidebar-body');
+        const jsonView = root?.querySelector?.('.frame-editor-json-view');
+
+        if (leftSidebarBody && Number.isFinite(scrollState.leftSidebarScrollTop)) {
+            leftSidebarBody.scrollTop = scrollState.leftSidebarScrollTop;
+        }
+
+        if (rightSidebarBody && Number.isFinite(scrollState.rightSidebarScrollTop)) {
+            rightSidebarBody.scrollTop = scrollState.rightSidebarScrollTop;
+        }
+
+        if (jsonView && Number.isFinite(scrollState.jsonViewScrollTop)) {
+            jsonView.scrollTop = scrollState.jsonViewScrollTop;
+        }
     },
 
     init() {
@@ -1195,6 +1697,15 @@ const FramesMode = {
             this.hideCanvasZoomContextMenu(root);
         });
 
+        root.addEventListener('pointerdown', event => {
+            const handle = event.target.closest('[data-frame-editor-padding-handle]');
+            if (!handle || !root.contains(handle)) {
+                return;
+            }
+
+            this.beginTextBlockPaddingResize(root, handle, event);
+        });
+
         root.addEventListener('keydown', event => {
             if (event.key === 'Escape') {
                 this.hideCanvasZoomContextMenu(root);
@@ -1203,6 +1714,9 @@ const FramesMode = {
 
         root.querySelectorAll('[data-frame-editor-canvas-block]').forEach(blockElement => {
             blockElement.addEventListener('pointerdown', event => {
+                if (event.target.closest('[data-frame-editor-padding-handle]')) {
+                    return;
+                }
                 this.beginCanvasBlockDrag(root, blockElement, event);
             });
 
@@ -1248,6 +1762,27 @@ const FramesMode = {
             control.addEventListener('change', onSettingChange);
         });
 
+        root.querySelectorAll('[data-block-adjust]').forEach(button => {
+            button.addEventListener('click', () => {
+                const selectedBlock = this.getSelectedBlock();
+                if (!selectedBlock || selectedBlock.type !== 'text') {
+                    return;
+                }
+
+                const setting = button.dataset.blockAdjust;
+                if (setting !== 'lineHeight') {
+                    return;
+                }
+
+                const direction = button.dataset.blockAdjustDirection === 'decrease' ? -1 : 1;
+                const nextLineHeight = this.clamp((Number(selectedBlock.lineHeight) || 1.5) + (direction * 0.1), 0.8, 3);
+                this.updateBlock(selectedBlock.id, {
+                    lineHeight: Number(nextLineHeight.toFixed(1))
+                });
+                this.renderIntoRoot();
+            });
+        });
+
         root.querySelectorAll('[data-canvas-setting]').forEach(control => {
             const onCanvasChange = event => {
                 this.handleCanvasSettingInput(event.currentTarget);
@@ -1268,9 +1803,7 @@ const FramesMode = {
                     return;
                 }
 
-                this.updateBlock(block.id, {
-                    [setting]: button.dataset.blockValue || ''
-                });
+                this.updateBlock(block.id, this.getBlockTogglePatch(block, setting, button.dataset.blockValue || ''));
                 this.renderIntoRoot();
             });
         });
@@ -1372,6 +1905,148 @@ const FramesMode = {
         window.addEventListener('pointercancel', onPointerUp);
     },
 
+    beginTextBlockPaddingResize(root, handleElement, event) {
+        if (event.button !== 0) {
+            return;
+        }
+
+        const handle = handleElement.dataset.frameEditorPaddingHandle;
+        const blockElement = handleElement.closest('[data-frame-editor-canvas-block]');
+        const blockId = blockElement?.dataset.frameEditorCanvasBlock;
+        const block = this.getBlockById(blockId);
+        const canvasScroll = root.querySelector('[data-frame-editor-canvas-scroll]');
+        if (!handle || !blockElement || !block || block.type !== 'text' || !canvasScroll) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const startPointer = {
+            x: event.clientX,
+            y: event.clientY
+        };
+        let nextPatch = null;
+        let nextPosition = {
+            xPct: block.xPct,
+            yPct: block.yPct
+        };
+        let didResize = false;
+
+        const onPointerMove = moveEvent => {
+            const deltaX = moveEvent.clientX - startPointer.x;
+            const deltaY = moveEvent.clientY - startPointer.y;
+            const threshold = handle.includes('-')
+                ? Math.hypot(deltaX, deltaY)
+                : Math.abs((handle === 'left' || handle === 'right') ? deltaX : deltaY);
+            if (!didResize && threshold >= 2) {
+                didResize = true;
+                blockElement.classList.add('is-resizing');
+            }
+
+            if (!didResize) {
+                return;
+            }
+
+            const resizePreview = this.getTextBlockResizePreview(
+                root,
+                block,
+                handle,
+                deltaX / Math.max(this.state.canvasZoom, 0.01),
+                deltaY / Math.max(this.state.canvasZoom, 0.01),
+                canvasScroll
+            );
+            nextPatch = resizePreview.patch;
+            nextPosition = resizePreview.position;
+            const previewBlock = {
+                ...block,
+                ...resizePreview.patch,
+                ...resizePreview.position
+            };
+
+            blockElement.style.left = `${previewBlock.xPct}%`;
+            blockElement.style.top = `${previewBlock.yPct}%`;
+            blockElement.style.width = `${this.getTextBlockLayout(previewBlock).width}px`;
+            blockElement.innerHTML = this.renderCanvasBlockInner(previewBlock);
+            this.syncInspectorBlockControls(root, resizePreview.patch);
+        };
+
+        const finishResize = () => {
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerUp);
+            blockElement.classList.remove('is-resizing');
+
+            if (!didResize || !nextPatch) {
+                return;
+            }
+
+            this.updateBlock(block.id, {
+                ...nextPatch,
+                ...nextPosition
+            });
+            this.renderIntoRoot();
+            this.clampUpdatedBlockToCanvas(this.getRoot(), this.getBlockById(block.id));
+        };
+
+        const onPointerUp = () => {
+            finishResize();
+        };
+
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
+    },
+
+    getTextBlockResizePreview(root, block, handle, deltaX, deltaY, canvasScroll) {
+        const padding = this.getTextBlockPadding(block);
+        const nextPadding = { ...padding };
+        const nextPosition = {
+            xPct: block.xPct,
+            yPct: block.yPct
+        };
+        const deltasBySide = {
+            left: -deltaX,
+            right: deltaX,
+            top: -deltaY,
+            bottom: deltaY
+        };
+        const affectedSides = handle.split('-').filter(Boolean);
+
+        affectedSides.forEach(side => {
+            const actualDelta = Number(deltasBySide[side]) || 0;
+            const nextValue = this.clamp(padding[side] + actualDelta, 0, this.TEXT_BLOCK_PADDING_MAX);
+            const appliedDelta = nextValue - padding[side];
+            nextPadding[side] = nextValue;
+
+            if (side === 'left') {
+                nextPosition.xPct -= (appliedDelta / 2 / Math.max(canvasScroll.clientWidth, 1)) * 100;
+            } else if (side === 'right') {
+                nextPosition.xPct += (appliedDelta / 2 / Math.max(canvasScroll.clientWidth, 1)) * 100;
+            } else if (side === 'top') {
+                nextPosition.yPct -= (appliedDelta / 2 / Math.max(canvasScroll.clientHeight, 1)) * 100;
+            } else if (side === 'bottom') {
+                nextPosition.yPct += (appliedDelta / 2 / Math.max(canvasScroll.clientHeight, 1)) * 100;
+            }
+        });
+
+        const patch = this.buildTextBlockPaddingPatch(nextPadding);
+        const previewBlock = {
+            ...block,
+            ...patch,
+            paddingLinked: false,
+            ...nextPosition
+        };
+
+        return {
+            patch: {
+                paddingLinked: false,
+                ...patch
+            },
+            position: this.clampCanvasBlockPosition(root, previewBlock, nextPosition)
+        };
+    },
+
     beginCanvasPan(root, stage, event) {
         if (event.button !== 0) {
             return;
@@ -1464,17 +2139,63 @@ const FramesMode = {
             return;
         }
 
-        const numericSettings = new Set(['fontSize', 'width', 'size']);
-        const nextValue = numericSettings.has(setting)
-            ? Number(control.value)
-            : control.value;
+        if (setting === 'appearance') {
+            this.updateBlock(block.id, this.getTextBlockAppearancePatch(control.value));
+            const updatedAppearanceBlock = this.getBlockById(block.id);
+            this.syncCanvasBlock(root, updatedAppearanceBlock);
+            this.clampUpdatedBlockToCanvas(root, updatedAppearanceBlock);
+            return;
+        }
 
-        this.updateBlock(block.id, {
-            [setting]: nextValue
-        });
+        const numericSettings = new Set(['fontSize', 'width', 'size', 'lineHeight', 'letterSpacing', 'paddingX', 'paddingY', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderWidth', 'borderRadius']);
+        let nextValue;
+
+        if (setting === 'backgroundColorRaw') {
+            nextValue = control.value;
+        } else if (control.type === 'checkbox') {
+            nextValue = control.checked;
+        } else {
+            nextValue = numericSettings.has(setting)
+                ? Number(control.value)
+                : control.value;
+        }
+
+        const patch = setting === 'backgroundColorRaw'
+            ? { backgroundColor: nextValue }
+            : (this.getMirroredTextBlockPaddingPatch(block, setting, nextValue) || { [setting]: nextValue });
+
+        this.updateBlock(block.id, patch);
+        this.syncInspectorBlockControls(root, patch);
         const updatedBlock = this.getBlockById(block.id);
         this.syncCanvasBlock(root, updatedBlock);
         this.clampUpdatedBlockToCanvas(root, updatedBlock);
+    },
+
+    syncInspectorBlockControls(root, patch = {}) {
+        const patchEntries = Object.entries(patch);
+        if (!root || !patchEntries.length) {
+            return;
+        }
+
+        root.querySelectorAll('[data-block-setting]').forEach(control => {
+            const setting = control.dataset.blockSetting;
+            const matchingEntry = patchEntries.find(([key]) => key === setting);
+            if (!matchingEntry) {
+                return;
+            }
+
+            if (control === document.activeElement) {
+                return;
+            }
+
+            const [, value] = matchingEntry;
+            if (control.type === 'checkbox') {
+                control.checked = Boolean(value);
+                return;
+            }
+
+            control.value = String(value);
+        });
     },
 
     syncCanvasBlock(root, block) {
@@ -1489,15 +2210,13 @@ const FramesMode = {
         }
 
         const width = block.type === 'text' ? block.width : block.size;
+        const resolvedWidth = block.type === 'text'
+            ? this.getTextBlockLayout(block).width
+            : width;
         blockElement.style.left = `${block.xPct}%`;
         blockElement.style.top = `${block.yPct}%`;
-        blockElement.style.width = `${width}px`;
-        blockElement.innerHTML = `
-            ${block.type === 'text'
-                ? `<div class="frame-editor-canvas-block-badge">${this.escapeHTML(I18n.translateString('Text'))}</div>`
-                : ''}
-            ${this.renderCanvasBlockInner(block)}
-        `;
+        blockElement.style.width = `${resolvedWidth}px`;
+        blockElement.innerHTML = this.renderCanvasBlockInner(block);
         this.applyCanvasLayout(root);
     },
 
@@ -1672,11 +2391,28 @@ const FramesMode = {
                 text: I18n.translateString('This is a text block'),
                 xPct,
                 yPct,
-                width: 320,
-                fontSize: 34,
-                fontWeight: 700,
+                width: 0,
+                fontSize: 32,
+                fontSizePreset: 'm',
+                fontWeight: 400,
                 fontStyle: 'normal',
-                color: '#1f2937',
+                color: this.getTextBlockDefaultColor(),
+                backgroundColor: 'transparent',
+                paddingTop: 0,
+                paddingRight: 0,
+                paddingBottom: 0,
+                paddingLeft: 0,
+                paddingX: 0,
+                paddingY: 0,
+                paddingLinked: true,
+                borderWidth: 0,
+                borderRadius: 0,
+                borderColor: this.getTextBlockDefaultColor(),
+                lineHeight: 1.5,
+                letterSpacing: 0,
+                textDecoration: 'none',
+                textTransform: 'none',
+                dropCap: false,
                 textAlign: 'left'
             };
         }
@@ -1869,11 +2605,7 @@ const FramesMode = {
             };
         }
 
-        const lineCount = Math.max(1, String(block.text || '').split('\n').length);
-        return {
-            width: block.width,
-            height: Math.max(54, (lineCount * block.fontSize * 1.2) + 28)
-        };
+        return this.getTextBlockLayout(block);
     },
 
     clampCanvasBlockPosition(root, block, position, blockElement = null) {
@@ -1933,6 +2665,44 @@ const FramesMode = {
 
     clamp(value, min, max) {
         return Math.min(max, Math.max(min, value));
+    },
+
+    getBlockTogglePatch(block, setting, value) {
+        if (block.type === 'text') {
+            if (setting === 'fontSizePreset') {
+                return this.getTextBlockFontSizePatch(value);
+            }
+
+            if (setting === 'backgroundColor') {
+                return {
+                    backgroundColor: value === 'transparent' ? 'transparent' : value
+                };
+            }
+
+            if (setting === 'paddingLinked') {
+                return this.getLinkedTextBlockPaddingTogglePatch(block, value);
+            }
+        }
+
+        return {
+            [setting]: value
+        };
+    },
+
+    getTextBlockDefaultColor() {
+        return this.isLightColor(this.state.canvasBackgroundColor) ? '#000000' : '#ffffff';
+    },
+
+    isLightColor(hexColor) {
+        const normalized = String(hexColor || '').replace('#', '').trim();
+        if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
+            return false;
+        }
+
+        const red = Number.parseInt(normalized.slice(0, 2), 16);
+        const green = Number.parseInt(normalized.slice(2, 4), 16);
+        const blue = Number.parseInt(normalized.slice(4, 6), 16);
+        return (0.299 * red + 0.587 * green + 0.114 * blue) > 186;
     },
 
     isDeveloperMode() {
