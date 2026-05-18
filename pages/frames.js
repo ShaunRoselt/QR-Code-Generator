@@ -61,12 +61,12 @@ const FramesMode = {
         { id: 'fill', label: 'Fill' }
     ]),
     LINE_BLOCK_STYLE_OPTIONS: Object.freeze([
-        { id: 'solid', label: 'Solid' },
-        { id: 'dashed', label: 'Dashed' },
-        { id: 'dotted', label: 'Dotted' },
-        { id: 'double', label: 'Double' },
-        { id: 'striped', label: 'Striped' },
-        { id: 'gradient', label: 'Gradient' }
+        { id: 'solid', label: 'Solid', preview: '────────' },
+        { id: 'dashed', label: 'Dashed', preview: '┄┄┄┄┄┄┄┄' },
+        { id: 'dotted', label: 'Dotted', preview: '········' },
+        { id: 'double', label: 'Double', preview: '═══════≡' },
+        { id: 'striped', label: 'Striped', preview: '▰▱▰▱▰▱▰▱' },
+        { id: 'gradient', label: 'Gradient', preview: '▁▂▃▄▅▆▇█' }
     ]),
     TEXT_BLOCK_FONT_SIZE_OPTIONS: Object.freeze([
         { id: 's', label: 'S', size: 24 },
@@ -848,15 +848,11 @@ const FramesMode = {
                     <div class="frame-editor-text-property-group">
                         ${this.renderTextPropertyGroupHeading('Appearance')}
                         <div class="frame-editor-text-color-list">
-                            ${this.renderTextColorControl('Fill', 'color', selectedBlock.color || this.getTextBlockDefaultColor())}
+                        ${this.renderTextColorControl('Fill', 'color', selectedBlock.color || this.getTextBlockDefaultColor())}
                         </div>
                         <label class="frame-editor-field frame-editor-field-wide">
                             <span>${I18n.translateString('Style')}</span>
-                            <select class="frame-editor-select" data-block-setting="lineStyle">
-                                ${this.LINE_BLOCK_STYLE_OPTIONS.map(option => `
-                                    <option value="${option.id}" ${selectedLineStyle === option.id ? 'selected' : ''}>${this.escapeHTML(I18n.translateString(option.label))}</option>
-                                `).join('')}
-                            </select>
+                            ${this.renderLineStylePicker(selectedLineStyle)}
                         </label>
                     </div>
                     <div class="frame-editor-text-property-group">
@@ -882,6 +878,40 @@ const FramesMode = {
         `;
     },
 
+    renderLineStylePicker(selectedLineStyle) {
+        const selectedOption = this.LINE_BLOCK_STYLE_OPTIONS.find(option => option.id === selectedLineStyle) || this.LINE_BLOCK_STYLE_OPTIONS[0];
+        const selectedPreview = this.getLineBlockStylePreviewText(selectedOption);
+        const selectedLabel = I18n.translateString(selectedOption?.label || '');
+
+        return `
+            <details class="frame-editor-line-style-picker" data-line-style-picker>
+                <summary class="frame-editor-line-style-picker-summary">
+                    <span class="frame-editor-line-style-picker-preview">${this.escapeHTML(selectedPreview)}</span>
+                    <span class="frame-editor-line-style-picker-label">${this.escapeHTML(selectedLabel)}</span>
+                    <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                </summary>
+                <div class="frame-editor-line-style-picker-menu" role="listbox" aria-label="${this.escapeHTML(I18n.translateString('Line style'))}">
+                    ${this.LINE_BLOCK_STYLE_OPTIONS.map(option => {
+                        const isSelected = option.id === selectedLineStyle;
+                        return `
+                            <button
+                                type="button"
+                                class="frame-editor-line-style-picker-option${isSelected ? ' active' : ''}"
+                                data-line-style-option="${this.escapeHTML(option.id)}"
+                                role="option"
+                                aria-selected="${isSelected ? 'true' : 'false'}"
+                            >
+                                <span class="frame-editor-line-style-picker-option-preview">${this.escapeHTML(this.getLineBlockStylePreviewText(option))}</span>
+                                <span class="frame-editor-line-style-picker-option-label">${this.escapeHTML(I18n.translateString(option.label))}</span>
+                                ${isSelected ? '<i class="bi bi-check2 frame-editor-line-style-picker-option-status" aria-hidden="true"></i>' : ''}
+                            </button>
+                        `;
+                    }).join('')}
+                </div>
+            </details>
+        `;
+    },
+
     renderBlockActionButtons() {
         return `
             <div class="frame-editor-inspector-actions">
@@ -895,6 +925,14 @@ const FramesMode = {
                 </button>
             </div>
         `;
+    },
+
+    getLineBlockStylePreviewText(option) {
+        if (!option) {
+            return '';
+        }
+
+        return option.preview || '';
     },
 
     renderSidebarToggleButton(setting, value, isActive, icon, label) {
@@ -3075,6 +3113,23 @@ const FramesMode = {
         root.querySelectorAll('[data-block-image-upload]').forEach(input => {
             input.addEventListener('change', event => {
                 this.handleImageBlockUpload(root, event.currentTarget);
+            });
+        });
+
+        root.querySelectorAll('[data-line-style-option]').forEach(button => {
+            button.addEventListener('click', () => {
+                const block = this.getSelectedBlock();
+                if (!block || block.type !== 'line') {
+                    return;
+                }
+
+                const lineStyle = button.dataset.lineStyleOption;
+                if (!lineStyle) {
+                    return;
+                }
+
+                this.updateBlock(block.id, this.normalizeLineBlockPatch(block, { lineStyle }));
+                this.renderIntoRoot();
             });
         });
 
