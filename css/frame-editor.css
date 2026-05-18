@@ -1338,6 +1338,18 @@
     cursor: grabbing;
 }
 
+.frame-editor-canvas-block.dragging .frame-editor-qr-block-surface,
+.frame-editor-canvas-block.dragging .frame-editor-shape-block-surface,
+.frame-editor-canvas-block.dragging .frame-editor-image-block-surface,
+.frame-editor-canvas-block.is-resizing .frame-editor-qr-block-surface,
+.frame-editor-canvas-block.is-resizing .frame-editor-shape-block-surface,
+.frame-editor-canvas-block.is-resizing .frame-editor-image-block-surface,
+.frame-editor-canvas-block.is-rotating .frame-editor-qr-block-surface,
+.frame-editor-canvas-block.is-rotating .frame-editor-shape-block-surface,
+.frame-editor-canvas-block.is-rotating .frame-editor-image-block-surface {
+    box-shadow: 0 0 0 2px rgba(102, 192, 244, 0.65);
+}
+
 .frame-editor-canvas-block.active .frame-editor-qr-block-surface {
     box-shadow:
         0 0 0 2px rgba(102, 192, 244, 0.65),

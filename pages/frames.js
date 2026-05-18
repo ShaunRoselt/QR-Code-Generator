@@ -1609,7 +1609,7 @@ const FramesMode = {
 
     getCanvasHandleScale(zoom = this.state.canvasZoom) {
         const normalizedZoom = Math.max(Number(zoom) || 0, 0.0001);
-        return Number((1 / normalizedZoom).toFixed(4));
+        return Number(Math.max(1 / normalizedZoom, 0.2).toFixed(4));
     },
 
     getQrBlockHandleLayout(block) {
@@ -3082,13 +3082,17 @@ const FramesMode = {
             xPct: block.xPct,
             yPct: block.yPct
         };
+        let previewFrame = 0;
+        let pendingPreviewBlock = null;
 
-        const updatePreview = () => {
-            const previewBlock = {
-                ...block,
-                ...nextPatch,
-                ...nextPosition
-            };
+        const applyPreview = () => {
+            previewFrame = 0;
+            if (!pendingPreviewBlock) {
+                return;
+            }
+
+            const previewBlock = pendingPreviewBlock;
+            pendingPreviewBlock = null;
             const layout = this.getCanvasBlockLayout(previewBlock);
             blockElement.style.left = `${previewBlock.xPct}%`;
             blockElement.style.top = `${previewBlock.yPct}%`;
@@ -3096,6 +3100,14 @@ const FramesMode = {
             blockElement.style.transform = this.getCanvasBlockTransform(previewBlock.rotation);
             this.syncShapeImageBlockPreview(blockElement, previewBlock);
             this.syncInspectorBlockControls(root, nextPatch);
+        };
+
+        const schedulePreview = previewBlock => {
+            pendingPreviewBlock = previewBlock;
+            if (previewFrame) {
+                return;
+            }
+            previewFrame = window.requestAnimationFrame(applyPreview);
         };
 
         const onPointerMove = moveEvent => {
@@ -3149,7 +3161,11 @@ const FramesMode = {
                 yPct: Number(((centerY / metrics.viewportHeight) * 100).toFixed(4))
             };
 
-            updatePreview();
+            schedulePreview({
+                ...block,
+                ...nextPatch,
+                ...nextPosition
+            });
         };
 
         const finishResize = () => {
@@ -3157,6 +3173,10 @@ const FramesMode = {
             window.removeEventListener('pointerup', onPointerUp);
             window.removeEventListener('pointercancel', onPointerUp);
             blockElement.classList.remove('is-resizing');
+            if (previewFrame) {
+                window.cancelAnimationFrame(previewFrame);
+                applyPreview();
+            }
 
             if (!didResize || !nextPatch) {
                 return;
