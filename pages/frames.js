@@ -35,6 +35,12 @@ const FramesMode = {
             icon: 'bi-square'
         },
         {
+            type: 'line',
+            name: 'Line Block',
+            description: 'Add divider and accent lines anywhere on the canvas.',
+            icon: 'bi-slash-lg'
+        },
+        {
             type: 'image',
             name: 'Image Block',
             description: 'Upload and place custom images on the canvas.',
@@ -53,6 +59,14 @@ const FramesMode = {
         { id: 'contain', label: 'Contain' },
         { id: 'cover', label: 'Cover' },
         { id: 'fill', label: 'Fill' }
+    ]),
+    LINE_BLOCK_STYLE_OPTIONS: Object.freeze([
+        { id: 'solid', label: 'Solid' },
+        { id: 'dashed', label: 'Dashed' },
+        { id: 'dotted', label: 'Dotted' },
+        { id: 'double', label: 'Double' },
+        { id: 'striped', label: 'Striped' },
+        { id: 'gradient', label: 'Gradient' }
     ]),
     TEXT_BLOCK_FONT_SIZE_OPTIONS: Object.freeze([
         { id: 's', label: 'S', size: 24 },
@@ -616,6 +630,10 @@ const FramesMode = {
             return this.renderImageBlockInspector(selectedBlock);
         }
 
+        if (selectedBlock.type === 'line') {
+            return this.renderLineBlockInspector(selectedBlock);
+        }
+
         return `
             <div class="frame-editor-sidebar-panel-section">
                 <div class="frame-editor-sidebar-summary">
@@ -808,6 +826,52 @@ const FramesMode = {
                         </label>
                         ${this.renderTextMeasurementField('Border width', 'borderWidth', selectedBlock.borderWidth ?? 0, 0, 20, 1)}
                         ${this.renderTextMeasurementField('Radius', 'borderRadius', selectedBlock.borderRadius ?? 0, 0, 120, 1)}
+                    </div>
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderBlockTransformControls(selectedBlock)}
+                    </div>
+                    ${this.renderBlockActionButtons()}
+                </div>
+            </div>
+        `;
+    },
+
+    renderLineBlockInspector(selectedBlock) {
+        const selectedLineStyle = selectedBlock.lineStyle || 'solid';
+
+        return `
+            <div class="frame-editor-sidebar-panel-section">
+                <div class="frame-editor-sidebar-summary">
+                    <span class="frame-editor-sidebar-title">${I18n.translateString('Line Block')}</span>
+                </div>
+                <div class="frame-editor-sidebar-form">
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderTextPropertyGroupHeading('Appearance')}
+                        <div class="frame-editor-text-color-list">
+                            ${this.renderTextColorControl('Fill', 'color', selectedBlock.color || this.getTextBlockDefaultColor())}
+                        </div>
+                        <label class="frame-editor-field frame-editor-field-wide">
+                            <span>${I18n.translateString('Style')}</span>
+                            <select class="frame-editor-select" data-block-setting="lineStyle">
+                                ${this.LINE_BLOCK_STYLE_OPTIONS.map(option => `
+                                    <option value="${option.id}" ${selectedLineStyle === option.id ? 'selected' : ''}>${this.escapeHTML(I18n.translateString(option.label))}</option>
+                                `).join('')}
+                            </select>
+                        </label>
+                    </div>
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderTextPropertyGroupHeading('Dimensions')}
+                        ${this.renderTextMeasurementField('Length', 'width', selectedBlock.width ?? 180, 24, this.getCanvasMeasurementMax('width'), 4)}
+                        ${this.renderTextMeasurementField('Thickness', 'height', selectedBlock.height ?? 8, 2, this.getCanvasMeasurementMax('height'), 1)}
+                    </div>
+                    <div class="frame-editor-text-property-group">
+                        ${this.renderTextPropertyGroupHeading('Border')}
+                        <label class="frame-editor-field frame-editor-field-wide">
+                            <span>${I18n.translateString('Border color')}</span>
+                            <input type="color" value="${this.escapeHTML(this.getTextBlockColorInputValue(selectedBlock.borderColor, this.getTextBlockDefaultColor()))}" data-block-setting="borderColor">
+                        </label>
+                        ${this.renderTextMeasurementField('Border width', 'borderWidth', selectedBlock.borderWidth ?? 0, 0, 20, 1)}
+                        ${this.renderTextMeasurementField('Radius', 'borderRadius', selectedBlock.borderRadius ?? 999, 0, 999, 1)}
                     </div>
                     <div class="frame-editor-text-property-group">
                         ${this.renderBlockTransformControls(selectedBlock)}
@@ -1355,6 +1419,9 @@ const FramesMode = {
         if (block?.type === 'image') {
             return 'Image Block';
         }
+        if (block?.type === 'line') {
+            return 'Line Block';
+        }
         return 'QR Code Block';
     },
 
@@ -1452,6 +1519,29 @@ const FramesMode = {
             return `
                 <div class="frame-editor-shape-block-surface" style="${shapeStyle}">
                     ${innerInset > 0 ? `<div class="frame-editor-shape-block-fill" style="${fillStyle}"></div>` : ''}
+                </div>
+                ${this.state.selectedBlockId === block.id ? this.renderCanvasBlockHandles(block) : ''}
+            `;
+        }
+
+        if (block.type === 'line') {
+            const layout = this.getLineBlockLayout(block);
+            const borderWidth = Math.max(0, Number(block.borderWidth) || 0);
+            const borderColor = borderWidth > 0 ? (block.borderColor || this.getTextBlockDefaultColor()) : 'transparent';
+            const borderRadius = this.getLineBlockBorderRadius(block, layout);
+            const innerInset = borderWidth > 0 ? Math.min(borderWidth, Math.floor(Math.min(layout.width, layout.height) / 2)) : 0;
+            const fillStyle = [
+                `inset: ${innerInset}px`,
+                `border-radius: ${Math.max(0, borderRadius - innerInset)}px`,
+                this.getLineBlockFillStyle(block, {
+                    width: Math.max(0, layout.width - (innerInset * 2)),
+                    height: Math.max(0, layout.height - (innerInset * 2))
+                })
+            ].join('; ');
+
+            return `
+                <div class="frame-editor-line-block-surface" style="width: ${layout.width}px; height: ${layout.height}px; background-color: ${borderColor}; border-radius: ${borderRadius}px;">
+                    <div class="frame-editor-line-block-fill" style="${fillStyle}"></div>
                 </div>
                 ${this.state.selectedBlockId === block.id ? this.renderCanvasBlockHandles(block) : ''}
             `;
@@ -1582,7 +1672,7 @@ const FramesMode = {
             return '';
         }
 
-        if (block.type === 'shape' || block.type === 'image') {
+        if (block.type === 'shape' || block.type === 'image' || block.type === 'line') {
             return `
                 ${this.renderBlockRotateHandle()}
                 ${this.renderShapeImageResizeHandles()}
@@ -1791,7 +1881,7 @@ const FramesMode = {
     },
 
     syncShapeImageBlockPreview(blockElement, block) {
-        if (!blockElement || (block?.type !== 'shape' && block?.type !== 'image')) {
+        if (!blockElement || (block?.type !== 'shape' && block?.type !== 'image' && block?.type !== 'line')) {
             return false;
         }
 
@@ -1842,6 +1932,33 @@ const FramesMode = {
                 } else {
                     fill.style.removeProperty('clip-path');
                 }
+            }
+            return true;
+        }
+
+        if (block.type === 'line') {
+            const surface = blockElement.querySelector('.frame-editor-line-block-surface');
+            const fill = blockElement.querySelector('.frame-editor-line-block-fill');
+            if (!surface) {
+                return false;
+            }
+
+            const layout = this.getLineBlockLayout(block);
+            const borderWidth = Math.max(0, Number(block.borderWidth) || 0);
+            const borderColor = borderWidth > 0 ? (block.borderColor || this.getTextBlockDefaultColor()) : 'transparent';
+            const borderRadius = this.getLineBlockBorderRadius(block, layout);
+            const innerInset = borderWidth > 0 ? Math.min(borderWidth, Math.floor(Math.min(layout.width, layout.height) / 2)) : 0;
+            surface.style.width = `${layout.width}px`;
+            surface.style.height = `${layout.height}px`;
+            surface.style.backgroundColor = borderColor;
+            surface.style.borderRadius = `${borderRadius}px`;
+            if (fill) {
+                fill.style.inset = `${innerInset}px`;
+                fill.style.borderRadius = `${Math.max(0, borderRadius - innerInset)}px`;
+                fill.style.cssText = `inset: ${innerInset}px; border-radius: ${Math.max(0, borderRadius - innerInset)}px; ${this.getLineBlockFillStyle(block, {
+                    width: Math.max(0, layout.width - (innerInset * 2)),
+                    height: Math.max(0, layout.height - (innerInset * 2))
+                })}`;
             }
             return true;
         }
@@ -1977,6 +2094,117 @@ const FramesMode = {
         };
     },
 
+    getLineBlockLayout(block) {
+        const normalized = this.getNormalizedLineBlockDimensions(block);
+        return {
+            width: normalized.width,
+            height: normalized.height
+        };
+    },
+
+    getLineBlockMinimumWidth(height = 8) {
+        const thickness = Math.max(2, Number(height) || 8);
+        const straightBodyLength = Math.max(24, thickness * 0.5);
+        return Math.ceil(thickness + straightBodyLength);
+    },
+
+    getNormalizedLineBlockDimensions(block) {
+        const height = Math.max(2, Number(block?.height) || 8);
+        const requestedWidth = Math.max(24, Number(block?.width) || 180);
+
+        return {
+            width: Math.max(requestedWidth, this.getLineBlockMinimumWidth(height)),
+            height
+        };
+    },
+
+    normalizeLineBlockPatch(block, patch = {}) {
+        if (!block || block.type !== 'line') {
+            return patch;
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(patch, 'width')
+            && !Object.prototype.hasOwnProperty.call(patch, 'height')) {
+            return patch;
+        }
+
+        const normalized = this.getNormalizedLineBlockDimensions({
+            ...block,
+            ...patch
+        });
+
+        return {
+            ...patch,
+            width: Math.round(normalized.width),
+            height: Math.round(normalized.height)
+        };
+    },
+
+    getLineBlockBorderRadius(block, layout = this.getLineBlockLayout(block)) {
+        const requestedRadius = Math.max(0, Number(block?.borderRadius ?? 999) || 0);
+        return Math.min(requestedRadius, Math.floor(Math.min(layout.width, layout.height) / 2));
+    },
+
+    getLineBlockFillStyle(block, layout = this.getLineBlockLayout(block)) {
+        const width = Math.max(0, Number(layout?.width) || 0);
+        const height = Math.max(0, Number(layout?.height) || 0);
+        const color = block?.color || this.getTextBlockDefaultColor();
+        const lineStyle = block?.lineStyle || 'solid';
+        const dashLength = Math.max(8, Math.round(height * 1.8));
+        const dashGap = Math.max(6, Math.round(height * 0.95));
+        const dotSize = Math.max(4, Math.round(height * 0.72));
+        const dotGap = Math.max(6, Math.round(height * 0.9));
+        const doubleBand = Math.max(2, Math.round(height * 0.28));
+        const stripeWidth = Math.max(6, Math.round(height * 0.75));
+
+        if (lineStyle === 'dashed') {
+            return [
+                `background-image: repeating-linear-gradient(90deg, ${color} 0 ${dashLength}px, transparent ${dashLength}px ${dashLength + dashGap}px)`,
+                'background-color: transparent',
+                'background-repeat: repeat'
+            ].join('; ');
+        }
+
+        if (lineStyle === 'dotted') {
+            return [
+                `background-image: radial-gradient(circle closest-side, ${color} 0 95%, transparent 100%)`,
+                `background-size: ${dotSize}px ${dotSize}px`,
+                `background-position: center`,
+                `background-repeat: repeat-x`,
+                'background-color: transparent'
+            ].join('; ');
+        }
+
+        if (lineStyle === 'double') {
+            return [
+                `background-image: linear-gradient(to bottom, ${color} 0 ${doubleBand}px, transparent ${doubleBand}px calc(100% - ${doubleBand}px), ${color} calc(100% - ${doubleBand}px) 100%)`,
+                'background-color: transparent',
+                'background-repeat: no-repeat'
+            ].join('; ');
+        }
+
+        if (lineStyle === 'striped') {
+            return [
+                `background-image: repeating-linear-gradient(135deg, ${color} 0 ${stripeWidth}px, ${this.hexToRgba(color, 0.22)} ${stripeWidth}px ${stripeWidth * 2}px)`,
+                `background-color: ${this.hexToRgba(color, 0.14)}`,
+                'background-repeat: repeat'
+            ].join('; ');
+        }
+
+        if (lineStyle === 'gradient') {
+            return [
+                `background-image: linear-gradient(90deg, ${this.hexToRgba(color, 0.35)} 0%, ${color} 50%, ${this.hexToRgba(color, 0.65)} 100%)`,
+                `background-color: ${color}`,
+                'background-repeat: no-repeat'
+            ].join('; ');
+        }
+
+        return [
+            `background-color: ${color}`,
+            width > 0 && height > 0 ? 'background-repeat: no-repeat' : ''
+        ].filter(Boolean).join('; ');
+    },
+
     getImageBlockLayout(block) {
         const borderWidth = Math.max(0, Number(block?.borderWidth) || 0);
         const imageWidth = Math.max(48, Number(block?.width) || 180);
@@ -2028,6 +2256,9 @@ const FramesMode = {
         }
         if (block.type === 'shape') {
             return this.getShapeBlockLayout(block);
+        }
+        if (block.type === 'line') {
+            return this.getLineBlockLayout(block);
         }
         if (block.type === 'image') {
             return this.getImageBlockLayout(block);
@@ -3051,7 +3282,7 @@ const FramesMode = {
         const block = this.getBlockById(blockId);
         const canvasScroll = root.querySelector('[data-frame-editor-canvas-scroll]');
         const metrics = this.getCanvasLayoutMetrics(root);
-        if (!handle || !blockElement || !block || !canvasScroll || !metrics || (block.type !== 'shape' && block.type !== 'image')) {
+        if (!handle || !blockElement || !block || !canvasScroll || !metrics || (block.type !== 'shape' && block.type !== 'image' && block.type !== 'line')) {
             return;
         }
 
@@ -3059,7 +3290,7 @@ const FramesMode = {
         event.stopPropagation();
 
         const zoom = Math.max(this.state.canvasZoom, 0.01);
-        const surfaceElement = blockElement.querySelector('.frame-editor-shape-block-surface, .frame-editor-image-block-surface') || blockElement;
+        const surfaceElement = blockElement.querySelector('.frame-editor-shape-block-surface, .frame-editor-image-block-surface, .frame-editor-line-block-surface') || blockElement;
         const surfaceRect = surfaceElement.getBoundingClientRect();
         const startOuterWidth = surfaceRect.width / zoom;
         const startOuterHeight = surfaceRect.height / zoom;
@@ -3074,8 +3305,12 @@ const FramesMode = {
             bottom: startCenter.y + (startOuterHeight / 2)
         };
         const minBorder = block.type === 'image' ? (Math.max(0, Number(block.borderWidth) || 0) * 2) : 0;
-        const minOuterWidth = Math.max(48 + minBorder, 48);
-        const minOuterHeight = Math.max(48 + minBorder, 48);
+        const minOuterWidth = block.type === 'line'
+            ? 24
+            : Math.max(48 + minBorder, 48);
+        const minOuterHeight = block.type === 'line'
+            ? 2
+            : Math.max(48 + minBorder, 48);
         let didResize = false;
         let nextPatch = null;
         let nextPosition = {
@@ -3142,8 +3377,6 @@ const FramesMode = {
 
             const outerWidth = Math.max(minOuterWidth, nextRight - nextLeft);
             const outerHeight = Math.max(minOuterHeight, nextBottom - nextTop);
-            const centerX = nextLeft + (outerWidth / 2);
-            const centerY = nextTop + (outerHeight / 2);
             const borderWidth = Math.max(0, Number(block.borderWidth) || 0);
 
             nextPatch = block.type === 'image'
@@ -3151,10 +3384,48 @@ const FramesMode = {
                     width: Math.max(48, Math.round(outerWidth - (borderWidth * 2))),
                     height: Math.max(48, Math.round(outerHeight - (borderWidth * 2)))
                 }
+                : block.type === 'line'
+                    ? {
+                        width: Math.max(24, Math.round(outerWidth)),
+                        height: Math.max(2, Math.round(outerHeight))
+                    }
                 : {
                     width: Math.max(48, Math.round(outerWidth)),
                     height: Math.max(48, Math.round(outerHeight))
                 };
+
+            let resolvedOuterWidth = outerWidth;
+            let resolvedOuterHeight = outerHeight;
+
+            if (block.type === 'line') {
+                nextPatch = this.normalizeLineBlockPatch(block, nextPatch);
+                resolvedOuterWidth = nextPatch.width;
+                resolvedOuterHeight = nextPatch.height;
+
+                const provisionalCenterX = nextLeft + (outerWidth / 2);
+                const provisionalCenterY = nextTop + (outerHeight / 2);
+
+                if (handle.includes('left') && !handle.includes('right')) {
+                    nextLeft = nextRight - resolvedOuterWidth;
+                } else if (handle.includes('right') && !handle.includes('left')) {
+                    nextRight = nextLeft + resolvedOuterWidth;
+                } else {
+                    nextLeft = provisionalCenterX - (resolvedOuterWidth / 2);
+                    nextRight = provisionalCenterX + (resolvedOuterWidth / 2);
+                }
+
+                if (handle.includes('top') && !handle.includes('bottom')) {
+                    nextTop = nextBottom - resolvedOuterHeight;
+                } else if (handle.includes('bottom') && !handle.includes('top')) {
+                    nextBottom = nextTop + resolvedOuterHeight;
+                } else {
+                    nextTop = provisionalCenterY - (resolvedOuterHeight / 2);
+                    nextBottom = provisionalCenterY + (resolvedOuterHeight / 2);
+                }
+            }
+
+            const centerX = nextLeft + (resolvedOuterWidth / 2);
+            const centerY = nextTop + (resolvedOuterHeight / 2);
 
             nextPosition = {
                 xPct: Number(((centerX / metrics.viewportWidth) * 100).toFixed(4)),
@@ -3427,7 +3698,7 @@ const FramesMode = {
         event.preventDefault();
         event.stopPropagation();
 
-        const surfaceElement = () => blockElement.querySelector('.frame-editor-text-block-surface, .frame-editor-qr-block-surface, .frame-editor-shape-block-surface, .frame-editor-image-block-surface') || blockElement;
+        const surfaceElement = () => blockElement.querySelector('.frame-editor-text-block-surface, .frame-editor-qr-block-surface, .frame-editor-shape-block-surface, .frame-editor-image-block-surface, .frame-editor-line-block-surface') || blockElement;
         const getCenterPoint = () => {
             const rect = surfaceElement().getBoundingClientRect();
             return {
@@ -3776,16 +4047,20 @@ const FramesMode = {
         if (setting === 'rotation') {
             nextValue = this.normalizeBlockRotation(nextValue);
         } else if (setting === 'width') {
-            nextValue = this.clamp(nextValue, 48, this.getCanvasMeasurementMax('width', root));
+            nextValue = this.clamp(nextValue, block.type === 'line' ? 24 : 48, this.getCanvasMeasurementMax('width', root));
         } else if (setting === 'height') {
-            nextValue = this.clamp(nextValue, 48, this.getCanvasMeasurementMax('height', root));
+            nextValue = this.clamp(nextValue, block.type === 'line' ? 2 : 48, this.getCanvasMeasurementMax('height', root));
         } else if (setting === 'size') {
             nextValue = this.clamp(nextValue, 80, this.getCanvasMeasurementMax('size', root));
         }
 
-        const patch = setting === 'backgroundColorRaw'
+        let patch = setting === 'backgroundColorRaw'
             ? { backgroundColor: nextValue }
             : (this.getMirroredTextBlockPaddingPatch(block, setting, nextValue, root) || { [setting]: nextValue });
+
+        if (block.type === 'line') {
+            patch = this.normalizeLineBlockPatch(block, patch);
+        }
 
         this.updateBlock(block.id, patch);
         this.syncInspectorBlockControls(root, patch);
@@ -4111,6 +4386,7 @@ const FramesMode = {
             { action: 'add-qr-block', label: 'Add QR Code block', icon: 'bi-qr-code' },
             { action: 'add-text-block', label: 'Add Text block', icon: 'bi-type-h2' },
             { action: 'add-shape-block', label: 'Add Shape block', icon: 'bi-square' },
+            { action: 'add-line-block', label: 'Add Line block', icon: 'bi-slash-lg' },
             { action: 'add-image-block', label: 'Add Image block', icon: 'bi-image' },
             { type: 'separator' },
             { action: 'edit-selected-block', label: 'Edit selected block', icon: 'bi-pencil-square', disabled: !this.state.selectedBlockId },
@@ -4260,6 +4536,10 @@ const FramesMode = {
         }
         if (action === 'add-shape-block') {
             this.addBlock('shape', position, root);
+            return;
+        }
+        if (action === 'add-line-block') {
+            this.addBlock('line', position, root);
             return;
         }
         if (action === 'add-image-block') {
@@ -4598,7 +4878,7 @@ const FramesMode = {
         const xPct = Number.isFinite(basePosition.xPct) ? basePosition.xPct : 50;
         const defaultYPct = blockType === 'text'
             ? 28
-            : (blockType === 'shape' ? 40 : 52);
+            : ((blockType === 'shape' || blockType === 'line') ? 40 : 52);
         const yPct = Number.isFinite(basePosition.yPct) ? basePosition.yPct : defaultYPct;
 
         if (blockType === 'text') {
@@ -4646,6 +4926,23 @@ const FramesMode = {
                 height: 160,
                 color: this.getTextBlockDefaultColor(),
                 borderRadius: 18,
+                rotation: 0
+            };
+        }
+
+        if (blockType === 'line') {
+            return {
+                id: this.getNextBlockId(),
+                type: 'line',
+                xPct,
+                yPct,
+                width: 180,
+                height: 8,
+                color: this.getTextBlockDefaultColor(),
+                lineStyle: 'solid',
+                borderWidth: 0,
+                borderRadius: 999,
+                borderColor: this.getTextBlockDefaultColor(),
                 rotation: 0
             };
         }
@@ -4925,7 +5222,7 @@ const FramesMode = {
 
     getCanvasBlockFootprint(block, blockElement = null) {
         if (blockElement && typeof blockElement.getBoundingClientRect === 'function') {
-            const measuredElement = blockElement.querySelector('.frame-editor-text-block-surface, .frame-editor-qr-block-surface, .frame-editor-shape-block-surface, .frame-editor-image-block-surface') || blockElement;
+            const measuredElement = blockElement.querySelector('.frame-editor-text-block-surface, .frame-editor-qr-block-surface, .frame-editor-shape-block-surface, .frame-editor-image-block-surface, .frame-editor-line-block-surface') || blockElement;
             const blockRect = measuredElement.getBoundingClientRect();
             const zoom = Math.max(this.state.canvasZoom, 0.01);
             return {

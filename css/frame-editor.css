@@ -1340,12 +1340,15 @@
 
 .frame-editor-canvas-block.dragging .frame-editor-qr-block-surface,
 .frame-editor-canvas-block.dragging .frame-editor-shape-block-surface,
+.frame-editor-canvas-block.dragging .frame-editor-line-block-surface,
 .frame-editor-canvas-block.dragging .frame-editor-image-block-surface,
 .frame-editor-canvas-block.is-resizing .frame-editor-qr-block-surface,
 .frame-editor-canvas-block.is-resizing .frame-editor-shape-block-surface,
+.frame-editor-canvas-block.is-resizing .frame-editor-line-block-surface,
 .frame-editor-canvas-block.is-resizing .frame-editor-image-block-surface,
 .frame-editor-canvas-block.is-rotating .frame-editor-qr-block-surface,
 .frame-editor-canvas-block.is-rotating .frame-editor-shape-block-surface,
+.frame-editor-canvas-block.is-rotating .frame-editor-line-block-surface,
 .frame-editor-canvas-block.is-rotating .frame-editor-image-block-surface {
     box-shadow: 0 0 0 2px rgba(102, 192, 244, 0.65);
 }
@@ -1357,6 +1360,7 @@
 }
 
 .frame-editor-canvas-block.active .frame-editor-shape-block-surface,
+.frame-editor-canvas-block.active .frame-editor-line-block-surface,
 .frame-editor-canvas-block.active .frame-editor-image-block-surface {
     box-shadow:
         0 0 0 2px rgba(102, 192, 244, 0.65),
@@ -1694,6 +1698,7 @@
 }
 
 .frame-editor-shape-block-surface,
+.frame-editor-line-block-surface,
 .frame-editor-image-block-surface {
     display: block;
     box-sizing: border-box;
@@ -1719,6 +1724,24 @@
     box-shadow: none;
     overflow: hidden;
     isolation: isolate;
+}
+
+.frame-editor-line-block-surface {
+    position: relative;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.frame-editor-line-block-fill {
+    position: absolute;
+    display: block;
+    pointer-events: none;
+    box-sizing: border-box;
 }
 
 .frame-editor-image-block-content {
