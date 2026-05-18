@@ -1153,7 +1153,8 @@
     letter-spacing: 0.02em;
 }
 
-.frame-editor-zoom-context-menu {
+.frame-editor-zoom-context-menu,
+.frame-editor-context-menu {
     position: fixed;
     z-index: 2000;
     min-width: 180px;
@@ -1164,11 +1165,17 @@
     box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
 }
 
-.frame-editor-zoom-context-menu[hidden] {
+.frame-editor-context-menu {
+    min-width: 220px;
+}
+
+.frame-editor-zoom-context-menu[hidden],
+.frame-editor-context-menu[hidden] {
     display: none;
 }
 
-.frame-editor-zoom-context-menu-item {
+.frame-editor-zoom-context-menu-item,
+.frame-editor-context-menu-item {
     display: inline-flex;
     align-items: center;
     gap: 0.55rem;
@@ -1186,8 +1193,38 @@
     font-weight: 600;
 }
 
+.frame-editor-context-menu-item {
+    justify-content: flex-start;
+}
+
+.frame-editor-context-menu-item-status {
+    margin-left: auto;
+}
+
+.frame-editor-context-menu-item.is-danger {
+    color: #ff8a65;
+}
+
+.frame-editor-context-menu-item.active {
+    background: rgba(102, 192, 244, 0.12);
+    color: var(--accent-primary);
+}
+
+.frame-editor-context-menu-item:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.frame-editor-context-menu-separator {
+    height: 1px;
+    margin: 0.35rem 0.4rem;
+    background: var(--border-color);
+}
+
 .frame-editor-zoom-context-menu-item:hover,
-.frame-editor-zoom-context-menu-item:focus-visible {
+.frame-editor-zoom-context-menu-item:focus-visible,
+.frame-editor-context-menu-item:hover,
+.frame-editor-context-menu-item:focus-visible {
     background: var(--bg-hover);
     outline: none;
 }
@@ -1275,6 +1312,10 @@
 }
 
 .frame-editor-canvas-block.is-rotating {
+    cursor: default;
+}
+
+.frame-editor-canvas-block.is-repositioning {
     cursor: default;
 }
 
@@ -1578,8 +1619,31 @@
 
 .frame-editor-qr-block-content {
     display: block;
+    position: relative;
     border-radius: inherit;
-    overflow: hidden;
+    overflow: visible;
+    transform-origin: center center;
+}
+
+.frame-editor-qr-block-content.is-selected {
+    box-shadow: 0 0 0 2px rgba(102, 192, 244, 0.65);
+    cursor: grab;
+}
+
+.frame-editor-qr-block-handle-layer {
+    position: absolute;
+    transform-origin: center center;
+    pointer-events: none;
+    z-index: 6;
+}
+
+.frame-editor-qr-block-handle-layer > .frame-editor-block-rotate-handle,
+.frame-editor-qr-block-handle-layer > .frame-editor-block-resize-handle {
+    pointer-events: auto;
+}
+
+.frame-editor-canvas-block.is-repositioning .frame-editor-qr-block-content.is-selected {
+    cursor: grabbing;
 }
 
 .frame-editor-qr-block-surface img,
@@ -1588,6 +1652,18 @@
     height: 100%;
     display: block;
     border-radius: inherit;
+}
+
+.frame-editor-qr-block-resize-handle {
+    z-index: 1;
+}
+
+.frame-editor-qr-block-resize-handle::before {
+    inset: 4px;
+}
+
+.frame-editor-qr-block-rotate-handle {
+    z-index: 2;
 }
 
 .frame-editor-shape-block-surface,
