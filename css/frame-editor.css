@@ -1277,6 +1277,21 @@
 .frame-editor-canvas-scene {
     transform-origin: top left;
     will-change: transform;
+    --frame-editor-handle-scale: 1;
+    --frame-editor-handle-corner-size: calc(18px * var(--frame-editor-handle-scale));
+    --frame-editor-handle-side-thickness: calc(14px * var(--frame-editor-handle-scale));
+    --frame-editor-handle-side-length: calc(42px * var(--frame-editor-handle-scale));
+    --frame-editor-handle-offset: calc(-9px * var(--frame-editor-handle-scale));
+    --frame-editor-handle-side-offset: calc(-7px * var(--frame-editor-handle-scale));
+    --frame-editor-rotate-handle-offset: calc(-40px * var(--frame-editor-handle-scale));
+    --frame-editor-rotate-stem-height: calc(14px * var(--frame-editor-handle-scale));
+    --frame-editor-rotate-stem-width: calc(2px * var(--frame-editor-handle-scale));
+    --frame-editor-handle-inset-top-bottom-y: calc(5px * var(--frame-editor-handle-scale));
+    --frame-editor-handle-inset-top-bottom-x: calc(6px * var(--frame-editor-handle-scale));
+    --frame-editor-handle-inset-left-right-y: calc(6px * var(--frame-editor-handle-scale));
+    --frame-editor-handle-inset-left-right-x: calc(5px * var(--frame-editor-handle-scale));
+    --frame-editor-handle-corner-inset: calc(4px * var(--frame-editor-handle-scale));
+    --frame-editor-handle-outline-width: calc(1px * var(--frame-editor-handle-scale));
 }
 
 .frame-editor-canvas-block-layer {
@@ -1389,20 +1404,20 @@
     position: absolute;
     border-radius: 999px;
     background-color: rgba(102, 192, 244, 0.95);
-    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.16);
+    box-shadow: 0 0 0 var(--frame-editor-handle-outline-width) rgba(15, 23, 42, 0.16);
 }
 
 .frame-editor-block-rotate-handle {
     position: absolute;
-    top: -40px;
+    top: var(--frame-editor-rotate-handle-offset);
     left: 50%;
-    width: 18px;
-    height: 18px;
+    width: var(--frame-editor-handle-corner-size);
+    height: var(--frame-editor-handle-corner-size);
     padding: 0;
     border: 0;
     border-radius: 999px;
     background-color: rgba(102, 192, 244, 0.98);
-    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.16);
+    box-shadow: 0 0 0 var(--frame-editor-handle-outline-width) rgba(15, 23, 42, 0.16);
     transform: translateX(-50%);
     cursor: grab;
     touch-action: none;
@@ -1413,9 +1428,9 @@
     content: "";
     position: absolute;
     left: 50%;
-    bottom: -14px;
-    width: 2px;
-    height: 14px;
+    bottom: calc(-1 * var(--frame-editor-rotate-stem-height));
+    width: var(--frame-editor-rotate-stem-width);
+    height: var(--frame-editor-rotate-stem-height);
     background-color: rgba(102, 192, 244, 0.7);
     transform: translateX(-50%);
 }
@@ -1423,76 +1438,76 @@
 .frame-editor-text-block-resize-handle-top,
 .frame-editor-text-block-resize-handle-bottom {
     left: 50%;
-    width: 42px;
-    height: 14px;
+    width: var(--frame-editor-handle-side-length);
+    height: var(--frame-editor-handle-side-thickness);
     transform: translateX(-50%);
     cursor: ns-resize;
 }
 
 .frame-editor-text-block-resize-handle-top {
-    top: -9px;
+    top: var(--frame-editor-handle-offset);
 }
 
 .frame-editor-text-block-resize-handle-bottom {
-    bottom: -9px;
+    bottom: var(--frame-editor-handle-offset);
 }
 
 .frame-editor-text-block-resize-handle-top::before,
 .frame-editor-text-block-resize-handle-bottom::before {
-    inset: 5px 6px;
+    inset: var(--frame-editor-handle-inset-top-bottom-y) var(--frame-editor-handle-inset-top-bottom-x);
 }
 
 .frame-editor-text-block-resize-handle-left,
 .frame-editor-text-block-resize-handle-right {
     top: 50%;
-    width: 14px;
-    height: 42px;
+    width: var(--frame-editor-handle-side-thickness);
+    height: var(--frame-editor-handle-side-length);
     transform: translateY(-50%);
     cursor: ew-resize;
 }
 
 .frame-editor-text-block-resize-handle-left {
-    left: -9px;
+    left: var(--frame-editor-handle-offset);
 }
 
 .frame-editor-text-block-resize-handle-right {
-    right: -9px;
+    right: var(--frame-editor-handle-offset);
 }
 
 .frame-editor-text-block-resize-handle-left::before,
 .frame-editor-text-block-resize-handle-right::before {
-    inset: 6px 5px;
+    inset: var(--frame-editor-handle-inset-left-right-y) var(--frame-editor-handle-inset-left-right-x);
 }
 
 .frame-editor-text-block-resize-handle-top-left,
 .frame-editor-text-block-resize-handle-top-right,
 .frame-editor-text-block-resize-handle-bottom-right,
 .frame-editor-text-block-resize-handle-bottom-left {
-    width: 18px;
-    height: 18px;
+    width: var(--frame-editor-handle-corner-size);
+    height: var(--frame-editor-handle-corner-size);
 }
 
 .frame-editor-text-block-resize-handle-top-left {
-    top: -9px;
-    left: -9px;
+    top: var(--frame-editor-handle-offset);
+    left: var(--frame-editor-handle-offset);
     cursor: nwse-resize;
 }
 
 .frame-editor-text-block-resize-handle-top-right {
-    top: -9px;
-    right: -9px;
+    top: var(--frame-editor-handle-offset);
+    right: var(--frame-editor-handle-offset);
     cursor: nesw-resize;
 }
 
 .frame-editor-text-block-resize-handle-bottom-right {
-    right: -9px;
-    bottom: -9px;
+    right: var(--frame-editor-handle-offset);
+    bottom: var(--frame-editor-handle-offset);
     cursor: nwse-resize;
 }
 
 .frame-editor-text-block-resize-handle-bottom-left {
-    bottom: -9px;
-    left: -9px;
+    bottom: var(--frame-editor-handle-offset);
+    left: var(--frame-editor-handle-offset);
     cursor: nesw-resize;
 }
 
@@ -1500,7 +1515,7 @@
 .frame-editor-text-block-resize-handle-top-right::before,
 .frame-editor-text-block-resize-handle-bottom-right::before,
 .frame-editor-text-block-resize-handle-bottom-left::before {
-    inset: 4px;
+    inset: var(--frame-editor-handle-corner-inset);
 }
 
 .frame-editor-block-resize-handle {
@@ -1517,82 +1532,82 @@
     position: absolute;
     border-radius: 999px;
     background-color: rgba(102, 192, 244, 0.95);
-    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.16);
+    box-shadow: 0 0 0 var(--frame-editor-handle-outline-width) rgba(15, 23, 42, 0.16);
 }
 
 .frame-editor-block-resize-handle-top,
 .frame-editor-block-resize-handle-bottom {
     left: 50%;
-    width: 42px;
-    height: 14px;
+    width: var(--frame-editor-handle-side-length);
+    height: var(--frame-editor-handle-side-thickness);
     transform: translateX(-50%);
     cursor: ns-resize;
 }
 
 .frame-editor-block-resize-handle-top {
-    top: -9px;
+    top: var(--frame-editor-handle-offset);
 }
 
 .frame-editor-block-resize-handle-bottom {
-    bottom: -9px;
+    bottom: var(--frame-editor-handle-offset);
 }
 
 .frame-editor-block-resize-handle-top::before,
 .frame-editor-block-resize-handle-bottom::before {
-    inset: 5px 6px;
+    inset: var(--frame-editor-handle-inset-top-bottom-y) var(--frame-editor-handle-inset-top-bottom-x);
 }
 
 .frame-editor-block-resize-handle-left,
 .frame-editor-block-resize-handle-right {
     top: 50%;
-    width: 14px;
-    height: 42px;
+    width: var(--frame-editor-handle-side-thickness);
+    height: var(--frame-editor-handle-side-length);
     transform: translateY(-50%);
     cursor: ew-resize;
 }
 
 .frame-editor-block-resize-handle-left {
-    left: -9px;
+    left: var(--frame-editor-handle-offset);
 }
 
 .frame-editor-block-resize-handle-right {
-    right: -9px;
+    right: var(--frame-editor-handle-offset);
 }
 
 .frame-editor-block-resize-handle-left::before,
 .frame-editor-block-resize-handle-right::before {
-    inset: 6px 5px;
+    inset: var(--frame-editor-handle-inset-left-right-y) var(--frame-editor-handle-inset-left-right-x);
 }
 
 .frame-editor-block-resize-handle-top-left,
 .frame-editor-block-resize-handle-top-right,
 .frame-editor-block-resize-handle-bottom-right,
 .frame-editor-block-resize-handle-bottom-left {
-    width: 18px;
-    height: 18px;
+    width: var(--frame-editor-handle-corner-size);
+    height: var(--frame-editor-handle-corner-size);
 }
 
 .frame-editor-block-resize-handle-top-left {
-    top: -9px;
-    left: -9px;
+    top: var(--frame-editor-handle-offset);
+    left: var(--frame-editor-handle-offset);
     cursor: nwse-resize;
 }
 
 .frame-editor-block-resize-handle-top-right {
-    top: -9px;
-    right: -9px;
+    top: var(--frame-editor-handle-offset);
+    right: var(--frame-editor-handle-offset);
     cursor: nesw-resize;
 }
 
 .frame-editor-block-resize-handle-bottom-right {
-    right: -9px;
-    bottom: -9px;
+    right: var(--frame-editor-handle-offset);
+    bottom: var(--frame-editor-handle-offset);
     cursor: nwse-resize;
 }
 
 .frame-editor-block-resize-handle-bottom-left {
-    bottom: -9px;
-    left: -9px;
+    bottom: var(--frame-editor-handle-offset);
+    left: var(--frame-editor-handle-offset);
     cursor: nesw-resize;
 }
 
@@ -1600,7 +1615,7 @@
 .frame-editor-block-resize-handle-top-right::before,
 .frame-editor-block-resize-handle-bottom-right::before,
 .frame-editor-block-resize-handle-bottom-left::before {
-    inset: 4px;
+    inset: var(--frame-editor-handle-corner-inset);
 }
 
 .frame-editor-qr-block-surface {
@@ -1659,7 +1674,7 @@
 }
 
 .frame-editor-qr-block-resize-handle::before {
-    inset: 4px;
+    inset: var(--frame-editor-handle-corner-inset);
 }
 
 .frame-editor-qr-block-rotate-handle {

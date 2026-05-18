@@ -66,9 +66,9 @@ const FramesMode = {
         { id: 'italic', label: 'Italic', fontWeight: 400, fontStyle: 'italic' },
         { id: 'bold-italic', label: 'Bold Italic', fontWeight: 700, fontStyle: 'italic' }
     ]),
-    DEFAULT_BLOCK_MEASUREMENT_MAX: 1600,
-    MIN_CANVAS_ZOOM: 0.05,
-    MAX_CANVAS_ZOOM: 2.5,
+    DEFAULT_BLOCK_MEASUREMENT_MAX: 20000,
+    MIN_CANVAS_ZOOM: 0.01,
+    MAX_CANVAS_ZOOM: 10,
 
     state: {
         activeTab: 'frames',
@@ -174,7 +174,7 @@ const FramesMode = {
                                         data-canvas-zoom-input
                                         inputmode="decimal"
                                         pattern="[0-9]*[.,]?[0-9]*"
-                                        value="${this.escapeHTML(String(Math.round(this.state.canvasZoom * 100)))}"
+                                        value="${this.escapeHTML(this.formatCanvasZoomPercent())}"
                                         aria-label="${this.escapeHTML(I18n.translateString('Zoom percentage'))}"
                                         title="${this.escapeHTML(I18n.translateString('Zoom percentage'))}"
                                     >
@@ -924,35 +924,40 @@ const FramesMode = {
 
     getCanvasMeasurementMax(setting = 'size', root = this.getRoot()) {
         const metrics = this.getCanvasLayoutMetrics(root);
+        const minimumZoom = Math.max(this.MIN_CANVAS_ZOOM, 0.001);
         if (!metrics) {
             return this.DEFAULT_BLOCK_MEASUREMENT_MAX;
         }
 
         if (setting === 'width') {
-            return Math.max(48, Math.ceil(metrics.viewportWidth));
+            return Math.max(48, Math.ceil(Math.max(this.DEFAULT_BLOCK_MEASUREMENT_MAX, metrics.viewportWidth / minimumZoom)));
         }
         if (setting === 'height') {
-            return Math.max(48, Math.ceil(metrics.viewportHeight));
+            return Math.max(48, Math.ceil(Math.max(this.DEFAULT_BLOCK_MEASUREMENT_MAX, metrics.viewportHeight / minimumZoom)));
         }
 
-        return Math.max(80, Math.ceil(Math.min(metrics.viewportWidth, metrics.viewportHeight)));
+        return Math.max(80, Math.ceil(Math.max(
+            this.DEFAULT_BLOCK_MEASUREMENT_MAX,
+            Math.min(metrics.viewportWidth, metrics.viewportHeight) / minimumZoom
+        )));
     },
 
     getTextBlockPaddingLimits(root, block, padding = this.getTextBlockPadding(block)) {
-        const metrics = this.getCanvasLayoutMetrics(root);
         const currentPadding = this.getTextBlockPadding(block);
         const currentLayout = this.getCanvasBlockLayout(block);
         const borderWidth = Math.max(0, Number(currentLayout?.borderWidth) || 0);
-        const fallbackHorizontalTotal = Math.max(currentPadding.left + currentPadding.right, this.DEFAULT_BLOCK_MEASUREMENT_MAX);
-        const fallbackVerticalTotal = Math.max(currentPadding.top + currentPadding.bottom, this.DEFAULT_BLOCK_MEASUREMENT_MAX);
+        const currentHorizontalTotal = currentPadding.left + currentPadding.right;
+        const currentVerticalTotal = currentPadding.top + currentPadding.bottom;
         const contentWidth = Math.max(0, currentLayout.width - currentPadding.left - currentPadding.right - (borderWidth * 2));
         const contentHeight = Math.max(0, currentLayout.height - currentPadding.top - currentPadding.bottom - (borderWidth * 2));
-        const maxHorizontalTotal = metrics
-            ? Math.max(currentPadding.left + currentPadding.right, Math.ceil(metrics.viewportWidth - contentWidth - (borderWidth * 2)))
-            : fallbackHorizontalTotal;
-        const maxVerticalTotal = metrics
-            ? Math.max(currentPadding.top + currentPadding.bottom, Math.ceil(metrics.viewportHeight - contentHeight - (borderWidth * 2)))
-            : fallbackVerticalTotal;
+        const maxHorizontalTotal = Math.max(
+            currentHorizontalTotal + this.DEFAULT_BLOCK_MEASUREMENT_MAX,
+            this.getCanvasMeasurementMax('width', root) - contentWidth - (borderWidth * 2)
+        );
+        const maxVerticalTotal = Math.max(
+            currentVerticalTotal + this.DEFAULT_BLOCK_MEASUREMENT_MAX,
+            this.getCanvasMeasurementMax('height', root) - contentHeight - (borderWidth * 2)
+        );
 
         return {
             left: Math.max(0, maxHorizontalTotal - padding.right),
@@ -1253,7 +1258,7 @@ const FramesMode = {
                                 <div
                                     class="frame-editor-canvas-scene"
                                     data-frame-editor-scene
-                                    style="transform: scale(${this.state.canvasZoom});"
+                                    style="transform: scale(${this.state.canvasZoom}); --frame-editor-handle-scale: ${this.getCanvasHandleScale()};"
                                 >
                                     <div class="frame-editor-canvas-block-layer">
                                         ${this.state.canvasBlocks.map((block, index) => this.renderCanvasBlock(block, index)).join('')}
@@ -1602,11 +1607,22 @@ const FramesMode = {
         `;
     },
 
+    getCanvasHandleScale(zoom = this.state.canvasZoom) {
+        const normalizedZoom = Math.max(Number(zoom) || 0, 0.0001);
+        return Number((1 / normalizedZoom).toFixed(4));
+    },
+
     getQrBlockHandleLayout(block) {
         const padding = this.getTextBlockPadding(block);
         const borderWidth = Math.max(0, Number(block?.borderWidth) || 0);
         const size = this.getQrBlockSize(block);
         const qrRotation = this.getQrBlockRotation(block);
+        const handleScale = this.getCanvasHandleScale();
+        const cornerSize = 18 * handleScale;
+        const sideLength = 42 * handleScale;
+        const sideThickness = 14 * handleScale;
+        const sideOffset = 7 * handleScale;
+        const cornerOffset = 9 * handleScale;
 
         return {
             layerLeft: borderWidth + padding.left,
@@ -1615,17 +1631,17 @@ const FramesMode = {
             rotation: qrRotation,
             rotate: {
                 left: size / 2,
-                top: -40
+                top: -40 * handleScale
             },
             resize: [
-                ['top', size / 2 - 21, -7, 42, 14, 'ns-resize'],
-                ['right', size - 7, size / 2 - 21, 14, 42, 'ew-resize'],
-                ['bottom', size / 2 - 21, size - 7, 42, 14, 'ns-resize'],
-                ['left', -7, size / 2 - 21, 14, 42, 'ew-resize'],
-                ['top-left', -9, -9, 18, 18, 'nwse-resize'],
-                ['top-right', size - 9, -9, 18, 18, 'nesw-resize'],
-                ['bottom-right', size - 9, size - 9, 18, 18, 'nwse-resize'],
-                ['bottom-left', -9, size - 9, 18, 18, 'nesw-resize']
+                ['top', size / 2 - (sideLength / 2), -sideOffset, sideLength, sideThickness, 'ns-resize'],
+                ['right', size - sideOffset, size / 2 - (sideLength / 2), sideThickness, sideLength, 'ew-resize'],
+                ['bottom', size / 2 - (sideLength / 2), size - sideOffset, sideLength, sideThickness, 'ns-resize'],
+                ['left', -sideOffset, size / 2 - (sideLength / 2), sideThickness, sideLength, 'ew-resize'],
+                ['top-left', -cornerOffset, -cornerOffset, cornerSize, cornerSize, 'nwse-resize'],
+                ['top-right', size - cornerOffset, -cornerOffset, cornerSize, cornerSize, 'nesw-resize'],
+                ['bottom-right', size - cornerOffset, size - cornerOffset, cornerSize, cornerSize, 'nwse-resize'],
+                ['bottom-left', -cornerOffset, size - cornerOffset, cornerSize, cornerSize, 'nesw-resize']
             ]
         };
     },
@@ -1735,6 +1751,119 @@ const FramesMode = {
             handleElement.style.cursor = cursor;
         });
 
+        return true;
+    },
+
+    syncTextBlockPreview(blockElement, block) {
+        if (!blockElement || block?.type !== 'text') {
+            return false;
+        }
+
+        const surface = blockElement.querySelector('.frame-editor-text-block-surface');
+        const content = blockElement.querySelector('.frame-editor-text-block-content');
+        if (!surface || !content) {
+            return false;
+        }
+
+        const layout = this.getTextBlockLayout(block);
+        const padding = this.getTextBlockPadding(block);
+        surface.style.backgroundColor = this.isTransparentTextBlockBackground(block)
+            ? 'transparent'
+            : block.backgroundColor;
+        surface.style.borderColor = (Number(block.borderWidth) || 0) > 0
+            ? (block.borderColor || block.color || this.getTextBlockDefaultColor())
+            : 'transparent';
+        surface.style.borderStyle = 'solid';
+        surface.style.borderWidth = `${layout.borderWidth}px`;
+        surface.style.padding = `${padding.top}px ${padding.right}px ${padding.bottom}px ${padding.left}px`;
+        surface.style.borderRadius = `${Math.max(0, Number(block.borderRadius) || 0)}px`;
+
+        content.style.fontSize = `${block.fontSize}px`;
+        content.style.fontWeight = String(block.fontWeight);
+        content.style.fontStyle = block.fontStyle;
+        content.style.color = block.color;
+        content.style.textAlign = block.textAlign || 'left';
+        content.style.lineHeight = String(this.getTextBlockLineHeight(block));
+        content.style.letterSpacing = `${(Number(block.letterSpacing) || 0)}px`;
+        content.style.textDecoration = block.textDecoration || 'none';
+        content.style.textTransform = block.textTransform || 'none';
+        return true;
+    },
+
+    syncShapeImageBlockPreview(blockElement, block) {
+        if (!blockElement || (block?.type !== 'shape' && block?.type !== 'image')) {
+            return false;
+        }
+
+        if (block.type === 'shape') {
+            const surface = blockElement.querySelector('.frame-editor-shape-block-surface');
+            if (!surface) {
+                return false;
+            }
+
+            const layout = this.getShapeBlockLayout(block);
+            const borderWidth = Math.max(0, Number(block.borderWidth) || 0);
+            const borderColor = borderWidth > 0 ? (block.borderColor || this.getTextBlockDefaultColor()) : 'transparent';
+            const fillColor = block.color || this.getTextBlockDefaultColor();
+            const innerInset = borderWidth > 0 ? Math.min(borderWidth, Math.floor(Math.min(layout.width, layout.height) / 2)) : 0;
+            const fill = blockElement.querySelector('.frame-editor-shape-block-fill');
+
+            surface.style.width = `${layout.width}px`;
+            surface.style.height = `${layout.height}px`;
+            surface.style.backgroundColor = borderWidth > 0 ? borderColor : fillColor;
+            surface.style.overflow = 'hidden';
+            const borderRadiusStyle = this.getShapeBorderRadiusStyle(block);
+            const clipPathStyle = this.getShapeClipPathStyle(block);
+            if (borderRadiusStyle) {
+                const [, value] = borderRadiusStyle.split(':');
+                surface.style.borderRadius = value.trim();
+            } else {
+                surface.style.removeProperty('border-radius');
+            }
+            if (clipPathStyle) {
+                const [, value] = clipPathStyle.split(':');
+                surface.style.clipPath = value.trim();
+            } else {
+                surface.style.removeProperty('clip-path');
+            }
+
+            if (fill) {
+                fill.style.inset = `${innerInset}px`;
+                fill.style.backgroundColor = fillColor;
+                if (borderRadiusStyle) {
+                    const [, value] = borderRadiusStyle.split(':');
+                    fill.style.borderRadius = value.trim();
+                } else {
+                    fill.style.removeProperty('border-radius');
+                }
+                if (clipPathStyle) {
+                    const [, value] = clipPathStyle.split(':');
+                    fill.style.clipPath = value.trim();
+                } else {
+                    fill.style.removeProperty('clip-path');
+                }
+            }
+            return true;
+        }
+
+        const surface = blockElement.querySelector('.frame-editor-image-block-surface');
+        const content = blockElement.querySelector('.frame-editor-image-block-content');
+        if (!surface || !content) {
+            return false;
+        }
+
+        const layout = this.getImageBlockLayout(block);
+        surface.style.borderWidth = `${layout.borderWidth}px`;
+        surface.style.borderStyle = 'solid';
+        surface.style.borderColor = (Number(block.borderWidth) || 0) > 0
+            ? (block.borderColor || this.getTextBlockDefaultColor())
+            : 'transparent';
+        surface.style.borderRadius = `${Math.max(0, Number(block.borderRadius) || 0)}px`;
+        surface.style.backgroundColor = this.isTransparentTextBlockBackground(block)
+            ? 'transparent'
+            : block.backgroundColor;
+        content.style.width = `${layout.imageWidth}px`;
+        content.style.height = `${layout.imageHeight}px`;
         return true;
     },
 
@@ -2409,7 +2538,9 @@ const FramesMode = {
 
             stage.addEventListener('wheel', event => {
                 event.preventDefault();
-                this.adjustCanvasZoom(event.deltaY < 0 ? 0.12 : -0.12, {
+                const wheelDelta = this.normalizeWheelZoomDelta(event, root);
+                const zoomFactor = Math.exp(-wheelDelta * 0.0015);
+                this.scaleCanvasZoom(zoomFactor, {
                     x: event.clientX,
                     y: event.clientY
                 }, root);
@@ -2456,11 +2587,11 @@ const FramesMode = {
             button.addEventListener('click', () => {
                 const action = button.dataset.canvasZoom;
                 if (action === 'in') {
-                    this.adjustCanvasZoom(0.12, null, root);
+                    this.scaleCanvasZoom(1.12, null, root);
                     return;
                 }
                 if (action === 'out') {
-                    this.adjustCanvasZoom(-0.12, null, root);
+                    this.scaleCanvasZoom(1 / 1.12, null, root);
                     return;
                 }
                 if (action === 'reset') {
@@ -2470,7 +2601,7 @@ const FramesMode = {
         });
 
         root.querySelectorAll('[data-canvas-zoom-input]').forEach(input => {
-            const commitZoom = () => this.handleCanvasZoomInput(input, root);
+                const commitZoom = () => this.handleCanvasZoomInput(input, root);
 
             input.addEventListener('keydown', event => {
                 if (event.key === 'Enter') {
@@ -2480,7 +2611,7 @@ const FramesMode = {
                 }
 
                 if (event.key === 'Escape') {
-                    input.value = String(Math.round(this.state.canvasZoom * 100));
+                    input.value = this.formatCanvasZoomPercent();
                     input.blur();
                     this.hideCanvasZoomContextMenu(root);
                 }
@@ -2753,6 +2884,7 @@ const FramesMode = {
             yPct: block.yPct
         };
         let didMove = false;
+        const dragFootprint = this.getCanvasBlockFootprint(block, blockElement);
 
         const onPointerMove = moveEvent => {
             const deltaX = moveEvent.clientX - startPointer.x;
@@ -2774,7 +2906,8 @@ const FramesMode = {
                     xPct: block.xPct + (((deltaX / this.state.canvasZoom) / Math.max(canvasScroll.clientWidth, 1)) * 100),
                     yPct: block.yPct + (((deltaY / this.state.canvasZoom) / Math.max(canvasScroll.clientHeight, 1)) * 100)
                 },
-                blockElement
+                null,
+                dragFootprint
             );
             blockElement.style.left = `${nextPosition.xPct}%`;
             blockElement.style.top = `${nextPosition.yPct}%`;
@@ -2872,7 +3005,11 @@ const FramesMode = {
             blockElement.style.left = `${previewBlock.xPct}%`;
             blockElement.style.top = `${previewBlock.yPct}%`;
             blockElement.style.width = `${layout.width}px`;
-            blockElement.innerHTML = this.renderCanvasBlockInner(previewBlock);
+            if (previewBlock.type === 'qr') {
+                this.syncQrBlockPreview(blockElement, previewBlock);
+            } else {
+                this.syncTextBlockPreview(blockElement, previewBlock);
+            }
             this.syncInspectorBlockControls(root, resizePreview.patch);
         };
 
@@ -2946,7 +3083,7 @@ const FramesMode = {
             yPct: block.yPct
         };
 
-        const updatePreview = (outerWidth, outerHeight, centerX, centerY) => {
+        const updatePreview = () => {
             const previewBlock = {
                 ...block,
                 ...nextPatch,
@@ -2957,9 +3094,8 @@ const FramesMode = {
             blockElement.style.top = `${previewBlock.yPct}%`;
             blockElement.style.width = `${layout.width}px`;
             blockElement.style.transform = this.getCanvasBlockTransform(previewBlock.rotation);
-            blockElement.innerHTML = this.renderCanvasBlockInner(previewBlock);
+            this.syncShapeImageBlockPreview(blockElement, previewBlock);
             this.syncInspectorBlockControls(root, nextPatch);
-            this.applyCanvasLayout(root);
         };
 
         const onPointerMove = moveEvent => {
@@ -3013,7 +3149,7 @@ const FramesMode = {
                 yPct: Number(((centerY / metrics.viewportHeight) * 100).toFixed(4))
             };
 
-            updatePreview(outerWidth, outerHeight, centerX, centerY);
+            updatePreview();
         };
 
         const finishResize = () => {
@@ -3788,7 +3924,7 @@ const FramesMode = {
         const rawValue = String(control.value || '').trim().replace(/%$/, '');
         const parsedValue = Number.parseFloat(rawValue);
         if (!Number.isFinite(parsedValue)) {
-            control.value = String(Math.round(this.state.canvasZoom * 100));
+            control.value = this.formatCanvasZoomPercent();
             return;
         }
 
@@ -3800,7 +3936,7 @@ const FramesMode = {
         const scroll = root?.querySelector?.('[data-frame-editor-canvas-scroll]');
         const metrics = this.getCanvasLayoutMetrics(root);
         const oldZoom = this.state.canvasZoom;
-        const normalizedZoom = Number(this.clamp(nextZoom, this.MIN_CANVAS_ZOOM, this.MAX_CANVAS_ZOOM).toFixed(2));
+        const normalizedZoom = Number(this.clamp(nextZoom, this.MIN_CANVAS_ZOOM, this.MAX_CANVAS_ZOOM).toFixed(4));
         if (!scroll || !metrics || normalizedZoom === oldZoom) {
             return;
         }
@@ -3822,11 +3958,20 @@ const FramesMode = {
             canvasPanX: nextPanX,
             canvasPanY: nextPanY
         };
-        this.renderIntoRoot();
+        this.syncCanvasViewportTransforms(root);
+        this.applyCanvasLayout(root);
     },
 
     adjustCanvasZoom(delta, anchorPoint = null, root = this.getRoot()) {
         this.setCanvasZoom(this.state.canvasZoom + delta, anchorPoint, root);
+    },
+
+    scaleCanvasZoom(factor, anchorPoint = null, root = this.getRoot()) {
+        const normalizedFactor = Number(factor);
+        if (!Number.isFinite(normalizedFactor) || normalizedFactor <= 0) {
+            return;
+        }
+        this.setCanvasZoom(this.state.canvasZoom * normalizedFactor, anchorPoint, root);
     },
 
     resetCanvasView(root = this.getRoot()) {
@@ -3837,7 +3982,8 @@ const FramesMode = {
             canvasPanX: 0,
             canvasPanY: 0
         };
-        this.renderIntoRoot();
+        this.syncCanvasViewportTransforms(root);
+        this.applyCanvasLayout(root);
         this.hideCanvasZoomContextMenu(root);
     },
 
@@ -3859,7 +4005,7 @@ const FramesMode = {
             Math.min(availableWidth / contentWidth, availableHeight / contentHeight),
             this.MIN_CANVAS_ZOOM,
             this.MAX_CANVAS_ZOOM
-        ).toFixed(2));
+        ).toFixed(4));
         const centerX = bounds.left + (contentWidth / 2);
         const centerY = bounds.top + (contentHeight / 2);
 
@@ -3870,7 +4016,8 @@ const FramesMode = {
             canvasPanX: (metrics.viewportWidth / 2) - (centerX * nextZoom),
             canvasPanY: (metrics.viewportHeight / 2) - (centerY * nextZoom)
         };
-        this.renderIntoRoot();
+        this.syncCanvasViewportTransforms(root);
+        this.applyCanvasLayout(root);
         this.hideCanvasZoomContextMenu(root);
     },
 
@@ -4163,6 +4310,67 @@ const FramesMode = {
 
         this.applyCanvasLayout(root);
         this.clampAllBlocksToCanvas(root);
+    },
+
+    formatCanvasZoomPercent(zoom = this.state.canvasZoom) {
+        const percent = Math.max(0, Number(zoom) || 0) * 100;
+        if (percent >= 100) {
+            return percent.toFixed(0);
+        }
+        if (percent >= 10) {
+            return percent.toFixed(1).replace(/\.0$/, '');
+        }
+        return percent.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+    },
+
+    syncCanvasZoomControls(root = this.getRoot()) {
+        if (!root) {
+            return;
+        }
+
+        const formattedZoom = this.formatCanvasZoomPercent();
+        root.querySelectorAll('[data-canvas-zoom-input]').forEach(input => {
+            if (input === document.activeElement) {
+                return;
+            }
+            input.value = formattedZoom;
+        });
+    },
+
+    syncCanvasViewportTransforms(root = this.getRoot()) {
+        if (!root) {
+            return;
+        }
+
+        const camera = root.querySelector('[data-frame-editor-camera]');
+        const scene = root.querySelector('[data-frame-editor-scene]');
+        if (camera) {
+            camera.style.transform = `translate(${this.state.canvasPanX}px, ${this.state.canvasPanY}px)`;
+        }
+        if (scene) {
+            scene.style.transform = `scale(${this.state.canvasZoom})`;
+            scene.style.setProperty('--frame-editor-handle-scale', String(this.getCanvasHandleScale()));
+        }
+        root.querySelectorAll('[data-frame-editor-qr-handle-layer]').forEach(handleLayer => {
+            const blockElement = handleLayer.closest('[data-frame-editor-canvas-block]');
+            const blockId = blockElement?.dataset.frameEditorCanvasBlock;
+            const block = this.getBlockById(blockId);
+            if (blockElement && block?.type === 'qr') {
+                this.syncQrBlockPreview(blockElement, block);
+            }
+        });
+        this.syncCanvasZoomControls(root);
+    },
+
+    normalizeWheelZoomDelta(event, root = this.getRoot()) {
+        const referenceHeight = root?.querySelector?.('[data-frame-editor-canvas-scroll]')?.clientHeight || window.innerHeight || 800;
+        if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+            return event.deltaY * 16;
+        }
+        if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+            return event.deltaY * referenceHeight;
+        }
+        return event.deltaY;
     },
 
     cloneBlockData(block) {
@@ -4717,12 +4925,11 @@ const FramesMode = {
         return this.getRotatedFootprint(layout.width, layout.height, block.rotation);
     },
 
-    clampCanvasBlockPosition(root, block, position, blockElement = null) {
+    clampCanvasBlockPosition(root, block, position, blockElement = null, footprintOverride = null) {
         const nextXPct = Number(position?.xPct);
         const nextYPct = Number(position?.yPct);
         const fallbackXPct = Number(block?.xPct);
         const fallbackYPct = Number(block?.yPct);
-        const metrics = this.getCanvasLayoutMetrics(root);
         const normalizedXPct = Number.isFinite(nextXPct)
             ? nextXPct
             : (Number.isFinite(fallbackXPct) ? fallbackXPct : 50);
@@ -4730,28 +4937,9 @@ const FramesMode = {
             ? nextYPct
             : (Number.isFinite(fallbackYPct) ? fallbackYPct : 50);
 
-        if (!metrics) {
-            return {
-                xPct: Number(normalizedXPct.toFixed(4)),
-                yPct: Number(normalizedYPct.toFixed(4))
-            };
-        }
-
-        const footprint = this.getCanvasBlockFootprint(block, blockElement || undefined);
-        const halfWidth = Math.max(0, footprint.width / 2);
-        const halfHeight = Math.max(0, footprint.height / 2);
-        const rawCenterX = (normalizedXPct / 100) * metrics.viewportWidth;
-        const rawCenterY = (normalizedYPct / 100) * metrics.viewportHeight;
-        const clampedCenterX = footprint.width >= metrics.viewportWidth
-            ? metrics.viewportWidth / 2
-            : this.clamp(rawCenterX, halfWidth, metrics.viewportWidth - halfWidth);
-        const clampedCenterY = footprint.height >= metrics.viewportHeight
-            ? metrics.viewportHeight / 2
-            : this.clamp(rawCenterY, halfHeight, metrics.viewportHeight - halfHeight);
-
         return {
-            xPct: Number(((clampedCenterX / metrics.viewportWidth) * 100).toFixed(4)),
-            yPct: Number(((clampedCenterY / metrics.viewportHeight) * 100).toFixed(4))
+            xPct: Number(normalizedXPct.toFixed(4)),
+            yPct: Number(normalizedYPct.toFixed(4))
         };
     },
 
