@@ -4978,11 +4978,12 @@ const FramesMode = {
             }
 
             nextPatch = this.getTextBlockRepositionPatch(block, deltaX, deltaY);
-            // while actively dragging, mark position as custom so the inspector shows "Custom"
             nextPatch = {
                 ...nextPatch,
-                textPositionX: 'custom',
-                textPositionY: 'custom'
+                ...this.getTextBlockPositionPatchFromPadding(this.getTextBlockPadding({
+                    ...block,
+                    ...nextPatch
+                }))
             };
 
             const previewBlock = {
@@ -5004,8 +5005,7 @@ const FramesMode = {
                 return;
             }
 
-            // mark inner positioning as custom when manually repositioned
-            this.updateBlock(block.id, { ...nextPatch, textPositionX: 'custom', textPositionY: 'custom' });
+            this.updateBlock(block.id, nextPatch);
             const updatedBlock = this.getBlockById(block.id);
             this.syncCanvasBlock(root, updatedBlock);
         };
