@@ -657,7 +657,7 @@ const FramesMode = {
             return I18n.translate('{style} line', { style: I18n.translateString(lineStyleLabel) });
         }
 
-        return this.getCanvasOverviewPreviewText(block?.content, this.PREVIEW_QR_TEXT);
+        return I18n.translateString('Uses current QR content');
     },
 
     getCanvasOverviewPreviewText(value, fallback = '') {
@@ -669,6 +669,15 @@ const FramesMode = {
         return normalized.length > 44
             ? `${normalized.slice(0, 43)}…`
             : normalized;
+    },
+
+    getCurrentQrPreviewText(root = document) {
+        const qrContainer = root?.querySelector?.('#qrcode');
+        const previewState = qrContainer && typeof QRCodePreviewRenderer !== 'undefined'
+            ? QRCodePreviewRenderer.getPreviewStateForContainer(qrContainer)
+            : null;
+        const previewText = String(previewState?.qrText || qrContainer?.title || '').trim();
+        return previewText || this.PREVIEW_QR_TEXT;
     },
 
     getBlockIcon(blockType) {
@@ -908,14 +917,11 @@ const FramesMode = {
                     <span class="frame-editor-sidebar-title">${I18n.translateString('QR Code Block')}</span>
                 </div>
                 <div class="frame-editor-sidebar-form">
-                    <label class="frame-editor-field frame-editor-field-wide">
-                        <span>${I18n.translateString('QR content')}</span>
-                        <input type="text" value="${this.escapeHTML(selectedBlock.content)}" data-block-setting="content">
-                    </label>
+                    <div class="form-hint">${this.escapeHTML(I18n.translateString('Uses the current QR content from the generator.'))}</div>
                     <div class="frame-editor-text-property-group">
                         ${this.renderTextPropertyGroupHeading('Colour')}
                         <div class="frame-editor-text-color-list">
-                            ${this.renderTextColorControl('Dark', 'colorDark', selectedBlock.colorDark || '#111111')}
+                            ${this.renderTextColorControl('Foreground', 'colorDark', selectedBlock.colorDark || '#111111')}
                             ${this.renderTextColorControl('Background', 'backgroundColorRaw', this.getTextBlockColorInputValue(selectedBlock.backgroundColor), true, this.isTransparentTextBlockBackground(selectedBlock))}
                         </div>
                     </div>
@@ -2291,7 +2297,7 @@ const FramesMode = {
 
     getCanvasQrMarkupCacheKey(block, size = this.getQrBlockSize(block)) {
         return JSON.stringify({
-            text: block?.content || this.PREVIEW_QR_TEXT,
+            text: this.getCurrentQrPreviewText(),
             size,
             colorDark: block?.colorDark || this.PREVIEW_QR_OPTIONS.colorDark
         });
@@ -2305,7 +2311,7 @@ const FramesMode = {
         }
 
         const qrMarkup = buildNativeQRCodeSVG({
-            text: block.content || this.PREVIEW_QR_TEXT,
+            text: this.getCurrentQrPreviewText(),
             size,
             qrOptions: {
                 ...this.PREVIEW_QR_OPTIONS,
@@ -6480,7 +6486,6 @@ const FramesMode = {
         return {
             id: this.getNextBlockId(),
             type: 'qr',
-            content: this.PREVIEW_QR_TEXT,
             xPct,
             yPct,
             size: 180,
