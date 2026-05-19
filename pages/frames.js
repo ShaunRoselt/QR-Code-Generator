@@ -713,7 +713,7 @@ const FramesMode = {
                     <span class="frame-editor-library-item-name">${this.escapeHTML(I18n.translateString(block.name))}</span>
                     <span class="frame-editor-library-item-description">${this.escapeHTML(I18n.translateString(block.description))}</span>
                 </span>
-                <span class="frame-editor-library-item-action">${I18n.translateString('Drag or click')}</span>
+                
             </button>
         `;
     },
