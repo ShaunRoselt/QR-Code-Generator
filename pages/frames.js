@@ -5,6 +5,7 @@ const FramesMode = {
     frameLibraryCache: null,
     framePreviewCache: new Map(),
     qrMarkupCache: new Map(),
+    lineBlockFillStyleCache: new Map(),
     blockIdCounter: 0,
     blockClipboard: null,
     frameEditorContextMenuState: null,
@@ -66,8 +67,26 @@ const FramesMode = {
         { id: 'dotted', label: 'Dotted', preview: '········' },
         { id: 'double', label: 'Double', preview: '═══════≡' },
         { id: 'striped', label: 'Striped', preview: '▰▱▰▱▰▱▰▱' },
-        { id: 'gradient', label: 'Gradient', preview: '▁▂▃▄▅▆▇█' }
+        { id: 'gradient', label: 'Gradient', preview: '▁▂▃▄▅▆▇█' },
+        { id: 'wave', label: 'Wave', preview: '∿∿∿∿∿∿∿∿' },
+        { id: 'triangle', label: 'Triangle', preview: '/\\/\\/\\/\\' },
+        { id: 'sawtooth', label: 'Sawtooth', preview: '/|/|/|/|' },
+        { id: 'square-wave', label: 'Square Wave', preview: '_|-|_|-' },
+        { id: 'pulse', label: 'Pulse', preview: '__/\\__/\\' }
     ]),
+    LINE_BLOCK_SVG_STYLE_CONFIGS: Object.freeze({
+        wave: Object.freeze({ type: 'wave', wavelengthFactor: 4, amplitudeRatio: 0.34, strokeRatio: 0.28 }),
+        triangle: Object.freeze({ type: 'triangle', wavelengthFactor: 3.1, amplitudeRatio: 0.38, strokeRatio: 0.25 }),
+        sawtooth: Object.freeze({ type: 'sawtooth', wavelengthFactor: 2.8, amplitudeRatio: 0.38, strokeRatio: 0.24 }),
+        'square-wave': Object.freeze({ type: 'square', wavelengthFactor: 3.4, amplitudeRatio: 0.38, strokeRatio: 0.22 }),
+        pulse: Object.freeze({ type: 'pulse', wavelengthFactor: 3.8, amplitudeRatio: 0.42, strokeRatio: 0.24 })
+    }),
+    LINE_BLOCK_LEGACY_STYLE_ALIASES: Object.freeze({
+        'soft-wave': 'wave',
+        'tight-wave': 'triangle',
+        'bold-wave': 'triangle',
+        ripple: 'pulse'
+    }),
     TEXT_BLOCK_FONT_SIZE_OPTIONS: Object.freeze([
         { id: 's', label: 'S', size: 24 },
         { id: 'm', label: 'M', size: 32 },
@@ -103,10 +122,14 @@ const FramesMode = {
         canvasGridColor: '#66c0f4',
         canvasGridOpacity: 0.08,
         canvasGridBaseSize: 32,
+        // Persisted widths for current session only (not saved to localStorage)
+        leftSidebarWidth: 340,
+        rightSidebarWidth: 320,
         isLoading: true,
         errorMessage: '',
         canvasBlocks: []
     },
+
 
     render() {
         const hasFrameData = !this.state.isLoading && !this.state.errorMessage;
@@ -226,7 +249,7 @@ const FramesMode = {
                 </div>
 
                 <div class="frame-editor-layout-scroll">
-                    <div class="frame-editor-layout${leftSidebarCollapsed ? ' frame-editor-layout-sidebar-collapsed' : ''}${this.state.isRightSidebarCollapsed ? ' frame-editor-layout-right-sidebar-collapsed' : ''}">
+                    <div class="frame-editor-layout${leftSidebarCollapsed ? ' frame-editor-layout-sidebar-collapsed' : ''}${this.state.isRightSidebarCollapsed ? ' frame-editor-layout-right-sidebar-collapsed' : ''}" style="${(leftSidebarCollapsed ? '' : `--left-sidebar-width: ${this.escapeHTML(String(Number(this.state.leftSidebarWidth || 340)))}px;`) + ' ' + (this.state.isRightSidebarCollapsed ? '' : `--right-sidebar-width: ${this.escapeHTML(String(Number(this.state.rightSidebarWidth || 320)))}px;`)}">
                         <aside
                             id="frameEditorSidebarPanel"
                             class="frame-editor-sidebar-panel"
@@ -837,7 +860,7 @@ const FramesMode = {
     },
 
     renderLineBlockInspector(selectedBlock) {
-        const selectedLineStyle = selectedBlock.lineStyle || 'solid';
+        const selectedLineStyle = this.getNormalizedLineBlockStyleId(selectedBlock.lineStyle || 'solid');
 
         return `
             <div class="frame-editor-sidebar-panel-section">
@@ -880,13 +903,16 @@ const FramesMode = {
 
     renderLineStylePicker(selectedLineStyle) {
         const selectedOption = this.LINE_BLOCK_STYLE_OPTIONS.find(option => option.id === selectedLineStyle) || this.LINE_BLOCK_STYLE_OPTIONS[0];
-        const selectedPreview = this.getLineBlockStylePreviewText(selectedOption);
         const selectedLabel = I18n.translateString(selectedOption?.label || '');
 
         return `
             <details class="frame-editor-line-style-picker" data-line-style-picker>
                 <summary class="frame-editor-line-style-picker-summary">
-                    <span class="frame-editor-line-style-picker-preview">${this.escapeHTML(selectedPreview)}</span>
+                    <span
+                        class="frame-editor-line-style-picker-preview"
+                        style="${this.escapeHTML(this.getLineStylePickerPreviewStyle(selectedOption.id))}"
+                        aria-hidden="true"
+                    ></span>
                     <span class="frame-editor-line-style-picker-label">${this.escapeHTML(selectedLabel)}</span>
                     <i class="bi bi-chevron-down" aria-hidden="true"></i>
                 </summary>
@@ -901,7 +927,11 @@ const FramesMode = {
                                 role="option"
                                 aria-selected="${isSelected ? 'true' : 'false'}"
                             >
-                                <span class="frame-editor-line-style-picker-option-preview">${this.escapeHTML(this.getLineBlockStylePreviewText(option))}</span>
+                                <span
+                                    class="frame-editor-line-style-picker-option-preview"
+                                    style="${this.escapeHTML(this.getLineStylePickerPreviewStyle(option.id))}"
+                                    aria-hidden="true"
+                                ></span>
                                 <span class="frame-editor-line-style-picker-option-label">${this.escapeHTML(I18n.translateString(option.label))}</span>
                                 ${isSelected ? '<i class="bi bi-check2 frame-editor-line-style-picker-option-status" aria-hidden="true"></i>' : ''}
                             </button>
@@ -927,12 +957,35 @@ const FramesMode = {
         `;
     },
 
-    getLineBlockStylePreviewText(option) {
-        if (!option) {
-            return '';
-        }
+    getLineStylePickerPreviewStyle(lineStyle) {
+        return [
+            this.getLineBlockFillStyle({
+                type: 'line',
+                color: '#66c0f4',
+                lineStyle: lineStyle || 'solid'
+            }, {
+                width: 112,
+                height: 24
+            })
+        ].join('; ');
+    },
 
-        return option.preview || '';
+    getNormalizedLineBlockStyleId(lineStyle) {
+        const candidateStyle = this.LINE_BLOCK_LEGACY_STYLE_ALIASES[lineStyle] || lineStyle || 'solid';
+        return this.LINE_BLOCK_STYLE_OPTIONS.some(option => option.id === candidateStyle)
+            ? candidateStyle
+            : 'solid';
+    },
+
+    getLineBlockFillInlineStyle(block, layout, innerInset = 0, borderRadius = 0) {
+        return [
+            `inset: ${innerInset}px`,
+            `border-radius: ${Math.max(0, borderRadius - innerInset)}px`,
+            this.getLineBlockFillStyle(block, {
+                width: Math.max(0, (Number(layout?.width) || 0) - (innerInset * 2)),
+                height: Math.max(0, (Number(layout?.height) || 0) - (innerInset * 2))
+            })
+        ].join('; ');
     },
 
     renderSidebarToggleButton(setting, value, isActive, icon, label) {
@@ -1568,18 +1621,11 @@ const FramesMode = {
             const borderColor = borderWidth > 0 ? (block.borderColor || this.getTextBlockDefaultColor()) : 'transparent';
             const borderRadius = this.getLineBlockBorderRadius(block, layout);
             const innerInset = borderWidth > 0 ? Math.min(borderWidth, Math.floor(Math.min(layout.width, layout.height) / 2)) : 0;
-            const fillStyle = [
-                `inset: ${innerInset}px`,
-                `border-radius: ${Math.max(0, borderRadius - innerInset)}px`,
-                this.getLineBlockFillStyle(block, {
-                    width: Math.max(0, layout.width - (innerInset * 2)),
-                    height: Math.max(0, layout.height - (innerInset * 2))
-                })
-            ].join('; ');
+            const fillStyle = this.getLineBlockFillInlineStyle(block, layout, innerInset, borderRadius);
 
             return `
                 <div class="frame-editor-line-block-surface" style="width: ${layout.width}px; height: ${layout.height}px; background-color: ${borderColor}; border-radius: ${borderRadius}px;">
-                    <div class="frame-editor-line-block-fill" style="${fillStyle}"></div>
+                    <div class="frame-editor-line-block-fill" style="${this.escapeHTML(fillStyle)}"></div>
                 </div>
                 ${this.state.selectedBlockId === block.id ? this.renderCanvasBlockHandles(block) : ''}
             `;
@@ -1991,12 +2037,11 @@ const FramesMode = {
             surface.style.backgroundColor = borderColor;
             surface.style.borderRadius = `${borderRadius}px`;
             if (fill) {
-                fill.style.inset = `${innerInset}px`;
-                fill.style.borderRadius = `${Math.max(0, borderRadius - innerInset)}px`;
-                fill.style.cssText = `inset: ${innerInset}px; border-radius: ${Math.max(0, borderRadius - innerInset)}px; ${this.getLineBlockFillStyle(block, {
-                    width: Math.max(0, layout.width - (innerInset * 2)),
-                    height: Math.max(0, layout.height - (innerInset * 2))
-                })}`;
+                const fillStyle = this.getLineBlockFillInlineStyle(block, layout, innerInset, borderRadius);
+                if (fill.dataset.lineFillStyle !== fillStyle) {
+                    fill.dataset.lineFillStyle = fillStyle;
+                    fill.style.cssText = fillStyle;
+                }
             }
             return true;
         }
@@ -2157,22 +2202,29 @@ const FramesMode = {
     },
 
     normalizeLineBlockPatch(block, patch = {}) {
+        const normalizedPatch = Object.prototype.hasOwnProperty.call(patch, 'lineStyle')
+            ? {
+                ...patch,
+                lineStyle: this.getNormalizedLineBlockStyleId(patch.lineStyle)
+            }
+            : patch;
+
         if (!block || block.type !== 'line') {
-            return patch;
+            return normalizedPatch;
         }
 
-        if (!Object.prototype.hasOwnProperty.call(patch, 'width')
-            && !Object.prototype.hasOwnProperty.call(patch, 'height')) {
-            return patch;
+        if (!Object.prototype.hasOwnProperty.call(normalizedPatch, 'width')
+            && !Object.prototype.hasOwnProperty.call(normalizedPatch, 'height')) {
+            return normalizedPatch;
         }
 
         const normalized = this.getNormalizedLineBlockDimensions({
             ...block,
-            ...patch
+            ...normalizedPatch
         });
 
         return {
-            ...patch,
+            ...normalizedPatch,
             width: Math.round(normalized.width),
             height: Math.round(normalized.height)
         };
@@ -2183,11 +2235,86 @@ const FramesMode = {
         return Math.min(requestedRadius, Math.floor(Math.min(layout.width, layout.height) / 2));
     },
 
+    svgMarkupToDataUrl(svgMarkup) {
+        return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(String(svgMarkup || '').replace(/\s{2,}/g, ' ').trim())}`;
+    },
+
+    getLineBlockSvgFillStyle(color, height, lineStyle, config) {
+        if (!config) {
+            return '';
+        }
+
+        const normalizedHeight = Math.max(8, Math.round(height));
+        const cacheKey = `${lineStyle || 'wave'}:${String(color || '').toLowerCase()}:${normalizedHeight}`;
+        const cachedFillStyle = this.lineBlockFillStyleCache.get(cacheKey);
+        if (cachedFillStyle) {
+            return cachedFillStyle;
+        }
+
+        const strokeWidth = Math.max(2, Math.round(normalizedHeight * config.strokeRatio));
+        const maxAmplitude = Math.max(1, Math.floor((normalizedHeight - strokeWidth) / 2));
+        const amplitude = Math.min(
+            maxAmplitude,
+            Math.max(1, Math.round(normalizedHeight * config.amplitudeRatio))
+        );
+        const wavelength = Math.max(18, Math.round(normalizedHeight * config.wavelengthFactor));
+        const midY = normalizedHeight / 2;
+        const topY = Math.max(strokeWidth / 2, midY - amplitude);
+        const bottomY = Math.min(normalizedHeight - (strokeWidth / 2), midY + amplitude);
+        const halfWave = wavelength / 2;
+        const quarterWave = wavelength / 4;
+        const threeQuarterWave = wavelength * 0.75;
+        const waveRiseX = halfWave * 0.22;
+        const wavePeakX = halfWave * 0.78;
+        let pathData = '';
+
+        if (config.type === 'triangle') {
+            pathData = `M 0 ${midY} L ${quarterWave} ${topY} L ${halfWave} ${midY} L ${threeQuarterWave} ${bottomY} L ${wavelength} ${midY}`;
+        } else if (config.type === 'sawtooth') {
+            pathData = `M 0 ${bottomY} L ${wavelength * 0.82} ${topY} L ${wavelength} ${bottomY}`;
+        } else if (config.type === 'square') {
+            pathData = `M 0 ${bottomY} L ${quarterWave} ${bottomY} L ${quarterWave} ${topY} L ${threeQuarterWave} ${topY} L ${threeQuarterWave} ${bottomY} L ${wavelength} ${bottomY}`;
+        } else if (config.type === 'pulse') {
+            pathData = `M 0 ${midY} L ${wavelength * 0.18} ${midY} L ${wavelength * 0.32} ${topY} L ${wavelength * 0.46} ${midY} L ${wavelength * 0.56} ${midY} L ${wavelength * 0.7} ${bottomY} L ${wavelength * 0.84} ${midY} L ${wavelength} ${midY}`;
+        } else {
+            pathData = `M 0 ${midY} C ${waveRiseX} ${topY}, ${wavePeakX} ${topY}, ${halfWave} ${midY} C ${halfWave + waveRiseX} ${bottomY}, ${wavelength - waveRiseX} ${bottomY}, ${wavelength} ${midY}`;
+        }
+
+        const svgMarkup = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${wavelength} ${normalizedHeight}">
+                <path
+                    d="${pathData}"
+                    fill="none"
+                    stroke="${color}"
+                    stroke-width="${strokeWidth}"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+            </svg>
+        `;
+
+        const fillStyle = [
+            `background-image: url('${this.svgMarkupToDataUrl(svgMarkup)}')`,
+            `background-size: ${wavelength}px 100%`,
+            'background-position: center',
+            'background-repeat: repeat-x',
+            'background-color: transparent'
+        ].join('; ');
+
+        this.lineBlockFillStyleCache.set(cacheKey, fillStyle);
+        if (this.lineBlockFillStyleCache.size > 128) {
+            const oldestCacheKey = this.lineBlockFillStyleCache.keys().next().value;
+            this.lineBlockFillStyleCache.delete(oldestCacheKey);
+        }
+
+        return fillStyle;
+    },
+
     getLineBlockFillStyle(block, layout = this.getLineBlockLayout(block)) {
         const width = Math.max(0, Number(layout?.width) || 0);
         const height = Math.max(0, Number(layout?.height) || 0);
         const color = block?.color || this.getTextBlockDefaultColor();
-        const lineStyle = block?.lineStyle || 'solid';
+        const lineStyle = this.getNormalizedLineBlockStyleId(block?.lineStyle || 'solid');
         const dashLength = Math.max(8, Math.round(height * 1.8));
         const dashGap = Math.max(6, Math.round(height * 0.95));
         const dotSize = Math.max(4, Math.round(height * 0.72));
@@ -2235,6 +2362,10 @@ const FramesMode = {
                 `background-color: ${color}`,
                 'background-repeat: no-repeat'
             ].join('; ');
+        }
+
+        if (this.LINE_BLOCK_SVG_STYLE_CONFIGS[lineStyle]) {
+            return this.getLineBlockSvgFillStyle(color, height, lineStyle, this.LINE_BLOCK_SVG_STYLE_CONFIGS[lineStyle]);
         }
 
         return [
@@ -3145,6 +3276,133 @@ const FramesMode = {
                 }
             });
         });
+
+        this.bindPanelResizeHandles(root);
+    },
+
+    bindPanelResizeHandles(root) {
+        const layout = root?.querySelector('.frame-editor-layout');
+        const leftPanel = root?.querySelector('.frame-editor-sidebar-panel');
+        const rightPanel = root?.querySelector('.frame-editor-right-sidebar-panel');
+        const hitArea = 10;
+
+        const updateHoverState = (panel, side, event) => {
+            if (!panel) {
+                return;
+            }
+            const rect = panel.getBoundingClientRect();
+            const isNearEdge = side === 'left'
+                ? event.clientX >= (rect.right - hitArea)
+                : event.clientX <= (rect.left + hitArea);
+            panel.classList.toggle('is-resize-hover', isNearEdge);
+        };
+
+        const bindHandle = (panel, side) => {
+            if (!panel) {
+                return;
+            }
+
+            panel.addEventListener('pointermove', event => {
+                if ((side === 'left' && this.isLeftSidebarCollapsed()) || (side === 'right' && this.state.isRightSidebarCollapsed)) {
+                    panel.classList.remove('is-resize-hover');
+                    return;
+                }
+                updateHoverState(panel, side, event);
+            });
+
+            panel.addEventListener('pointerleave', () => {
+                panel.classList.remove('is-resize-hover');
+            });
+
+            panel.addEventListener('pointerdown', event => {
+                if (event.button !== 0 || !layout) {
+                    return;
+                }
+
+                const rect = panel.getBoundingClientRect();
+                const isNearEdge = side === 'left'
+                    ? event.clientX >= (rect.right - hitArea)
+                    : event.clientX <= (rect.left + hitArea);
+                if (!isNearEdge) {
+                    return;
+                }
+
+                this.beginPanelResize(root, layout, panel, side, event);
+            });
+        };
+
+        bindHandle(leftPanel, 'left');
+        bindHandle(rightPanel, 'right');
+    },
+
+    beginPanelResize(root, layout, panel, side, event) {
+        if (!root || !layout || !panel) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const isLeft = side === 'left';
+        const layoutRect = layout.getBoundingClientRect();
+        const layoutStyles = getComputedStyle(layout);
+        const startLeft = parseFloat(layoutStyles.getPropertyValue('--left-sidebar-width'))
+            || root.querySelector('.frame-editor-sidebar-panel')?.clientWidth
+            || Number(this.state.leftSidebarWidth || 340);
+        const startRight = parseFloat(layoutStyles.getPropertyValue('--right-sidebar-width'))
+            || root.querySelector('.frame-editor-right-sidebar-panel')?.clientWidth
+            || Number(this.state.rightSidebarWidth || 320);
+        const minMainWidth = 220;
+        const minSidebarWidth = 220;
+        const startX = event.clientX;
+        const bodyStyle = document.body.style;
+        const previousCursor = bodyStyle.cursor;
+        const previousUserSelect = bodyStyle.userSelect;
+
+        panel.classList.add('is-resizing');
+        bodyStyle.cursor = 'col-resize';
+        bodyStyle.userSelect = 'none';
+
+        const onPointerMove = moveEvent => {
+            const deltaX = moveEvent.clientX - startX;
+            if (isLeft) {
+                const maxLeft = Math.max(minSidebarWidth, layoutRect.width - startRight - minMainWidth);
+                const nextLeft = Math.round(this.clamp(startLeft + deltaX, minSidebarWidth, maxLeft));
+                layout.style.setProperty('--left-sidebar-width', `${nextLeft}px`);
+            } else {
+                const maxRight = Math.max(minSidebarWidth, layoutRect.width - startLeft - minMainWidth);
+                const nextRight = Math.round(this.clamp(startRight - deltaX, minSidebarWidth, maxRight));
+                layout.style.setProperty('--right-sidebar-width', `${nextRight}px`);
+            }
+        };
+
+        const finish = () => {
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', finish);
+            window.removeEventListener('pointercancel', finish);
+            panel.classList.remove('is-resizing');
+            panel.classList.remove('is-resize-hover');
+            bodyStyle.cursor = previousCursor;
+            bodyStyle.userSelect = previousUserSelect;
+
+            const finalStyles = getComputedStyle(layout);
+            const finalLeft = parseFloat(finalStyles.getPropertyValue('--left-sidebar-width'))
+                || root.querySelector('.frame-editor-sidebar-panel')?.clientWidth
+                || Number(this.state.leftSidebarWidth || 340);
+            const finalRight = parseFloat(finalStyles.getPropertyValue('--right-sidebar-width'))
+                || root.querySelector('.frame-editor-right-sidebar-panel')?.clientWidth
+                || Number(this.state.rightSidebarWidth || 320);
+
+            this.state = {
+                ...this.state,
+                leftSidebarWidth: Math.round(finalLeft),
+                rightSidebarWidth: Math.round(finalRight)
+            };
+            this.renderIntoRoot();
+        };
+
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', finish);
+        window.addEventListener('pointercancel', finish);
     },
 
     beginCanvasBlockDrag(root, blockElement, event, options = {}) {
@@ -3313,8 +3571,9 @@ const FramesMode = {
                 ...nextPatch,
                 ...nextPosition
             });
-            this.renderIntoRoot();
-            this.clampUpdatedBlockToCanvas(this.getRoot(), this.getBlockById(block.id));
+            const updatedBlock = this.getBlockById(block.id);
+            this.syncCanvasBlock(root, updatedBlock);
+            this.clampUpdatedBlockToCanvas(root, updatedBlock);
         };
 
         const onPointerUp = () => {
@@ -3512,8 +3771,9 @@ const FramesMode = {
                 ...nextPatch,
                 ...nextPosition
             });
-            this.renderIntoRoot();
-            this.clampUpdatedBlockToCanvas(this.getRoot(), this.getBlockById(block.id));
+            const updatedBlock = this.getBlockById(block.id);
+            this.syncCanvasBlock(root, updatedBlock);
+            this.clampUpdatedBlockToCanvas(root, updatedBlock);
         };
 
         const onPointerUp = () => {
@@ -4188,24 +4448,19 @@ const FramesMode = {
             return;
         }
 
-        root.querySelectorAll('[data-block-setting]').forEach(control => {
-            const setting = control.dataset.blockSetting;
-            const matchingEntry = patchEntries.find(([key]) => key === setting);
-            if (!matchingEntry) {
-                return;
-            }
+        patchEntries.forEach(([setting, value]) => {
+            root.querySelectorAll(`[data-block-setting="${setting}"]`).forEach(control => {
+                if (control === document.activeElement) {
+                    return;
+                }
 
-            if (control === document.activeElement) {
-                return;
-            }
+                if (control.type === 'checkbox') {
+                    control.checked = Boolean(value);
+                    return;
+                }
 
-            const [, value] = matchingEntry;
-            if (control.type === 'checkbox') {
-                control.checked = Boolean(value);
-                return;
-            }
-
-            control.value = String(value);
+                control.value = String(value);
+            });
         });
     },
 

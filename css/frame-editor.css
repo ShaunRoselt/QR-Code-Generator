@@ -118,25 +118,28 @@
 }
 
 .frame-editor-layout {
+    --left-sidebar-width: 340px;
+    --right-sidebar-width: 320px;
     display: grid;
-    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr) minmax(280px, 320px);
+    grid-template-columns: var(--left-sidebar-width) minmax(0, 1fr) var(--right-sidebar-width);
     gap: 0;
     align-items: stretch;
-    transition: grid-template-columns 0.25s ease;
+    transition: grid-template-columns 0.15s ease, --left-sidebar-width 0.12s ease, --right-sidebar-width 0.12s ease;
     min-height: 0;
     height: 100%;
 }
 
 .frame-editor-layout.frame-editor-layout-sidebar-collapsed {
-    grid-template-columns: 0 minmax(0, 1fr) minmax(280px, 320px);
+    --left-sidebar-width: 0px;
 }
 
 .frame-editor-layout.frame-editor-layout-right-sidebar-collapsed {
-    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr) 0;
+    --right-sidebar-width: 0px;
 }
 
 .frame-editor-layout.frame-editor-layout-sidebar-collapsed.frame-editor-layout-right-sidebar-collapsed {
-    grid-template-columns: 0 minmax(0, 1fr) 0;
+    --left-sidebar-width: 0px;
+    --right-sidebar-width: 0px;
 }
 
 .frame-editor-sidebar-panel,
@@ -150,7 +153,12 @@
     height: 100%;
 }
 
+.frame-editor-sidebar-panel { grid-column: 1; }
+.frame-editor-workspace-panel { grid-column: 2; }
+.frame-editor-right-sidebar-panel { grid-column: 3; }
+
 .frame-editor-sidebar-panel {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -175,6 +183,7 @@
 }
 
 .frame-editor-right-sidebar-panel {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -196,6 +205,13 @@
     transform: translateX(12px);
     padding-inline: 0;
     border-color: transparent;
+}
+
+.frame-editor-sidebar-panel.is-resize-hover,
+.frame-editor-sidebar-panel.is-resizing,
+.frame-editor-right-sidebar-panel.is-resize-hover,
+.frame-editor-right-sidebar-panel.is-resizing {
+    cursor: col-resize;
 }
 
 .frame-editor-tabs {
@@ -580,12 +596,15 @@
 
 .frame-editor-line-style-picker-preview,
 .frame-editor-line-style-picker-option-preview {
-    flex: 0 0 8ch;
-    width: 8ch;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-variant-ligatures: none;
-    white-space: nowrap;
-    letter-spacing: 0;
+    display: block;
+    flex: 0 0 112px;
+    width: 112px;
+    min-width: 112px;
+    height: 24px;
+    border-radius: 999px;
+    overflow: hidden;
+    background-color: rgba(148, 163, 184, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.2);
 }
 
 .frame-editor-line-style-picker-label,
@@ -618,7 +637,7 @@
     align-items: center;
     gap: 0.75rem;
     width: 100%;
-    min-height: 36px;
+    min-height: 44px;
     padding: 0.55rem 0.75rem;
     border: 0;
     border-radius: 10px;
