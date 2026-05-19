@@ -118,6 +118,16 @@ const FramesMode = {
         { id: 'italic', label: 'Italic', fontWeight: 400, fontStyle: 'italic' },
         { id: 'bold-italic', label: 'Bold Italic', fontWeight: 700, fontStyle: 'italic' }
     ]),
+    TEXT_BLOCK_POSITION_X_OPTIONS: Object.freeze([
+        { id: 'left', label: 'Left' },
+        { id: 'center', label: 'Center' },
+        { id: 'right', label: 'Right' }
+    ]),
+    TEXT_BLOCK_POSITION_Y_OPTIONS: Object.freeze([
+        { id: 'top', label: 'Top' },
+        { id: 'center', label: 'Center' },
+        { id: 'bottom', label: 'Bottom' }
+    ]),
     DEFAULT_BLOCK_MEASUREMENT_MAX: 20000,
     MIN_CANVAS_ZOOM: 0.01,
     MAX_CANVAS_ZOOM: 10,
@@ -135,6 +145,7 @@ const FramesMode = {
         autoCollapseLeftSidebar: false,
         rightSidebarTab: 'block',
         selectedQrBlockId: '',
+        selectedTextBlockId: '',
         canvasZoom: 1,
         canvasPanX: 0,
         canvasPanY: 0,
@@ -832,14 +843,22 @@ const FramesMode = {
                                         ${this.renderTextOptionButton('textDecoration', 'line-through', 'S', selectedBlock.textDecoration === 'line-through')}
                                     </div>
                                 </div>
-                                <div class="frame-editor-field">
-                                    <span>${I18n.translateString('Alignment')}</span>
-                                    <div class="frame-editor-inline-options">
-                                        ${this.renderTextOptionButton('textAlign', 'left', 'L', (selectedBlock.textAlign || 'left') === 'left')}
-                                        ${this.renderTextOptionButton('textAlign', 'center', 'C', selectedBlock.textAlign === 'center')}
-                                        ${this.renderTextOptionButton('textAlign', 'right', 'R', selectedBlock.textAlign === 'right')}
-                                    </div>
-                                </div>
+                                <label class="frame-editor-field">
+                                    <span>${I18n.translateString('Text align')}</span>
+                                    <select class="frame-editor-select" data-block-setting="textAlignCombined">
+                                        <optgroup label="${I18n.translateString('Horizontal')}">
+                                            <option value="h-left" ${this.getCombinedTextAlignSelected(selectedBlock) === 'h-left' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Left'))}</option>
+                                            <option value="h-center" ${this.getCombinedTextAlignSelected(selectedBlock) === 'h-center' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Center'))}</option>
+                                            <option value="h-right" ${this.getCombinedTextAlignSelected(selectedBlock) === 'h-right' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Right'))}</option>
+                                        </optgroup>
+                                        <optgroup label="${I18n.translateString('Vertical')}">
+                                            <option value="v-top" ${this.getCombinedTextAlignSelected(selectedBlock) === 'v-top' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Top'))}</option>
+                                            <option value="v-center" ${this.getCombinedTextAlignSelected(selectedBlock) === 'v-center' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Center'))}</option>
+                                            <option value="v-bottom" ${this.getCombinedTextAlignSelected(selectedBlock) === 'v-bottom' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Bottom'))}</option>
+                                        </optgroup>
+                                        <option value="custom" ${this.getCombinedTextAlignSelected(selectedBlock) === 'custom' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Custom'))}</option>
+                                    </select>
+                                </label>
                                 <div class="frame-editor-field frame-editor-field-wide">
                                     <span>${I18n.translateString('Letter case')}</span>
                                     <div class="frame-editor-inline-options frame-editor-inline-options-wide">
@@ -864,6 +883,17 @@ const FramesMode = {
                         <div class="frame-editor-text-property-group">
                             ${this.renderTextPaddingControls(selectedBlock)}
                         </div>
+                        ${this.canSelectTextInnerBlock(selectedBlock)
+                            ? `
+                                <div class="frame-editor-inspector-actions">
+                                    <button type="button" class="frame-editor-action-button" data-block-action="${this.isTextInnerSelected(selectedBlock) ? 'deselect-text' : 'select-text'}">
+                                        <i class="bi ${this.isTextInnerSelected(selectedBlock) ? 'bi-x-circle' : 'bi-cursor-text'}" aria-hidden="true"></i>
+                                        <span>${I18n.translateString(this.isTextInnerSelected(selectedBlock) ? 'Deselect text' : 'Select text')}</span>
+                                    </button>
+                                </div>
+                            `
+                            : ''
+                        }
                         <div class="frame-editor-text-property-group">
                             ${this.renderTextPropertyGroupHeading('Border')}
                             <label class="frame-editor-field frame-editor-field-wide">
@@ -921,8 +951,8 @@ const FramesMode = {
                     <div class="frame-editor-text-property-group">
                         ${this.renderTextPropertyGroupHeading('Colour')}
                         <div class="frame-editor-text-color-list">
-                            ${this.renderTextColorControl('Foreground', 'colorDark', selectedBlock.colorDark || '#111111')}
-                            ${this.renderTextColorControl('Background', 'backgroundColorRaw', this.getTextBlockColorInputValue(selectedBlock.backgroundColor), true, this.isTransparentTextBlockBackground(selectedBlock))}
+                            ${this.renderTextColorControl('Foreground', 'colorDark', selectedBlock.colorDark || '#111111', false, false, 'bi-brush')}
+                            ${this.renderTextColorControl('Background', 'backgroundColorRaw', this.getTextBlockColorInputValue(selectedBlock.backgroundColor), true, this.isTransparentTextBlockBackground(selectedBlock), 'bi-square-fill')}
                         </div>
                     </div>
                     <div class="frame-editor-text-property-group">
@@ -1344,12 +1374,16 @@ const FramesMode = {
         `;
     },
 
-    renderTextColorControl(label, setting, value, supportsTransparent = false, isTransparent = false) {
+    renderTextColorControl(label, setting, value, supportsTransparent = false, isTransparent = false, icon = '') {
         const normalizedValue = this.escapeHTML(value || '#000000');
+        // Show icon OR color chip. If transparent, prefer the chip so the "is-transparent" state is visible.
+        const iconHtml = icon && !isTransparent ? `<i class="bi ${this.escapeHTML(icon)}" aria-hidden="true" style="margin-right:0.5rem; font-size:0.95rem; opacity:0.95; color: ${normalizedValue};"></i>` : '';
+        const chipHtml = `<span class="frame-editor-color-chip${isTransparent ? ' is-transparent' : ''}" style="${isTransparent ? '' : `background-color: ${normalizedValue};`}"></span>`;
         return `
             <label class="frame-editor-text-color-row">
                 <span class="frame-editor-text-color-label">
-                    <span class="frame-editor-color-chip${isTransparent ? ' is-transparent' : ''}" style="${isTransparent ? '' : `background-color: ${normalizedValue};`}"></span>
+                    ${iconHtml}
+                    ${chipHtml}
                     <span>${this.escapeHTML(I18n.translateString(label))}</span>
                 </span>
                 <span class="frame-editor-text-color-actions">
@@ -1530,6 +1564,46 @@ const FramesMode = {
         };
     },
 
+    getTextBlockAxisPositionValue(startPadding, endPadding, startValue, centerValue, endValue) {
+        const start = Math.max(0, Number(startPadding) || 0);
+        const end = Math.max(0, Number(endPadding) || 0);
+        const total = start + end;
+        if (total <= 0.5) {
+            return startValue;
+        }
+
+        if (Math.abs(start - end) <= 1) {
+            return centerValue;
+        }
+
+        return start < end ? startValue : endValue;
+    },
+
+    getTextBlockPositionPatchFromPadding(padding) {
+        return {
+            textPositionX: this.getTextBlockAxisPositionValue(padding?.left, padding?.right, 'left', 'center', 'right'),
+            textPositionY: this.getTextBlockAxisPositionValue(padding?.top, padding?.bottom, 'top', 'center', 'bottom')
+        };
+    },
+
+    getTextBlockPositionX(block) {
+        const explicitValue = String(block?.textPositionX || '').trim().toLowerCase();
+        if (explicitValue === 'left' || explicitValue === 'center' || explicitValue === 'right') {
+            return explicitValue;
+        }
+
+        return this.getTextBlockPositionPatchFromPadding(this.getTextBlockPadding(block)).textPositionX;
+    },
+
+    getTextBlockPositionY(block) {
+        const explicitValue = String(block?.textPositionY || '').trim().toLowerCase();
+        if (explicitValue === 'top' || explicitValue === 'center' || explicitValue === 'bottom') {
+            return explicitValue;
+        }
+
+        return this.getTextBlockPositionPatchFromPadding(this.getTextBlockPadding(block)).textPositionY;
+    },
+
     getTextBlockPadding(block) {
         const horizontalPadding = Math.max(0, Number(block?.paddingX) || 0);
         const verticalPadding = Math.max(0, Number(block?.paddingY) || 0);
@@ -1564,6 +1638,18 @@ const FramesMode = {
         };
     },
 
+    buildBlockPaddingPatch(block, padding) {
+        const paddingPatch = this.buildTextBlockPaddingPatch(padding);
+        if (block?.type !== 'text') {
+            return paddingPatch;
+        }
+
+        return {
+            ...paddingPatch,
+            ...this.getTextBlockPositionPatchFromPadding(padding)
+        };
+    },
+
     getTextBlockPaddingSideFromSetting(setting) {
         const sideMap = {
             paddingTop: 'top',
@@ -1584,14 +1670,14 @@ const FramesMode = {
             const normalizedValue = this.clamp(Number(value) || 0, 0, paddingLimits.paddingX);
             padding.left = normalizedValue;
             padding.right = normalizedValue;
-            return this.buildTextBlockPaddingPatch(padding);
+            return this.buildBlockPaddingPatch(block, padding);
         }
 
         if (setting === 'paddingY') {
             const normalizedValue = this.clamp(Number(value) || 0, 0, paddingLimits.paddingY);
             padding.top = normalizedValue;
             padding.bottom = normalizedValue;
-            return this.buildTextBlockPaddingPatch(padding);
+            return this.buildBlockPaddingPatch(block, padding);
         }
 
         if (!side) {
@@ -1601,7 +1687,7 @@ const FramesMode = {
         if (block?.paddingLinked === false) {
             const normalizedValue = this.clamp(Number(value) || 0, 0, paddingLimits[side]);
             padding[side] = normalizedValue;
-            return this.buildTextBlockPaddingPatch(padding);
+            return this.buildBlockPaddingPatch(block, padding);
         }
 
         const normalizedValue = this.clamp(
@@ -1617,7 +1703,7 @@ const FramesMode = {
             padding.bottom = normalizedValue;
         }
 
-        return this.buildTextBlockPaddingPatch(padding);
+        return this.buildBlockPaddingPatch(block, padding);
     },
 
     getLinkedTextBlockPaddingTogglePatch(block, nextValue) {
@@ -1631,12 +1717,50 @@ const FramesMode = {
         const padding = this.getTextBlockPadding(block);
         return {
             paddingLinked: true,
-            ...this.buildTextBlockPaddingPatch({
+            ...this.buildBlockPaddingPatch(block, {
                 top: Math.max(padding.top, padding.bottom),
                 right: Math.max(padding.left, padding.right),
                 bottom: Math.max(padding.top, padding.bottom),
                 left: Math.max(padding.left, padding.right)
             })
+        };
+    },
+
+    getTextBlockInnerAlignmentPatch(block, setting, value) {
+        if (block?.type !== 'text') {
+            return {};
+        }
+
+        const padding = this.getTextBlockPadding(block);
+        if (setting === 'textPositionX') {
+            const totalHorizontalPadding = padding.left + padding.right;
+            if (value === 'right') {
+                padding.left = totalHorizontalPadding;
+                padding.right = 0;
+            } else if (value === 'center') {
+                padding.left = Number((totalHorizontalPadding / 2).toFixed(2));
+                padding.right = Math.max(0, Number((totalHorizontalPadding - padding.left).toFixed(2)));
+            } else {
+                padding.left = 0;
+                padding.right = totalHorizontalPadding;
+            }
+        } else if (setting === 'textPositionY') {
+            const totalVerticalPadding = padding.top + padding.bottom;
+            if (value === 'bottom') {
+                padding.top = totalVerticalPadding;
+                padding.bottom = 0;
+            } else if (value === 'center') {
+                padding.top = Number((totalVerticalPadding / 2).toFixed(2));
+                padding.bottom = Math.max(0, Number((totalVerticalPadding - padding.top).toFixed(2)));
+            } else {
+                padding.top = 0;
+                padding.bottom = totalVerticalPadding;
+            }
+        }
+
+        return {
+            paddingLinked: false,
+            ...this.buildBlockPaddingPatch(block, padding)
         };
     },
 
@@ -1931,6 +2055,29 @@ const FramesMode = {
             && this.state.selectedQrBlockId === block.id;
     },
 
+    canSelectTextInnerBlock(block) {
+        if (block?.type !== 'text') {
+            return false;
+        }
+
+        if (block?.parentId) {
+            return false;
+        }
+
+        if (this.getChildBlocks(block.id).length) {
+            return false;
+        }
+
+        const padding = this.getTextBlockPadding(block);
+        return (padding.left + padding.right + padding.top + padding.bottom) > 0;
+    },
+
+    isTextInnerSelected(block) {
+        return this.canSelectTextInnerBlock(block)
+            && this.state.selectedBlockId === block.id
+            && this.state.selectedTextBlockId === block.id;
+    },
+
     getCanvasBlockZIndex(block, index = -1) {
         const renderIndex = index >= 0
             ? index
@@ -1950,6 +2097,7 @@ const FramesMode = {
             const layout = this.getTextBlockLayout(block);
             const padding = this.getTextBlockPadding(block);
             const childLayer = this.renderCanvasBlockChildLayer(block, layout);
+            const isTextInnerSelected = this.isTextInnerSelected(block);
             const surfaceStyle = [
                 `background-color: ${this.isTransparentTextBlockBackground(block) ? 'transparent' : block.backgroundColor}`,
                 `border-color: ${(Number(block.borderWidth) || 0) > 0 ? (block.borderColor || block.color || this.getTextBlockDefaultColor()) : 'transparent'}`,
@@ -1971,9 +2119,9 @@ const FramesMode = {
             ].join('; ');
 
             return `
-                <div class="frame-editor-text-block-surface" style="${surfaceStyle}"><div class="frame-editor-text-block-content" style="${inlineStyle}" spellcheck="false">${this.renderTextBlockContentMarkup(block)}</div></div>
+                <div class="frame-editor-text-block-surface" style="${surfaceStyle}"><div class="frame-editor-text-block-content${isTextInnerSelected ? ' is-selected' : ''}" data-frame-editor-text-content="true" style="${inlineStyle}" spellcheck="false">${this.renderTextBlockContentMarkup(block)}</div></div>
                 ${childLayer}
-                ${this.state.selectedBlockId === block.id ? this.renderCanvasBlockHandles(block) : ''}
+                ${this.state.selectedBlockId === block.id && !isTextInnerSelected ? this.renderCanvasBlockHandles(block) : ''}
             `;
         }
 
@@ -2366,6 +2514,10 @@ const FramesMode = {
             return '';
         }
 
+        if (block.type === 'text' && this.isTextInnerSelected(block)) {
+            return '';
+        }
+
         if (block.type === 'shape' || block.type === 'image' || block.type === 'line' || block.type === 'section' || block.type === 'columns') {
             return `
                 ${this.renderBlockRotateHandle()}
@@ -2571,6 +2723,7 @@ const FramesMode = {
         content.style.letterSpacing = `${(Number(block.letterSpacing) || 0)}px`;
         content.style.textDecoration = block.textDecoration || 'none';
         content.style.textTransform = block.textTransform || 'none';
+        content.classList.toggle('is-selected', this.isTextInnerSelected(block));
         return true;
     },
 
@@ -3582,7 +3735,8 @@ const FramesMode = {
                 this.state = {
                     ...this.state,
                     selectedBlockId: '',
-                    selectedQrBlockId: ''
+                    selectedQrBlockId: '',
+                    selectedTextBlockId: ''
                 };
                 this.renderIntoRoot();
             });
@@ -3766,9 +3920,25 @@ const FramesMode = {
                     return;
                 }
 
+                const textContent = event.target.closest('[data-frame-editor-text-content]');
                 const qrContent = event.target.closest('[data-frame-editor-qr-content]');
                 const blockId = blockElement.dataset.frameEditorCanvasBlock;
                 const block = this.getBlockById(blockId);
+                if (textContent && block?.type === 'text' && this.canSelectTextInnerBlock(block)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (this.isTextInnerSelected(block)) {
+                        this.beginTextBlockReposition(root, blockElement, event);
+                    } else if (this.state.selectedBlockId === blockId) {
+                        this.beginCanvasBlockDrag(root, blockElement, event, {
+                            onClick: () => this.selectTextInnerBlock(blockId)
+                        });
+                    } else {
+                        this.selectBlock(blockId);
+                    }
+                    return;
+                }
+
                 if (qrContent && block?.type === 'qr' && this.canSelectQrInnerBlock(block)) {
                     event.preventDefault();
                     event.stopPropagation();
@@ -3781,6 +3951,13 @@ const FramesMode = {
                     } else {
                         this.selectBlock(blockId);
                     }
+                    return;
+                }
+
+                if (block?.type === 'text' && this.isTextInnerSelected(block)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    this.deselectTextInnerBlock(blockId);
                     return;
                 }
 
@@ -3937,6 +4114,17 @@ const FramesMode = {
                 }
                 if (action === 'deselect-qr-code') {
                     this.deselectQrInnerBlock();
+                    return;
+                }
+                if (action === 'select-text') {
+                    const block = this.getSelectedBlock();
+                    if (this.canSelectTextInnerBlock(block)) {
+                        this.selectTextInnerBlock(block.id);
+                    }
+                    return;
+                }
+                if (action === 'deselect-text') {
+                    this.deselectTextInnerBlock();
                 }
             });
         });
@@ -3984,6 +4172,7 @@ const FramesMode = {
                     ...this.state,
                     selectedBlockId: blockId,
                     selectedQrBlockId: '',
+                    selectedTextBlockId: '',
                     rightSidebarTab: 'block'
                 };
                 this.renderIntoRoot();
@@ -4755,6 +4944,75 @@ const FramesMode = {
         window.addEventListener('pointercancel', onPointerUp);
     },
 
+    beginTextBlockReposition(root, blockElement, event) {
+        if (event.button !== 0) {
+            return;
+        }
+
+        const blockId = blockElement?.dataset.frameEditorCanvasBlock;
+        const block = this.getBlockById(blockId);
+        if (!blockElement || !this.isTextInnerSelected(block)) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const startPointer = {
+            x: event.clientX,
+            y: event.clientY
+        };
+        let nextPatch = null;
+        let didMove = false;
+
+        const onPointerMove = moveEvent => {
+            const deltaX = (moveEvent.clientX - startPointer.x) / Math.max(this.state.canvasZoom, 0.01);
+            const deltaY = (moveEvent.clientY - startPointer.y) / Math.max(this.state.canvasZoom, 0.01);
+
+            if (!didMove && Math.hypot(deltaX, deltaY) >= 4) {
+                didMove = true;
+                blockElement.classList.add('is-repositioning');
+            }
+
+            if (!didMove) {
+                return;
+            }
+
+            nextPatch = this.getTextBlockRepositionPatch(block, deltaX, deltaY);
+            const previewBlock = {
+                ...block,
+                ...nextPatch
+            };
+
+            this.syncTextBlockPreview(blockElement, previewBlock);
+            this.syncInspectorBlockControls(root, nextPatch);
+        };
+
+        const finishReposition = () => {
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerUp);
+            blockElement.classList.remove('is-repositioning');
+
+            if (!didMove || !nextPatch) {
+                return;
+            }
+
+            // mark inner positioning as custom when manually repositioned
+            this.updateBlock(block.id, { ...nextPatch, textPositionX: 'custom', textPositionY: 'custom' });
+            const updatedBlock = this.getBlockById(block.id);
+            this.syncCanvasBlock(root, updatedBlock);
+        };
+
+        const onPointerUp = () => {
+            finishReposition();
+        };
+
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
+    },
+
     beginQrBlockRotate(root, handleElement, event) {
         if (event.button !== 0) {
             return;
@@ -4950,7 +5208,7 @@ const FramesMode = {
             nextPosition.yPct += (globalShiftY / Math.max(canvasScroll.clientHeight, 1)) * 100;
         });
 
-        const patch = this.buildTextBlockPaddingPatch(nextPadding);
+        const patch = this.buildBlockPaddingPatch(block, nextPadding);
         const previewBlock = {
             ...block,
             ...patch,
@@ -4967,7 +5225,7 @@ const FramesMode = {
         };
     },
 
-    getQrBlockRepositionPatch(block, deltaX, deltaY) {
+    getInnerBlockRepositionPadding(block, deltaX, deltaY) {
         const padding = this.getTextBlockPadding(block);
         const rotationRadians = this.getBlockRotation(block) * (Math.PI / 180);
         const cosine = Math.cos(rotationRadians);
@@ -4985,7 +5243,19 @@ const FramesMode = {
         };
         nextPadding.right = Math.max(0, totalHorizontalPadding - nextPadding.left);
         nextPadding.bottom = Math.max(0, totalVerticalPadding - nextPadding.top);
+        return nextPadding;
+    },
 
+    getTextBlockRepositionPatch(block, deltaX, deltaY) {
+        const nextPadding = this.getInnerBlockRepositionPadding(block, deltaX, deltaY);
+        return {
+            paddingLinked: false,
+            ...this.buildBlockPaddingPatch(block, nextPadding)
+        };
+    },
+
+    getQrBlockRepositionPatch(block, deltaX, deltaY) {
+        const nextPadding = this.getInnerBlockRepositionPadding(block, deltaX, deltaY);
         return {
             paddingLinked: false,
             ...this.buildTextBlockPaddingPatch(nextPadding)
@@ -5179,6 +5449,51 @@ const FramesMode = {
             return;
         }
 
+        if (setting === 'textPositionX' || setting === 'textPositionY') {
+            const patch = this.getTextBlockInnerAlignmentPatch(block, setting, control.value);
+            this.updateBlock(block.id, patch);
+            this.syncInspectorBlockControls(root, patch);
+            const updatedPositionBlock = this.getBlockById(block.id);
+            this.syncCanvasBlock(root, updatedPositionBlock);
+            this.clampUpdatedBlockToCanvas(root, updatedPositionBlock);
+            return;
+        }
+
+        if (setting === 'textAlignCombined') {
+            const value = String(control.value || '').trim();
+            if (value === 'custom') {
+                const patch = { textPositionX: 'custom', textPositionY: 'custom' };
+                this.updateBlock(block.id, patch);
+                this.syncInspectorBlockControls(root, patch);
+                const updatedBlock = this.getBlockById(block.id);
+                this.syncCanvasBlock(root, updatedBlock);
+                this.clampUpdatedBlockToCanvas(root, updatedBlock);
+                return;
+            }
+
+            if (value.startsWith('h-')) {
+                const axisValue = value.slice(2);
+                const patch = this.getTextBlockInnerAlignmentPatch(block, 'textPositionX', axisValue);
+                this.updateBlock(block.id, patch);
+                this.syncInspectorBlockControls(root, patch);
+                const updatedBlock = this.getBlockById(block.id);
+                this.syncCanvasBlock(root, updatedBlock);
+                this.clampUpdatedBlockToCanvas(root, updatedBlock);
+                return;
+            }
+
+            if (value.startsWith('v-')) {
+                const axisValue = value.slice(2);
+                const patch = this.getTextBlockInnerAlignmentPatch(block, 'textPositionY', axisValue);
+                this.updateBlock(block.id, patch);
+                this.syncInspectorBlockControls(root, patch);
+                const updatedBlock = this.getBlockById(block.id);
+                this.syncCanvasBlock(root, updatedBlock);
+                this.clampUpdatedBlockToCanvas(root, updatedBlock);
+                return;
+            }
+        }
+
         const numericSettings = new Set(['fontSize', 'width', 'height', 'size', 'lineHeight', 'letterSpacing', 'paddingX', 'paddingY', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderWidth', 'borderRadius', 'rotation', 'childGap', 'columnCount', 'columnGap']);
         let nextValue;
 
@@ -5237,6 +5552,21 @@ const FramesMode = {
         const updatedBlock = this.getBlockById(block.id);
         this.syncCanvasBlock(root, updatedBlock);
         this.clampUpdatedBlockToCanvas(root, updatedBlock);
+    },
+
+    getCombinedTextAlignSelected(block) {
+        if (!block) {
+            return 'h-center';
+        }
+
+        const explicitX = String(block?.textPositionX || '').trim().toLowerCase();
+        const explicitY = String(block?.textPositionY || '').trim().toLowerCase();
+        if (explicitX === 'custom' || explicitY === 'custom') {
+            return 'custom';
+        }
+
+        const x = this.getTextBlockPositionX(block) || 'center';
+        return `h-${x}`;
     },
 
     handleImageBlockUpload(root, input) {
@@ -5533,10 +5863,19 @@ const FramesMode = {
                     icon: isQrInnerSelected ? 'bi-x-circle' : 'bi-bullseye'
                 }
                 : null;
+            const isTextInnerSelected = this.isTextInnerSelected(block);
+            const textSelectionItem = this.canSelectTextInnerBlock(block)
+                ? {
+                    action: isTextInnerSelected ? 'deselect-text' : 'select-text',
+                    label: isTextInnerSelected ? 'Deselect text' : 'Select text',
+                    icon: isTextInnerSelected ? 'bi-x-circle' : 'bi-cursor-text'
+                }
+                : null;
 
             return [
                 { action: 'edit-block', label: 'Edit', icon: 'bi-pencil-square' },
                 qrSelectionItem,
+                textSelectionItem,
                 { action: 'duplicate-block', label: 'Duplicate', icon: 'bi-files' },
                 { action: 'copy-block', label: 'Copy', icon: 'bi-clipboard' },
                 { action: 'cut-block', label: 'Cut', icon: 'bi-scissors' },
@@ -5624,7 +5963,9 @@ const FramesMode = {
         if (this.state.selectedBlockId !== blockId) {
             this.state = {
                 ...this.state,
-                selectedBlockId: blockId
+                selectedBlockId: blockId,
+                selectedQrBlockId: blockId === this.state.selectedQrBlockId ? blockId : '',
+                selectedTextBlockId: blockId === this.state.selectedTextBlockId ? blockId : ''
             };
             this.renderIntoRoot();
             root = this.getRoot();
@@ -5664,6 +6005,14 @@ const FramesMode = {
         }
         if (action === 'deselect-qr-code') {
             this.deselectQrInnerBlock(blockId);
+            return;
+        }
+        if (action === 'select-text') {
+            this.selectTextInnerBlock(blockId);
+            return;
+        }
+        if (action === 'deselect-text') {
+            this.deselectTextInnerBlock(blockId);
             return;
         }
         if (action === 'duplicate-block') {
@@ -6003,7 +6352,9 @@ const FramesMode = {
             ...this.state,
             selectedBlockId: blockId,
             rightSidebarTab: 'block',
-            isRightSidebarCollapsed: false
+            isRightSidebarCollapsed: false,
+            selectedQrBlockId: this.state.selectedQrBlockId === blockId ? blockId : '',
+            selectedTextBlockId: this.state.selectedTextBlockId === blockId ? blockId : ''
         };
         this.renderIntoRoot();
         this.focusInspectorControl('.frame-editor-right-sidebar-body [data-block-setting]');
@@ -6018,7 +6369,8 @@ const FramesMode = {
         this.state = {
             ...this.state,
             selectedBlockId: blockId,
-            selectedQrBlockId: blockId
+            selectedQrBlockId: blockId,
+            selectedTextBlockId: ''
         };
         this.renderIntoRoot();
     },
@@ -6031,6 +6383,33 @@ const FramesMode = {
         this.state = {
             ...this.state,
             selectedQrBlockId: ''
+        };
+        this.renderIntoRoot();
+    },
+
+    selectTextInnerBlock(blockId) {
+        const block = this.getBlockById(blockId);
+        if (!this.canSelectTextInnerBlock(block)) {
+            return;
+        }
+
+        this.state = {
+            ...this.state,
+            selectedBlockId: blockId,
+            selectedQrBlockId: '',
+            selectedTextBlockId: blockId
+        };
+        this.renderIntoRoot();
+    },
+
+    deselectTextInnerBlock(blockId = this.state.selectedTextBlockId) {
+        if (!blockId || this.state.selectedTextBlockId !== blockId) {
+            return;
+        }
+
+        this.state = {
+            ...this.state,
+            selectedTextBlockId: ''
         };
         this.renderIntoRoot();
     },
@@ -6053,7 +6432,8 @@ const FramesMode = {
         this.state = {
             ...this.state,
             selectedBlockId: '',
-            selectedQrBlockId: ''
+            selectedQrBlockId: '',
+            selectedTextBlockId: ''
         };
         this.renderIntoRoot();
     },
@@ -6090,6 +6470,7 @@ const FramesMode = {
             ...this.state,
             selectedBlockId: instantiatedSubtree.rootBlock.id,
             selectedQrBlockId: '',
+            selectedTextBlockId: '',
             canvasBlocks: this.mergeBlockSubtreeIntoCanvas(this.state.canvasBlocks, instantiatedSubtree.blocks)
         };
         this.renderIntoRoot();
@@ -6220,6 +6601,7 @@ const FramesMode = {
             canvasBlocks: rebuiltBlocks,
             selectedBlockId: sourceBlockId,
             selectedQrBlockId: '',
+            selectedTextBlockId: '',
             rightSidebarTab: 'block'
         };
         this.renderIntoRoot();
@@ -6307,6 +6689,7 @@ const FramesMode = {
             ...this.state,
             selectedBlockId: nextBlock.id,
             selectedQrBlockId: '',
+            selectedTextBlockId: '',
             canvasBlocks: targetContainer
                 ? [...this.state.canvasBlocks, nextBlock]
                 : this.insertCanvasBlockByLayer(this.state.canvasBlocks, nextBlock)
@@ -6359,6 +6742,8 @@ const FramesMode = {
                 textTransform: 'none',
                 dropCap: false,
                 textAlign: 'left',
+                textPositionX: 'left',
+                textPositionY: 'top',
                 parentId,
                 childOrder,
                 columnIndex
@@ -6526,7 +6911,10 @@ const FramesMode = {
             canvasBlocks: nextBlocks,
             selectedQrBlockId: this.state.selectedQrBlockId === blockId && !this.canSelectQrInnerBlock(updatedBlock)
                 ? ''
-                : this.state.selectedQrBlockId
+                : this.state.selectedQrBlockId,
+            selectedTextBlockId: this.state.selectedTextBlockId === blockId && !this.canSelectTextInnerBlock(updatedBlock)
+                ? ''
+                : this.state.selectedTextBlockId
         };
     },
 
@@ -6565,7 +6953,8 @@ const FramesMode = {
             ...this.state,
             canvasBlocks: remainingBlocks,
             selectedBlockId: nextSelectedBlockId,
-            selectedQrBlockId: idsToRemove.has(this.state.selectedQrBlockId) ? '' : this.state.selectedQrBlockId
+            selectedQrBlockId: idsToRemove.has(this.state.selectedQrBlockId) ? '' : this.state.selectedQrBlockId,
+            selectedTextBlockId: idsToRemove.has(this.state.selectedTextBlockId) ? '' : this.state.selectedTextBlockId
         };
         this.renderIntoRoot();
     },
@@ -6590,6 +6979,7 @@ const FramesMode = {
             ...this.state,
             selectedBlockId: instantiatedSubtree.rootBlock.id,
             selectedQrBlockId: '',
+            selectedTextBlockId: '',
             canvasBlocks: this.mergeBlockSubtreeIntoCanvas(this.state.canvasBlocks, instantiatedSubtree.blocks)
         };
         this.renderIntoRoot();
@@ -6610,7 +7000,8 @@ const FramesMode = {
         this.state = {
             ...this.state,
             selectedBlockId: blockId,
-            selectedQrBlockId: blockId === this.state.selectedQrBlockId ? blockId : ''
+            selectedQrBlockId: blockId === this.state.selectedQrBlockId ? blockId : '',
+            selectedTextBlockId: blockId === this.state.selectedTextBlockId ? blockId : ''
         };
         this.renderIntoRoot();
     },
