@@ -5645,6 +5645,7 @@ const FramesMode = {
             return;
         }
 
+        const selectedBlock = this.getSelectedBlock();
         patchEntries.forEach(([setting, value]) => {
             root.querySelectorAll(`[data-block-setting="${setting}"]`).forEach(control => {
                 if (control === document.activeElement) {
@@ -5659,6 +5660,21 @@ const FramesMode = {
                 control.value = String(value);
             });
         });
+
+        if (selectedBlock?.type === 'text') {
+            const mergedBlock = {
+                ...selectedBlock,
+                ...patch
+            };
+            const combinedValue = this.getCombinedTextAlignSelected(mergedBlock);
+            root.querySelectorAll('[data-block-setting="textAlignCombined"]').forEach(control => {
+                if (control === document.activeElement) {
+                    return;
+                }
+
+                control.value = combinedValue;
+            });
+        }
     },
 
     syncCanvasBlock(root, block) {
