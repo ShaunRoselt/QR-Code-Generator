@@ -4985,6 +4985,9 @@ const FramesMode = {
                     ...nextPatch
                 }))
             };
+            nextPatch.textAlign = nextPatch.textPositionX === 'center'
+                ? 'center'
+                : (nextPatch.textPositionX === 'right' ? 'right' : 'left');
 
             const previewBlock = {
                 ...block,
@@ -5494,8 +5497,18 @@ const FramesMode = {
             y = ['top','center','bottom'].includes(y) ? y : 'center';
 
             const patchX = this.getTextBlockInnerAlignmentPatch(block, 'textPositionX', x);
-            const patchY = this.getTextBlockInnerAlignmentPatch(block, 'textPositionY', y);
-            const patch = { ...patchX, ...patchY };
+            const blockAfterX = {
+                ...block,
+                ...patchX
+            };
+            const patchY = this.getTextBlockInnerAlignmentPatch(blockAfterX, 'textPositionY', y);
+            const patch = {
+                ...patchX,
+                ...patchY,
+                textAlign: x === 'center'
+                    ? 'center'
+                    : (x === 'right' ? 'right' : 'left')
+            };
 
             this.updateBlock(block.id, patch);
             this.syncInspectorBlockControls(root, patch);
