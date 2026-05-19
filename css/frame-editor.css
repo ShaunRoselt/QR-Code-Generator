@@ -1687,6 +1687,11 @@
     box-sizing: border-box;
 }
 
+.frame-editor-text-block-content.is-selected {
+    box-shadow: 0 0 0 2px rgba(102, 192, 244, 0.65);
+    cursor: grab;
+}
+
 .frame-editor-text-block-drop-cap {
     float: left;
     margin: 0.08em 0.12em 0 0;
@@ -1962,6 +1967,10 @@
 }
 
 .frame-editor-canvas-block.is-repositioning .frame-editor-qr-block-content.is-selected {
+    cursor: grabbing;
+}
+
+.frame-editor-canvas-block.is-repositioning .frame-editor-text-block-content.is-selected {
     cursor: grabbing;
 }
 
