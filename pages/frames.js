@@ -846,16 +846,15 @@ const FramesMode = {
                                 <label class="frame-editor-field">
                                     <span>${I18n.translateString('Text align')}</span>
                                     <select class="frame-editor-select" data-block-setting="textAlignCombined">
-                                        <optgroup label="${I18n.translateString('Horizontal')}">
-                                            <option value="h-left" ${this.getCombinedTextAlignSelected(selectedBlock) === 'h-left' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Left'))}</option>
-                                            <option value="h-center" ${this.getCombinedTextAlignSelected(selectedBlock) === 'h-center' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Center'))}</option>
-                                            <option value="h-right" ${this.getCombinedTextAlignSelected(selectedBlock) === 'h-right' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Right'))}</option>
-                                        </optgroup>
-                                        <optgroup label="${I18n.translateString('Vertical')}">
-                                            <option value="v-top" ${this.getCombinedTextAlignSelected(selectedBlock) === 'v-top' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Top'))}</option>
-                                            <option value="v-center" ${this.getCombinedTextAlignSelected(selectedBlock) === 'v-center' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Center'))}</option>
-                                            <option value="v-bottom" ${this.getCombinedTextAlignSelected(selectedBlock) === 'v-bottom' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Bottom'))}</option>
-                                        </optgroup>
+                                        <option value="top-left" ${this.getCombinedTextAlignSelected(selectedBlock) === 'top-left' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Top left'))}</option>
+                                        <option value="top-center" ${this.getCombinedTextAlignSelected(selectedBlock) === 'top-center' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Top center'))}</option>
+                                        <option value="top-right" ${this.getCombinedTextAlignSelected(selectedBlock) === 'top-right' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Top right'))}</option>
+                                        <option value="center-left" ${this.getCombinedTextAlignSelected(selectedBlock) === 'center-left' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Center left'))}</option>
+                                        <option value="center" ${this.getCombinedTextAlignSelected(selectedBlock) === 'center' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Center'))}</option>
+                                        <option value="center-right" ${this.getCombinedTextAlignSelected(selectedBlock) === 'center-right' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Center right'))}</option>
+                                        <option value="bottom-left" ${this.getCombinedTextAlignSelected(selectedBlock) === 'bottom-left' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Bottom left'))}</option>
+                                        <option value="bottom-center" ${this.getCombinedTextAlignSelected(selectedBlock) === 'bottom-center' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Bottom center'))}</option>
+                                        <option value="bottom-right" ${this.getCombinedTextAlignSelected(selectedBlock) === 'bottom-right' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Bottom right'))}</option>
                                         <option value="custom" ${this.getCombinedTextAlignSelected(selectedBlock) === 'custom' ? 'selected' : ''}>${this.escapeHTML(I18n.translateString('Custom'))}</option>
                                     </select>
                                 </label>
@@ -5460,7 +5459,7 @@ const FramesMode = {
         }
 
         if (setting === 'textAlignCombined') {
-            const value = String(control.value || '').trim();
+            const value = String(control.value || '').trim().toLowerCase();
             if (value === 'custom') {
                 const patch = { textPositionX: 'custom', textPositionY: 'custom' };
                 this.updateBlock(block.id, patch);
@@ -5471,27 +5470,32 @@ const FramesMode = {
                 return;
             }
 
-            if (value.startsWith('h-')) {
-                const axisValue = value.slice(2);
-                const patch = this.getTextBlockInnerAlignmentPatch(block, 'textPositionX', axisValue);
-                this.updateBlock(block.id, patch);
-                this.syncInspectorBlockControls(root, patch);
-                const updatedBlock = this.getBlockById(block.id);
-                this.syncCanvasBlock(root, updatedBlock);
-                this.clampUpdatedBlockToCanvas(root, updatedBlock);
-                return;
+            let [y, x] = value.split('-');
+            if (!x) {
+                if (['left','center','right'].includes(y)) {
+                    x = y;
+                    y = this.getTextBlockPositionY(block) || 'center';
+                } else if (['top','center','bottom'].includes(y)) {
+                    x = this.getTextBlockPositionX(block) || 'center';
+                } else {
+                    x = this.getTextBlockPositionX(block) || 'center';
+                    y = this.getTextBlockPositionY(block) || 'center';
+                }
             }
 
-            if (value.startsWith('v-')) {
-                const axisValue = value.slice(2);
-                const patch = this.getTextBlockInnerAlignmentPatch(block, 'textPositionY', axisValue);
-                this.updateBlock(block.id, patch);
-                this.syncInspectorBlockControls(root, patch);
-                const updatedBlock = this.getBlockById(block.id);
-                this.syncCanvasBlock(root, updatedBlock);
-                this.clampUpdatedBlockToCanvas(root, updatedBlock);
-                return;
-            }
+            x = ['left','center','right'].includes(x) ? x : 'center';
+            y = ['top','center','bottom'].includes(y) ? y : 'center';
+
+            const patchX = this.getTextBlockInnerAlignmentPatch(block, 'textPositionX', x);
+            const patchY = this.getTextBlockInnerAlignmentPatch(block, 'textPositionY', y);
+            const patch = { ...patchX, ...patchY };
+
+            this.updateBlock(block.id, patch);
+            this.syncInspectorBlockControls(root, patch);
+            const updatedBlock = this.getBlockById(block.id);
+            this.syncCanvasBlock(root, updatedBlock);
+            this.clampUpdatedBlockToCanvas(root, updatedBlock);
+            return;
         }
 
         const numericSettings = new Set(['fontSize', 'width', 'height', 'size', 'lineHeight', 'letterSpacing', 'paddingX', 'paddingY', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderWidth', 'borderRadius', 'rotation', 'childGap', 'columnCount', 'columnGap']);
@@ -5556,7 +5560,7 @@ const FramesMode = {
 
     getCombinedTextAlignSelected(block) {
         if (!block) {
-            return 'h-center';
+            return 'center';
         }
 
         const explicitX = String(block?.textPositionX || '').trim().toLowerCase();
@@ -5566,7 +5570,8 @@ const FramesMode = {
         }
 
         const x = this.getTextBlockPositionX(block) || 'center';
-        return `h-${x}`;
+        const y = this.getTextBlockPositionY(block) || 'center';
+        return `${y}-${x}`;
     },
 
     handleImageBlockUpload(root, input) {
