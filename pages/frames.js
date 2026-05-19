@@ -1567,15 +1567,24 @@ const FramesMode = {
         const start = Math.max(0, Number(startPadding) || 0);
         const end = Math.max(0, Number(endPadding) || 0);
         const total = start + end;
-        if (total <= 0.5) {
+        const snapTolerance = 1;
+        if (total <= snapTolerance) {
             return startValue;
         }
 
-        if (Math.abs(start - end) <= 1) {
+        if (start <= snapTolerance && end >= total - snapTolerance) {
+            return startValue;
+        }
+
+        if (end <= snapTolerance && start >= total - snapTolerance) {
+            return endValue;
+        }
+
+        if (Math.abs(start - end) <= snapTolerance) {
             return centerValue;
         }
 
-        return start < end ? startValue : endValue;
+        return 'custom';
     },
 
     getTextBlockPositionPatchFromPadding(padding) {
@@ -1587,7 +1596,7 @@ const FramesMode = {
 
     getTextBlockPositionX(block) {
         const explicitValue = String(block?.textPositionX || '').trim().toLowerCase();
-        if (explicitValue === 'left' || explicitValue === 'center' || explicitValue === 'right') {
+        if (explicitValue === 'left' || explicitValue === 'center' || explicitValue === 'right' || explicitValue === 'custom') {
             return explicitValue;
         }
 
@@ -1596,7 +1605,7 @@ const FramesMode = {
 
     getTextBlockPositionY(block) {
         const explicitValue = String(block?.textPositionY || '').trim().toLowerCase();
-        if (explicitValue === 'top' || explicitValue === 'center' || explicitValue === 'bottom') {
+        if (explicitValue === 'top' || explicitValue === 'center' || explicitValue === 'bottom' || explicitValue === 'custom') {
             return explicitValue;
         }
 
@@ -4985,9 +4994,11 @@ const FramesMode = {
                     ...nextPatch
                 }))
             };
-            nextPatch.textAlign = nextPatch.textPositionX === 'center'
-                ? 'center'
-                : (nextPatch.textPositionX === 'right' ? 'right' : 'left');
+            nextPatch.textAlign = nextPatch.textPositionX === 'custom'
+                ? (block.textAlign || 'left')
+                : (nextPatch.textPositionX === 'center'
+                    ? 'center'
+                    : (nextPatch.textPositionX === 'right' ? 'right' : 'left'));
 
             const previewBlock = {
                 ...block,
@@ -5591,6 +5602,9 @@ const FramesMode = {
 
         const x = this.getTextBlockPositionX(block) || 'center';
         const y = this.getTextBlockPositionY(block) || 'center';
+        if (x === 'custom' || y === 'custom') {
+            return 'custom';
+        }
         return `${y}-${x}`;
     },
 
