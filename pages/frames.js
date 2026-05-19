@@ -4978,6 +4978,13 @@ const FramesMode = {
             }
 
             nextPatch = this.getTextBlockRepositionPatch(block, deltaX, deltaY);
+            // while actively dragging, mark position as custom so the inspector shows "Custom"
+            nextPatch = {
+                ...nextPatch,
+                textPositionX: 'custom',
+                textPositionY: 'custom'
+            };
+
             const previewBlock = {
                 ...block,
                 ...nextPatch
