@@ -109,6 +109,7 @@ const FramesMode = {
         selectedFrameKey: '',
         selectedBlockId: '',
         workspaceView: 'grid',
+        leftPanelMode: 'library',
         isSidebarCollapsed: false,
         preferLeftSidebarExpanded: false,
         isRightSidebarCollapsed: false,
@@ -147,9 +148,17 @@ const FramesMode = {
             ? I18n.translateString('Search frames')
             : I18n.translateString('Search blocks');
         const leftSidebarCollapsed = this.isLeftSidebarCollapsed();
-        const sidebarToggleLabel = leftSidebarCollapsed
-            ? I18n.translateString('Expand sidebar')
-            : I18n.translateString('Collapse sidebar');
+        const isCanvasOverviewMode = (this.state.leftPanelMode || 'library') === 'overview';
+        const isSidebarLibraryMode = !isCanvasOverviewMode;
+        const sidebarToggleLabel = !leftSidebarCollapsed && isSidebarLibraryMode
+            ? I18n.translateString('Collapse sidebar')
+            : I18n.translateString('Expand sidebar');
+        const canvasOverviewToggleLabel = !leftSidebarCollapsed && isCanvasOverviewMode
+            ? I18n.translateString('Collapse canvas overview')
+            : I18n.translateString('Expand canvas overview');
+        const leftPanelAriaLabel = isCanvasOverviewMode
+            ? I18n.translateString('Canvas Overview')
+            : I18n.translateString('Frame Editor sidebar');
         const rightSidebarToggleLabel = this.state.isRightSidebarCollapsed
             ? I18n.translateString('Expand properties sidebar')
             : I18n.translateString('Collapse properties sidebar');
@@ -164,14 +173,25 @@ const FramesMode = {
                 <div class="frame-editor-header-bar">
                     <button
                         type="button"
-                        class="frame-editor-sidebar-toggle"
+                        class="frame-editor-sidebar-toggle${!leftSidebarCollapsed && isSidebarLibraryMode ? ' active' : ''}"
                         data-frame-editor-toggle-sidebar
-                        aria-expanded="${leftSidebarCollapsed ? 'false' : 'true'}"
+                        aria-expanded="${!leftSidebarCollapsed && isSidebarLibraryMode ? 'true' : 'false'}"
                         aria-controls="frameEditorSidebarPanel"
                         title="${this.escapeHTML(sidebarToggleLabel)}"
                     >
                         <i class="bi ${leftSidebarCollapsed ? 'bi-layout-sidebar-inset-reverse' : 'bi-layout-sidebar-inset'}" aria-hidden="true"></i>
                         <span class="frame-editor-button-label">${I18n.translateString('Sidebar')}</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="frame-editor-sidebar-toggle${!leftSidebarCollapsed && isCanvasOverviewMode ? ' active' : ''}"
+                        data-frame-editor-toggle-overview
+                        aria-expanded="${!leftSidebarCollapsed && isCanvasOverviewMode ? 'true' : 'false'}"
+                        aria-controls="frameEditorSidebarPanel"
+                        title="${this.escapeHTML(canvasOverviewToggleLabel)}"
+                    >
+                        <i class="bi bi-list-ul" aria-hidden="true"></i>
+                        <span class="frame-editor-button-label">${I18n.translateString('Canvas Overview')}</span>
                     </button>
                     <div class="frame-editor-header-actions">
                         <button
@@ -253,29 +273,37 @@ const FramesMode = {
                         <aside
                             id="frameEditorSidebarPanel"
                             class="frame-editor-sidebar-panel"
-                            aria-label="${I18n.translateString('Frame Editor sidebar')}"
+                            aria-label="${leftPanelAriaLabel}"
                             aria-hidden="${leftSidebarCollapsed ? 'true' : 'false'}"
                         >
-                            <div class="frame-editor-tabs" role="tablist" aria-label="${I18n.translateString('Frame Editor panels')}">
-                                ${this.renderTabButton('frames', 'Frames', 'bi-collection')}
-                                ${this.renderTabButton('blocks', 'Blocks', 'bi-grid-3x3-gap')}
-                            </div>
+                            ${isCanvasOverviewMode
+                                ? `
+                                    <div class="frame-editor-sidebar-body frame-editor-sidebar-body-overview">
+                                        ${this.renderCanvasOverviewSidebar()}
+                                    </div>
+                                `
+                                : `
+                                    <div class="frame-editor-tabs" role="tablist" aria-label="${I18n.translateString('Frame Editor panels')}">
+                                        ${this.renderTabButton('frames', 'Frames', 'bi-collection')}
+                                        ${this.renderTabButton('blocks', 'Blocks', 'bi-grid-3x3-gap')}
+                                    </div>
 
-                            <div class="frame-editor-sidebar-search search-field">
-                                <i class="bi bi-search search-icon" aria-hidden="true"></i>
-                                <input
-                                    type="search"
-                                    class="search-input"
-                                    id="frameEditorSearchInput"
-                                    value="${this.escapeHTML(this.state.searchTerm)}"
-                                    placeholder="${this.escapeHTML(searchLabel)}"
-                                    aria-label="${this.escapeHTML(searchLabel)}"
-                                >
-                            </div>
+                                    <div class="frame-editor-sidebar-search search-field">
+                                        <i class="bi bi-search search-icon" aria-hidden="true"></i>
+                                        <input
+                                            type="search"
+                                            class="search-input"
+                                            id="frameEditorSearchInput"
+                                            value="${this.escapeHTML(this.state.searchTerm)}"
+                                            placeholder="${this.escapeHTML(searchLabel)}"
+                                            aria-label="${this.escapeHTML(searchLabel)}"
+                                        >
+                                    </div>
 
-                            <div class="frame-editor-sidebar-body">
-                                ${this.renderSidebarContent(filteredFrames, totalFrameCount, filteredBlocks)}
-                            </div>
+                                    <div class="frame-editor-sidebar-body">
+                                        ${this.renderSidebarContent(filteredFrames, totalFrameCount, filteredBlocks)}
+                                    </div>
+                                `}
                         </aside>
 
                         <section
@@ -436,6 +464,108 @@ const FramesMode = {
                 ${filteredBlocks.map(block => this.renderBlockLibraryItem(block)).join('')}
             </div>
         `;
+    },
+
+    renderCanvasOverviewSidebar() {
+        const blockEntries = this.state.canvasBlocks
+            .map((block, index) => ({ block, index }))
+            .slice()
+            .reverse();
+
+        if (!blockEntries.length) {
+            return `
+                <div class="frame-editor-sidebar-summary">
+                    <span class="frame-editor-sidebar-title">${I18n.translateString('Canvas Overview')}</span>
+                    <span class="frame-editor-sidebar-count">${I18n.translate('{count} blocks', { count: '0' })}</span>
+                </div>
+                <div class="frame-editor-empty-state">
+                    <i class="bi bi-layout-text-window-reverse" aria-hidden="true"></i>
+                    <div class="frame-editor-empty-title">${I18n.translateString('No blocks on canvas')}</div>
+                    <p>${I18n.translateString('Add blocks to the canvas to see and select them here.')}</p>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="frame-editor-sidebar-summary">
+                <span class="frame-editor-sidebar-title">${I18n.translateString('Canvas Overview')}</span>
+                <span class="frame-editor-sidebar-count">${I18n.translate('{count} blocks', { count: String(blockEntries.length) })}</span>
+            </div>
+            <div class="frame-editor-overview-list" role="listbox" aria-label="${this.escapeHTML(I18n.translateString('Canvas Overview'))}">
+                ${blockEntries.map(({ block, index }) => this.renderCanvasOverviewItem(block, index)).join('')}
+            </div>
+        `;
+    },
+
+    renderCanvasOverviewItem(block, index) {
+        const isActive = this.state.selectedBlockId === block.id;
+        const icon = this.getBlockIcon(block.type);
+        const label = this.getBlockLabel(block);
+        const summary = this.getCanvasOverviewItemSummary(block);
+        const layerNumber = this.state.canvasBlocks.length - index;
+
+        return `
+            <button
+                type="button"
+                class="frame-editor-overview-item${isActive ? ' active' : ''}"
+                data-frame-editor-overview-block="${block.id}"
+                role="option"
+                aria-selected="${isActive ? 'true' : 'false'}"
+                title="${this.escapeHTML(I18n.translateString(label))}"
+            >
+                <span class="frame-editor-overview-item-icon" aria-hidden="true">
+                    <i class="bi ${icon}"></i>
+                </span>
+                <span class="frame-editor-overview-item-meta">
+                    <span class="frame-editor-overview-item-title">${this.escapeHTML(I18n.translateString(label))}</span>
+                    <span class="frame-editor-overview-item-copy">${this.escapeHTML(summary)}</span>
+                </span>
+                <span class="frame-editor-overview-item-aside">
+                    <span class="frame-editor-overview-item-layer">#${this.escapeHTML(String(layerNumber))}</span>
+                    ${isActive ? `<span class="frame-editor-overview-item-status">${I18n.translateString('Selected')}</span>` : ''}
+                </span>
+            </button>
+        `;
+    },
+
+    getCanvasOverviewItemSummary(block) {
+        if (block?.type === 'text') {
+            return this.getCanvasOverviewPreviewText(block.text, I18n.translateString('Empty text'));
+        }
+
+        if (block?.type === 'shape') {
+            const shapeLabel = this.SHAPE_BLOCK_OPTIONS.find(option => option.id === (block.shapeType || 'rectangle'))?.label || 'Shape';
+            return I18n.translateString(shapeLabel);
+        }
+
+        if (block?.type === 'image') {
+            return block.src
+                ? I18n.translateString('Image uploaded')
+                : I18n.translateString('No image selected');
+        }
+
+        if (block?.type === 'line') {
+            const normalizedStyle = this.getNormalizedLineBlockStyleId(block.lineStyle);
+            const lineStyleLabel = this.LINE_BLOCK_STYLE_OPTIONS.find(option => option.id === normalizedStyle)?.label || 'Solid';
+            return I18n.translate('{style} line', { style: I18n.translateString(lineStyleLabel) });
+        }
+
+        return this.getCanvasOverviewPreviewText(block?.content, this.PREVIEW_QR_TEXT);
+    },
+
+    getCanvasOverviewPreviewText(value, fallback = '') {
+        const normalized = String(value || fallback || '').replace(/\s+/g, ' ').trim();
+        if (!normalized) {
+            return '';
+        }
+
+        return normalized.length > 44
+            ? `${normalized.slice(0, 43)}…`
+            : normalized;
+    },
+
+    getBlockIcon(blockType) {
+        return this.BLOCK_LIBRARY.find(block => block.type === blockType)?.icon || 'bi-square';
     },
 
     renderFrameListItem(frame, selectedFrame) {
@@ -2734,9 +2864,25 @@ const FramesMode = {
     bindEvents(root) {
         root.querySelectorAll('[data-frame-editor-toggle-sidebar]').forEach(button => {
             button.addEventListener('click', () => {
-                const nextCollapsed = !this.isLeftSidebarCollapsed();
+                const isOverviewMode = (this.state.leftPanelMode || 'library') === 'overview';
+                const nextCollapsed = isOverviewMode ? false : !this.isLeftSidebarCollapsed();
                 this.state = {
                     ...this.state,
+                    leftPanelMode: 'library',
+                    isSidebarCollapsed: nextCollapsed,
+                    preferLeftSidebarExpanded: !nextCollapsed
+                };
+                this.renderIntoRoot();
+            });
+        });
+
+        root.querySelectorAll('[data-frame-editor-toggle-overview]').forEach(button => {
+            button.addEventListener('click', () => {
+                const isOverviewMode = (this.state.leftPanelMode || 'library') === 'overview';
+                const nextCollapsed = isOverviewMode ? !this.isLeftSidebarCollapsed() : false;
+                this.state = {
+                    ...this.state,
+                    leftPanelMode: 'overview',
                     isSidebarCollapsed: nextCollapsed,
                     preferLeftSidebarExpanded: !nextCollapsed
                 };
@@ -3260,6 +3406,23 @@ const FramesMode = {
                 }
 
                 this.updateBlock(block.id, this.normalizeLineBlockPatch(block, { lineStyle }));
+                this.renderIntoRoot();
+            });
+        });
+
+        root.querySelectorAll('[data-frame-editor-overview-block]').forEach(button => {
+            button.addEventListener('click', () => {
+                const blockId = button.dataset.frameEditorOverviewBlock;
+                if (!blockId || !this.getBlockById(blockId)) {
+                    return;
+                }
+
+                this.state = {
+                    ...this.state,
+                    selectedBlockId: blockId,
+                    selectedQrBlockId: '',
+                    rightSidebarTab: 'block'
+                };
                 this.renderIntoRoot();
             });
         });
