@@ -13,3 +13,9 @@ Thumbs.db
 
 .env
 .env.*
+
+assets/trailer/
+assets/trailer/**/*.mp4
+
+# Ignore top-level trailer folder
+trailer/
