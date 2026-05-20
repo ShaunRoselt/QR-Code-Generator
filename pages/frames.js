@@ -118,6 +118,12 @@ const FramesMode = {
         { id: 'italic', label: 'Italic', fontWeight: 400, fontStyle: 'italic' },
         { id: 'bold-italic', label: 'Bold Italic', fontWeight: 700, fontStyle: 'italic' }
     ]),
+    TEXT_BLOCK_APPEARANCE_TOGGLE_OPTIONS: Object.freeze([
+        { id: 'bold', label: 'Bold' },
+        { id: 'italic', label: 'Italic' },
+        { id: 'underline', label: 'Underline' },
+        { id: 'line-through', label: 'Line-through' }
+    ]),
     TEXT_BLOCK_POSITION_X_OPTIONS: Object.freeze([
         { id: 'left', label: 'Left' },
         { id: 'center', label: 'Center' },
@@ -814,11 +820,7 @@ const FramesMode = {
                             <div class="frame-editor-inspector-grid frame-editor-text-grid">
                                 <label class="frame-editor-field">
                                     <span>${I18n.translateString('Appearance')}</span>
-                                    <select class="frame-editor-select" data-block-setting="appearance">
-                                        ${this.TEXT_BLOCK_APPEARANCE_OPTIONS.map(option => `
-                                            <option value="${option.id}" ${this.getTextBlockAppearance(selectedBlock) === option.id ? 'selected' : ''}>${this.escapeHTML(I18n.translateString(option.label))}</option>
-                                        `).join('')}
-                                    </select>
+                                    ${this.renderTextAppearanceDropdown(selectedBlock)}
                                 </label>
                                 <div class="frame-editor-field">
                                     <span>${I18n.translateString('Line height')}</span>
@@ -835,14 +837,6 @@ const FramesMode = {
                                         <span>px</span>
                                     </div>
                                 </label>
-                                <div class="frame-editor-field">
-                                    <span>${I18n.translateString('Decoration')}</span>
-                                    <div class="frame-editor-inline-options">
-                                        ${this.renderTextOptionButton('textDecoration', 'none', '−', (selectedBlock.textDecoration || 'none') === 'none')}
-                                        ${this.renderTextOptionButton('textDecoration', 'underline', 'U', selectedBlock.textDecoration === 'underline')}
-                                        ${this.renderTextOptionButton('textDecoration', 'line-through', 'S', selectedBlock.textDecoration === 'line-through')}
-                                    </div>
-                                </div>
                                 <label class="frame-editor-field">
                                     <span>${I18n.translateString('Text align')}</span>
                                     <select class="frame-editor-select" data-block-setting="textAlignCombined">
@@ -1548,19 +1542,107 @@ const FramesMode = {
         `;
     },
 
+    renderTextAppearanceDropdown(block) {
+        const selectedTokens = this.getTextBlockAppearanceTokens(block);
+        const summaryLabel = this.getTextBlockAppearanceLabel(selectedTokens.join('+'));
+        return `
+            <details class="frame-editor-dropdown frame-editor-appearance-dropdown">
+                <summary
+                    class="frame-editor-dropdown-summary"
+                    aria-label="${this.escapeHTML(I18n.translateString('Appearance'))}"
+                >
+                    <span class="frame-editor-dropdown-value" data-frame-editor-appearance-label>${this.escapeHTML(summaryLabel)}</span>
+                    <i class="bi bi-caret-down-fill" aria-hidden="true"></i>
+                </summary>
+                <div class="frame-editor-dropdown-menu">
+                    ${this.TEXT_BLOCK_APPEARANCE_TOGGLE_OPTIONS.map(option => `
+                        <label class="frame-editor-checkbox-row">
+                            <input
+                                type="checkbox"
+                                data-block-setting="appearanceOption"
+                                data-block-value="${option.id}"
+                                ${selectedTokens.includes(option.id) ? 'checked' : ''}
+                            >
+                            <span>${this.escapeHTML(I18n.translateString(option.label))}</span>
+                        </label>
+                    `).join('')}
+                </div>
+            </details>
+        `;
+    },
+
+    getTextBlockAppearanceTokens(block) {
+        const tokens = [];
+        if (Number(block?.fontWeight) >= 700) {
+            tokens.push('bold');
+        }
+        if (String(block?.fontStyle || '').trim().toLowerCase() === 'italic') {
+            tokens.push('italic');
+        }
+
+        const decorations = String(block?.textDecoration || 'none').split(/\s+/).filter(Boolean);
+        if (decorations.includes('underline')) {
+            tokens.push('underline');
+        }
+        if (decorations.includes('line-through')) {
+            tokens.push('line-through');
+        }
+
+        return tokens;
+    },
+
     getTextBlockAppearance(block) {
         const fontWeight = Number(block?.fontWeight) >= 700 ? 700 : 400;
         const fontStyle = block?.fontStyle === 'italic' ? 'italic' : 'normal';
-        const match = this.TEXT_BLOCK_APPEARANCE_OPTIONS.find(option => option.fontWeight === fontWeight && option.fontStyle === fontStyle);
+        const match = this.TEXT_BLOCK_APPEARANCE_OPTIONS.find(option => option.fontWeight !== undefined && option.fontWeight === fontWeight && option.fontStyle === fontStyle);
         return match?.id || 'default';
     },
 
     getTextBlockAppearancePatch(appearanceId) {
         const appearance = this.TEXT_BLOCK_APPEARANCE_OPTIONS.find(option => option.id === appearanceId) || this.TEXT_BLOCK_APPEARANCE_OPTIONS[0];
+        const patch = {};
+        if (appearance.fontWeight !== undefined) {
+            patch.fontWeight = appearance.fontWeight;
+        }
+        if (appearance.fontStyle !== undefined) {
+            patch.fontStyle = appearance.fontStyle;
+        }
+        return patch;
+    },
+
+    getTextBlockAppearancePatchFromTokens(tokens = []) {
+        const normalizedTokens = Array.isArray(tokens)
+            ? tokens.map(token => String(token).trim().toLowerCase()).filter(Boolean)
+            : [];
+        const decorations = [];
+        if (normalizedTokens.includes('underline')) {
+            decorations.push('underline');
+        }
+        if (normalizedTokens.includes('line-through')) {
+            decorations.push('line-through');
+        }
+
         return {
-            fontWeight: appearance.fontWeight,
-            fontStyle: appearance.fontStyle
+            fontWeight: normalizedTokens.includes('bold') ? 700 : 400,
+            fontStyle: normalizedTokens.includes('italic') ? 'italic' : 'normal',
+            textDecoration: decorations.length ? decorations.join(' ') : 'none'
         };
+    },
+
+    getTextBlockAppearanceLabel(appearanceId) {
+        if (!appearanceId) {
+            return I18n.translateString('Default');
+        }
+        const tokens = String(appearanceId).split('+').map(t => t.trim()).filter(Boolean);
+        const labels = tokens.map(token => {
+            const option = this.TEXT_BLOCK_APPEARANCE_TOGGLE_OPTIONS.find(o => o.id === token)
+                || this.TEXT_BLOCK_APPEARANCE_OPTIONS.find(o => o.id === token);
+            if (option) {
+                return I18n.translateString(option.label);
+            }
+            return String(token).split(/[-_]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        });
+        return labels.join(' + ');
     },
 
     getTextBlockAxisPositionValue(startPadding, endPadding, startValue, centerValue, endValue) {
@@ -5469,6 +5551,18 @@ const FramesMode = {
             return;
         }
 
+        if (setting === 'appearanceOption') {
+            const optionControls = Array.from(root.querySelectorAll('[data-block-setting="appearanceOption"]'));
+            const selectedTokens = optionControls.filter(c => Boolean(c.checked)).map(c => String(c.dataset.blockValue || '').trim()).filter(Boolean);
+            const patch = this.getTextBlockAppearancePatchFromTokens(selectedTokens);
+            this.updateBlock(block.id, patch);
+            this.syncInspectorBlockControls(root, patch);
+            const updatedBlock = this.getBlockById(block.id);
+            this.syncCanvasBlock(root, updatedBlock);
+            this.clampUpdatedBlockToCanvas(root, updatedBlock);
+            return;
+        }
+
         if (setting === 'textPositionX' || setting === 'textPositionY') {
             const patch = this.getTextBlockInnerAlignmentPatch(block, setting, control.value);
             this.updateBlock(block.id, patch);
@@ -5528,7 +5622,6 @@ const FramesMode = {
             this.clampUpdatedBlockToCanvas(root, updatedBlock);
             return;
         }
-
         const numericSettings = new Set(['fontSize', 'width', 'height', 'size', 'lineHeight', 'letterSpacing', 'paddingX', 'paddingY', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderWidth', 'borderRadius', 'rotation', 'childGap', 'columnCount', 'columnGap']);
         let nextValue;
 
@@ -5700,6 +5793,19 @@ const FramesMode = {
                 }
 
                 control.value = combinedValue;
+            });
+
+            const appearanceTokens = this.getTextBlockAppearanceTokens(mergedBlock);
+            const appearanceLabel = this.getTextBlockAppearanceLabel(appearanceTokens.join('+'));
+
+            root.querySelectorAll('[data-frame-editor-appearance-label]').forEach(control => {
+                control.textContent = appearanceLabel;
+            });
+
+            root.querySelectorAll('[data-block-setting="appearanceOption"]').forEach(control => {
+                if (control === document.activeElement) return;
+                const token = String(control.dataset.blockValue || '').trim();
+                control.checked = appearanceTokens.includes(token);
             });
         }
     },
