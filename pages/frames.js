@@ -11,6 +11,7 @@ const FramesMode = {
     overviewDragBlockId: '',
     overviewCollapsedBlockIds: new Set(),
     frameEditorContextMenuState: null,
+    CANVAS_OVERVIEW_ROOT_ID: 'frame-editor-canvas-root',
     PREVIEW_QR_TEXT: 'https://qrcode.apps.shaunroselt.com/',
     PREVIEW_QR_OPTIONS: Object.freeze({
         colorDark: '#000000',
@@ -149,7 +150,7 @@ const FramesMode = {
         preferLeftSidebarExpanded: false,
         isRightSidebarCollapsed: false,
         autoCollapseLeftSidebar: false,
-        rightSidebarTab: 'block',
+        selectedCanvas: false,
         selectedQrBlockId: '',
         selectedTextBlockId: '',
         canvasZoom: 1,
@@ -504,31 +505,30 @@ const FramesMode = {
 
     renderCanvasOverviewSidebar() {
         const blockEntries = this.getCanvasOverviewEntries();
-
-        if (!blockEntries.length) {
-            return `
-                <div class="frame-editor-sidebar-summary">
-                    <span class="frame-editor-sidebar-title">${I18n.translateString('Canvas Overview')}</span>
-                    <span class="frame-editor-sidebar-count">${I18n.translate('{count} blocks', { count: '0' })}</span>
-                </div>
-                <div class="frame-editor-empty-state">
-                    <i class="bi bi-layout-text-window-reverse" aria-hidden="true"></i>
-                    <div class="frame-editor-empty-title">${I18n.translateString('No blocks on canvas')}</div>
-                    <p>${I18n.translateString('Add blocks to the canvas to see and select them here.')}</p>
-                </div>
-            `;
-        }
+        const canvasEntryCount = blockEntries.length + 1;
+        const isCanvasCollapsed = this.isCanvasOverviewBlockCollapsed(this.CANVAS_OVERVIEW_ROOT_ID);
+        const visibleBlockEntries = isCanvasCollapsed
+            ? []
+            : blockEntries.map(entry => ({
+                ...entry,
+                depth: entry.depth + 1
+            }));
 
         return `
             <div class="frame-editor-sidebar-summary">
                 <span class="frame-editor-sidebar-title">${I18n.translateString('Canvas Overview')}</span>
-                <span class="frame-editor-sidebar-count">${I18n.translate('{count} blocks', { count: String(blockEntries.length) })}</span>
+                <span class="frame-editor-sidebar-count">${I18n.translate('{count} items', { count: String(canvasEntryCount) })}</span>
             </div>
             <div class="frame-editor-overview-list" role="listbox" aria-label="${this.escapeHTML(I18n.translateString('Canvas Overview'))}" data-frame-editor-overview-list>
-                ${blockEntries.map(({ block, depth }, index) => this.renderCanvasOverviewItem(block, index, depth)).join('')}
-                <div class="frame-editor-overview-root-dropzone" data-frame-editor-overview-root-drop="end" role="note">
-                    ${this.escapeHTML(I18n.translateString('Drop here to move a block back to the root'))}
-                </div>
+                ${this.renderCanvasOverviewCanvasItem(blockEntries.length)}
+                ${visibleBlockEntries.map(({ block, depth }, index) => this.renderCanvasOverviewItem(block, index + 1, depth)).join('')}
+                ${blockEntries.length && !isCanvasCollapsed
+                    ? `
+                        <div class="frame-editor-overview-root-dropzone" data-frame-editor-overview-root-drop="end" role="note">
+                            ${this.escapeHTML(I18n.translateString('Drop here to move a block back to the canvas'))}
+                        </div>
+                    `
+                    : ''}
             </div>
         `;
     },
@@ -551,6 +551,32 @@ const FramesMode = {
         this.getRootCanvasBlocks(blocks).forEach(rootBlock => visit(rootBlock, 0));
         return entries;
     },
+
+    renderCanvasOverviewCanvasItem(childCount = 0) {
+        const isActive = this.isCanvasSelected();
+        // Render the canvas entry with no left-indent so it starts flush-left.
+        return `
+            <div class="frame-editor-overview-item-shell" style="--frame-editor-overview-depth: 0; grid-template-columns: 0px minmax(0, 1fr); gap: 0.15rem;">
+                <button
+                    type="button"
+                    class="frame-editor-overview-item${isActive ? ' active' : ''}"
+                    data-frame-editor-overview-canvas="true"
+                    role="option"
+                    aria-selected="${isActive ? 'true' : 'false'}"
+                    title="${this.escapeHTML(I18n.translateString('Canvas'))}"
+                >
+                    <span class="frame-editor-overview-item-icon" aria-hidden="true">
+                        <i class="bi bi-grid-1x2"></i>
+                    </span>
+                    <span class="frame-editor-overview-item-title">${this.escapeHTML(I18n.translateString('Canvas'))}</span>
+                    ${isActive
+                        ? `<span class="frame-editor-overview-item-status">${I18n.translateString('Selected')}</span>`
+                        : '<span class="frame-editor-overview-item-layer">#1</span>'}
+                </button>
+            </div>
+        `;
+    },
+
 
     renderCanvasOverviewItem(block, index, depth = 0) {
         const isActive = this.state.selectedBlockId === block.id;
@@ -745,33 +771,14 @@ const FramesMode = {
     },
 
     renderRightSidebar(selectedBlock) {
+        const sidebarContent = this.isCanvasSelected()
+            ? this.renderRightSidebarCanvasContent()
+            : this.renderRightSidebarBlockContent(selectedBlock);
+
         return `
-            <div class="frame-editor-right-sidebar-tabs" role="tablist" aria-label="${this.escapeHTML(I18n.translateString('Frame Editor properties panels'))}">
-                ${this.renderRightSidebarTabButton('block', 'Block', 'bi-bounding-box')}
-                ${this.renderRightSidebarTabButton('canvas', 'Canvas', 'bi-grid-1x2')}
-            </div>
             <div class="frame-editor-right-sidebar-body">
-                ${this.state.rightSidebarTab === 'block'
-                    ? this.renderRightSidebarBlockContent(selectedBlock)
-                    : this.renderRightSidebarCanvasContent()}
+                ${sidebarContent}
             </div>
-        `;
-    },
-
-    renderRightSidebarTabButton(tabId, label, icon) {
-        const isActive = this.state.rightSidebarTab === tabId;
-
-        return `
-            <button
-                type="button"
-                class="frame-editor-tab${isActive ? ' active' : ''}"
-                data-frame-editor-properties-tab="${tabId}"
-                role="tab"
-                aria-selected="${isActive ? 'true' : 'false'}"
-            >
-                <i class="bi ${icon}" aria-hidden="true"></i>
-                <span>${this.escapeHTML(I18n.translateString(label))}</span>
-            </button>
         `;
     },
 
@@ -780,8 +787,8 @@ const FramesMode = {
             return `
                 <div class="frame-editor-empty-state frame-editor-empty-state-compact">
                     <i class="bi bi-cursor" aria-hidden="true"></i>
-                    <div class="frame-editor-empty-title">${I18n.translateString('No block selected')}</div>
-                    <p>${I18n.translateString('Select a block on the canvas to edit its properties here.')}</p>
+                    <div class="frame-editor-empty-title">${I18n.translateString('Nothing selected')}</div>
+                    <p>${I18n.translateString('Select a block or the canvas to edit its properties here.')}</p>
                 </div>
             `;
         }
@@ -1946,7 +1953,7 @@ const FramesMode = {
                 <div class="frame-editor-canvas-shell">
                 <div class="frame-editor-canvas-scroll" data-frame-editor-canvas-scroll>
                     <div
-                        class="frame-editor-canvas-stage"
+                        class="frame-editor-canvas-stage${this.isCanvasSelected() ? ' is-selected' : ''}"
                         data-frame-editor-stage
                         aria-label="${this.escapeHTML(I18n.translateString('Frame editor canvas'))}"
                     >
@@ -3591,6 +3598,31 @@ const FramesMode = {
             this.handleFrameEditorKeydown = event => {
                 const isDeleteKey = event.key === 'Delete' || event.key === 'Backspace';
                 if (!isDeleteKey || !this.shouldHandleCanvasDeleteShortcut(event)) {
+                    const isModifierShortcut = (event.ctrlKey || event.metaKey) && !event.altKey;
+                    if (!isModifierShortcut || !this.shouldHandleCanvasClipboardShortcut(event)) {
+                        return;
+                    }
+
+                    const key = String(event.key || '').toLowerCase();
+                    if (key === 'c' && this.state.selectedBlockId) {
+                        event.preventDefault();
+                        this.copyBlockToClipboard();
+                        return;
+                    }
+
+                    if (key === 'x' && this.state.selectedBlockId) {
+                        event.preventDefault();
+                        this.cutBlockToClipboard();
+                        return;
+                    }
+
+                    if (key === 'v' && this.hasBlockClipboard()) {
+                        event.preventDefault();
+                        const pastePosition = this.state.selectedBlockId
+                            ? null
+                            : this.getVisibleCanvasCenterPosition(this.getRoot());
+                        this.pasteBlockFromClipboard(pastePosition, this.getRoot());
+                    }
                     return;
                 }
 
@@ -3706,21 +3738,6 @@ const FramesMode = {
             });
         });
 
-        root.querySelectorAll('[data-frame-editor-properties-tab]').forEach(button => {
-            button.addEventListener('click', () => {
-                const nextTab = button.dataset.frameEditorPropertiesTab;
-                if (!nextTab || nextTab === this.state.rightSidebarTab) {
-                    return;
-                }
-
-                this.state = {
-                    ...this.state,
-                    rightSidebarTab: nextTab
-                };
-                this.renderIntoRoot();
-            });
-        });
-
         root.querySelectorAll('[data-frame-editor-save-json]').forEach(button => {
             button.addEventListener('click', () => {
                 this.saveFrameAsJson(root);
@@ -3818,17 +3835,7 @@ const FramesMode = {
                     return;
                 }
 
-                if (!this.state.selectedBlockId) {
-                    return;
-                }
-
-                this.state = {
-                    ...this.state,
-                    selectedBlockId: '',
-                    selectedQrBlockId: '',
-                    selectedTextBlockId: ''
-                };
-                this.renderIntoRoot();
+                this.selectCanvas({ focusInspector: false });
             });
 
             stage.addEventListener('dragover', event => {
@@ -4261,9 +4268,9 @@ const FramesMode = {
                 this.state = {
                     ...this.state,
                     selectedBlockId: blockId,
+                    selectedCanvas: false,
                     selectedQrBlockId: '',
-                    selectedTextBlockId: '',
-                    rightSidebarTab: 'block'
+                    selectedTextBlockId: ''
                 };
                 this.renderIntoRoot();
             });
@@ -4323,6 +4330,12 @@ const FramesMode = {
             button.addEventListener('dragend', () => {
                 this.clearCanvasOverviewDropIndicators(root);
                 this.overviewDragBlockId = '';
+            });
+        });
+
+        root.querySelectorAll('[data-frame-editor-overview-canvas]').forEach(button => {
+            button.addEventListener('click', () => {
+                this.selectCanvas({ focusInspector: false });
             });
         });
 
@@ -6067,7 +6080,7 @@ const FramesMode = {
             { type: 'separator' },
             { action: 'edit-selected-block', label: 'Edit selected block', icon: 'bi-pencil-square', disabled: !this.state.selectedBlockId },
             { action: 'open-canvas-settings', label: 'Canvas settings', icon: 'bi-sliders' },
-            { action: 'clear-selection', label: 'Deselect block', icon: 'bi-x-circle', disabled: !this.state.selectedBlockId },
+            { action: 'clear-selection', label: 'Clear selection', icon: 'bi-x-circle', disabled: !this.state.selectedBlockId && !this.isCanvasSelected() },
             { type: 'separator' },
             { action: 'fit-blocks', label: 'Fit blocks', icon: 'bi-arrows-angle-expand', disabled: !this.state.canvasBlocks.length },
             { action: 'reset-view', label: 'Reset view', icon: 'bi-arrow-counterclockwise' }
@@ -6125,6 +6138,7 @@ const FramesMode = {
             this.state = {
                 ...this.state,
                 selectedBlockId: blockId,
+                selectedCanvas: false,
                 selectedQrBlockId: blockId === this.state.selectedQrBlockId ? blockId : '',
                 selectedTextBlockId: blockId === this.state.selectedTextBlockId ? blockId : ''
             };
@@ -6512,7 +6526,7 @@ const FramesMode = {
         this.state = {
             ...this.state,
             selectedBlockId: blockId,
-            rightSidebarTab: 'block',
+            selectedCanvas: false,
             isRightSidebarCollapsed: false,
             selectedQrBlockId: this.state.selectedQrBlockId === blockId ? blockId : '',
             selectedTextBlockId: this.state.selectedTextBlockId === blockId ? blockId : ''
@@ -6530,6 +6544,7 @@ const FramesMode = {
         this.state = {
             ...this.state,
             selectedBlockId: blockId,
+            selectedCanvas: false,
             selectedQrBlockId: blockId,
             selectedTextBlockId: ''
         };
@@ -6557,6 +6572,7 @@ const FramesMode = {
         this.state = {
             ...this.state,
             selectedBlockId: blockId,
+            selectedCanvas: false,
             selectedQrBlockId: '',
             selectedTextBlockId: blockId
         };
@@ -6575,23 +6591,38 @@ const FramesMode = {
         this.renderIntoRoot();
     },
 
-    openCanvasInspector() {
+    isCanvasSelected() {
+        return Boolean(this.state.selectedCanvas);
+    },
+
+    selectCanvas(options = {}) {
+        const focusInspector = options.focusInspector !== false;
         this.state = {
             ...this.state,
-            rightSidebarTab: 'canvas',
+            selectedCanvas: true,
+            selectedBlockId: '',
+            selectedQrBlockId: '',
+            selectedTextBlockId: '',
             isRightSidebarCollapsed: false
         };
         this.renderIntoRoot();
-        this.focusInspectorControl('.frame-editor-right-sidebar-body [data-canvas-setting]');
+        if (focusInspector) {
+            this.focusInspectorControl('.frame-editor-right-sidebar-body [data-canvas-setting]');
+        }
+    },
+
+    openCanvasInspector() {
+        this.selectCanvas();
     },
 
     clearSelectedBlock() {
-        if (!this.state.selectedBlockId) {
+        if (!this.state.selectedBlockId && !this.isCanvasSelected()) {
             return;
         }
 
         this.state = {
             ...this.state,
+            selectedCanvas: false,
             selectedBlockId: '',
             selectedQrBlockId: '',
             selectedTextBlockId: ''
@@ -6630,6 +6661,7 @@ const FramesMode = {
         this.state = {
             ...this.state,
             selectedBlockId: instantiatedSubtree.rootBlock.id,
+            selectedCanvas: false,
             selectedQrBlockId: '',
             selectedTextBlockId: '',
             canvasBlocks: this.mergeBlockSubtreeIntoCanvas(this.state.canvasBlocks, instantiatedSubtree.blocks)
@@ -6761,9 +6793,9 @@ const FramesMode = {
             ...this.state,
             canvasBlocks: rebuiltBlocks,
             selectedBlockId: sourceBlockId,
+            selectedCanvas: false,
             selectedQrBlockId: '',
-            selectedTextBlockId: '',
-            rightSidebarTab: 'block'
+            selectedTextBlockId: ''
         };
         this.renderIntoRoot();
 
@@ -6792,7 +6824,8 @@ const FramesMode = {
         this.state = {
             ...this.state,
             canvasBlocks: reorderedBlocks,
-            selectedBlockId: blockId
+            selectedBlockId: blockId,
+            selectedCanvas: false
         };
         this.renderIntoRoot();
     },
@@ -6818,7 +6851,8 @@ const FramesMode = {
         this.state = {
             ...this.state,
             canvasBlocks: reorderedBlocks,
-            selectedBlockId: blockId
+            selectedBlockId: blockId,
+            selectedCanvas: false
         };
         this.renderIntoRoot();
     },
@@ -6849,6 +6883,7 @@ const FramesMode = {
         this.state = {
             ...this.state,
             selectedBlockId: nextBlock.id,
+            selectedCanvas: false,
             selectedQrBlockId: '',
             selectedTextBlockId: '',
             canvasBlocks: targetContainer
@@ -7114,6 +7149,7 @@ const FramesMode = {
             ...this.state,
             canvasBlocks: remainingBlocks,
             selectedBlockId: nextSelectedBlockId,
+            selectedCanvas: false,
             selectedQrBlockId: idsToRemove.has(this.state.selectedQrBlockId) ? '' : this.state.selectedQrBlockId,
             selectedTextBlockId: idsToRemove.has(this.state.selectedTextBlockId) ? '' : this.state.selectedTextBlockId
         };
@@ -7139,6 +7175,7 @@ const FramesMode = {
         this.state = {
             ...this.state,
             selectedBlockId: instantiatedSubtree.rootBlock.id,
+            selectedCanvas: false,
             selectedQrBlockId: '',
             selectedTextBlockId: '',
             canvasBlocks: this.mergeBlockSubtreeIntoCanvas(this.state.canvasBlocks, instantiatedSubtree.blocks)
@@ -7161,6 +7198,7 @@ const FramesMode = {
         this.state = {
             ...this.state,
             selectedBlockId: blockId,
+            selectedCanvas: false,
             selectedQrBlockId: blockId === this.state.selectedQrBlockId ? blockId : '',
             selectedTextBlockId: blockId === this.state.selectedTextBlockId ? blockId : ''
         };
@@ -7443,6 +7481,19 @@ const FramesMode = {
 
     shouldHandleCanvasDeleteShortcut(event) {
         if (!this.state.selectedBlockId || !event?.target) {
+            return false;
+        }
+
+        const target = event.target;
+        if (target.closest?.('input, textarea, select, button, a, [contenteditable="true"]')) {
+            return false;
+        }
+
+        return target === document.body || Boolean(target.closest?.('.frame-editor-layout, .frame-editor-workspace-panel, [data-frame-editor-stage]'));
+    },
+
+    shouldHandleCanvasClipboardShortcut(event) {
+        if (!event?.target) {
             return false;
         }
 
