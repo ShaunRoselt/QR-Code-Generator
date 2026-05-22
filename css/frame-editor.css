@@ -159,9 +159,17 @@
     height: 100%;
 }
 
-.frame-editor-sidebar-panel { grid-column: 1; }
-.frame-editor-workspace-panel { grid-column: 2; }
-.frame-editor-right-sidebar-panel { grid-column: 3; }
+.frame-editor-sidebar-panel {
+    grid-column: 1;
+}
+
+.frame-editor-workspace-panel {
+    grid-column: 2;
+}
+
+.frame-editor-right-sidebar-panel {
+    grid-column: 3;
+}
 
 .frame-editor-sidebar-panel {
     position: relative;
@@ -197,6 +205,9 @@
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     border-bottom-left-radius: 0;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--bg-card) 92%, rgba(255, 255, 255, 0.04)) 0%, color-mix(in srgb, var(--bg-card) 98%, transparent) 140px),
+        var(--bg-card);
     overflow: hidden;
     transition:
         opacity 0.2s ease,
@@ -571,6 +582,11 @@
     color: var(--text-secondary);
 }
 
+.frame-editor-empty-state[hidden],
+.frame-editor-workspace-empty[hidden] {
+    display: none !important;
+}
+
 .frame-editor-empty-state i,
 .frame-editor-workspace-empty i {
     font-size: 2rem;
@@ -689,7 +705,7 @@
     grid-column: span 3;
 }
 
-.frame-editor-field > span {
+.frame-editor-field>span {
     font-size: 0.78rem;
     font-weight: 600;
     color: var(--text-muted);
@@ -1020,7 +1036,7 @@
     background-color: var(--bg-card);
 }
 
-.frame-editor-text-color-row + .frame-editor-text-color-row {
+.frame-editor-text-color-row+.frame-editor-text-color-row {
     border-top: 1px solid var(--border-color);
 }
 
@@ -1247,12 +1263,12 @@
     transition: transform 0.2s ease;
 }
 
-.frame-editor-switch-control input:checked + .frame-editor-switch-slider {
+.frame-editor-switch-control input:checked+.frame-editor-switch-slider {
     border-color: var(--accent-primary);
     background-color: rgba(102, 192, 244, 0.18);
 }
 
-.frame-editor-switch-control input:checked + .frame-editor-switch-slider::after {
+.frame-editor-switch-control input:checked+.frame-editor-switch-slider::after {
     transform: translateX(16px);
     background-color: var(--accent-primary);
 }
@@ -1618,16 +1634,108 @@
 .frame-editor-right-sidebar-tabs {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem;
+}
+
+.frame-editor-right-sidebar-shell {
+    display: flex;
+    flex-direction: column;
     gap: 0.65rem;
+    min-height: 0;
+    height: 100%;
+}
+
+.frame-editor-right-sidebar-topbar {
+    padding-top: 0.15rem;
+}
+
+.frame-editor-right-sidebar-search {
+    max-width: none;
+}
+
+.frame-editor-right-sidebar-search .search-input {
+    min-height: 38px;
+    padding-block: 0.6rem;
+    border-radius: 8px;
+    background-color: color-mix(in srgb, var(--bg-card) 94%, rgba(255, 255, 255, 0.03));
+}
+
+.frame-editor-right-sidebar-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+    padding: 0.78rem 0.9rem 0.7rem;
+    border: 1px solid color-mix(in srgb, var(--border-color) 86%, rgba(255, 255, 255, 0.08));
+    border-radius: 10px 10px 4px 4px;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--bg-secondary) 82%, rgba(255, 255, 255, 0.05)) 0%, color-mix(in srgb, var(--bg-card) 94%, transparent) 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.frame-editor-right-sidebar-selection-name {
+    font-size: 0.96rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.frame-editor-right-sidebar-selection-kind {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.frame-editor-right-sidebar-tab {
+    min-height: 34px;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid color-mix(in srgb, var(--border-color) 88%, rgba(255, 255, 255, 0.06));
+    border-radius: 8px 8px 0 0;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--bg-secondary) 88%, transparent) 0%, color-mix(in srgb, var(--bg-card) 96%, transparent) 100%);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.frame-editor-right-sidebar-tab.active {
+    border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-color));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 8%, var(--bg-card)) 0%, color-mix(in srgb, var(--bg-card) 98%, transparent) 100%);
+    color: var(--text-primary);
+}
+
+.frame-editor-right-sidebar-tab:focus-visible {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+.frame-editor-right-sidebar-tab[disabled] {
+    opacity: 0.58;
+    cursor: not-allowed;
 }
 
 .frame-editor-right-sidebar-body {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.8rem;
     min-height: 0;
     overflow-y: auto;
     padding-right: 0.2rem;
+    padding-bottom: 0.2rem;
+}
+
+.frame-editor-right-sidebar-content[hidden] {
+    display: none;
+}
+
+.frame-editor-right-sidebar-panel [hidden] {
+    display: none !important;
+}
+
+.frame-editor-right-sidebar-search-empty {
+    min-height: 220px;
 }
 
 .frame-editor-sidebar-panel-section,
@@ -1640,6 +1748,162 @@
 .frame-editor-empty-state-compact {
     min-height: 220px;
     padding-inline: 0.5rem;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-empty-state-compact {
+    min-height: 260px;
+    border: 1px dashed color-mix(in srgb, var(--border-color) 85%, rgba(255, 255, 255, 0.08));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--bg-secondary) 86%, transparent);
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-sidebar-summary {
+    padding-inline: 0.2rem;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-sidebar-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-sidebar-form {
+    gap: 0.8rem;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-text-property-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.7rem;
+    border: 1px solid color-mix(in srgb, var(--border-color) 90%, rgba(255, 255, 255, 0.04));
+    border-radius: 9px;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--bg-secondary) 86%, rgba(255, 255, 255, 0.04)) 0%, color-mix(in srgb, var(--bg-card) 96%, transparent) 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-text-group-heading {
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-color) 92%, rgba(255, 255, 255, 0.04));
+    font-size: 0.73rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-text-group-heading i {
+    color: color-mix(in srgb, var(--text-muted) 88%, transparent);
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-inspector-grid,
+.frame-editor-right-sidebar-panel .frame-editor-text-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.7rem;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-field,
+.frame-editor-right-sidebar-panel .frame-editor-padding-field {
+    display: grid;
+    grid-template-columns: minmax(88px, 0.92fr) minmax(0, 1.4fr);
+    gap: 0.4rem 0.7rem;
+    align-items: center;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-field-wide {
+    grid-column: auto;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-field>span,
+.frame-editor-right-sidebar-panel .frame-editor-padding-field-label {
+    font-size: 0.76rem;
+    line-height: 1.3;
+    color: var(--text-muted);
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-field> :not(span),
+.frame-editor-right-sidebar-panel .frame-editor-padding-field> :not(.frame-editor-padding-field-label) {
+    min-width: 0;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-field textarea {
+    min-height: 74px;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-field input:not([type="color"]),
+.frame-editor-right-sidebar-panel .frame-editor-field textarea,
+.frame-editor-right-sidebar-panel .frame-editor-field select,
+.frame-editor-right-sidebar-panel .frame-editor-dropdown-summary,
+.frame-editor-right-sidebar-panel .frame-editor-line-style-picker-summary {
+    min-height: 38px;
+    padding: 0.6rem 0.7rem;
+    border-radius: 8px;
+    background-color: color-mix(in srgb, var(--bg-card) 94%, rgba(255, 255, 255, 0.03));
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-text-color-list {
+    border-radius: 8px;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-text-color-row {
+    padding: 0.65rem 0.75rem;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-measurement-field {
+    grid-template-columns: minmax(0, 92px) minmax(0, 1fr);
+    gap: 0.6rem;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-stepper,
+.frame-editor-right-sidebar-panel .frame-editor-unit-input,
+.frame-editor-right-sidebar-panel .frame-editor-segmented-control,
+.frame-editor-right-sidebar-panel .frame-editor-inline-options {
+    min-height: 38px;
+    border-radius: 8px;
+    background-color: color-mix(in srgb, var(--bg-card) 95%, rgba(255, 255, 255, 0.03));
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-stepper-value,
+.frame-editor-right-sidebar-panel .frame-editor-unit-input input {
+    padding-inline: 0.7rem;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-stepper-button {
+    width: 36px;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-unit-input span {
+    padding-right: 0.7rem;
+    font-size: 0.77rem;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-switch-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.7rem;
+    align-items: start;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-switch-copy strong {
+    display: block;
+    font-size: 0.78rem;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-switch-copy small {
+    display: block;
+    margin-top: 0.12rem;
+    font-size: 0.72rem;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-inspector-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+}
+
+.frame-editor-right-sidebar-panel .frame-editor-action-button {
+    width: 100%;
+    min-height: 38px;
 }
 
 .frame-editor-canvas-camera {
@@ -2053,8 +2317,8 @@
     z-index: 6;
 }
 
-.frame-editor-qr-block-handle-layer > .frame-editor-block-rotate-handle,
-.frame-editor-qr-block-handle-layer > .frame-editor-block-resize-handle {
+.frame-editor-qr-block-handle-layer>.frame-editor-block-rotate-handle,
+.frame-editor-qr-block-handle-layer>.frame-editor-block-resize-handle {
     pointer-events: auto;
 }
 

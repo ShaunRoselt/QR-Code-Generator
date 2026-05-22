@@ -154,6 +154,8 @@ const FramesMode = {
     state: {
         activeTab: 'frames',
         searchTerm: '',
+        rightSidebarTab: 'properties',
+        rightSidebarSearchTerm: '',
         selectedFrameKey: '',
         selectedBlockId: '',
         workspaceView: 'grid',
@@ -209,8 +211,8 @@ const FramesMode = {
             ? I18n.translateString('Canvas Overview')
             : I18n.translateString('Frame Editor sidebar');
         const rightSidebarToggleLabel = this.state.isRightSidebarCollapsed
-            ? I18n.translateString('Expand properties sidebar')
-            : I18n.translateString('Collapse properties sidebar');
+            ? I18n.translateString('Expand Block Inspector')
+            : I18n.translateString('Collapse Block Inspector');
         const isDeveloperMode = this.isDeveloperMode();
 
         return `
@@ -312,7 +314,7 @@ const FramesMode = {
                             title="${this.escapeHTML(rightSidebarToggleLabel)}"
                         >
                             <i class="bi ${this.state.isRightSidebarCollapsed ? 'bi-layout-sidebar-reverse' : 'bi-layout-sidebar'}" aria-hidden="true"></i>
-                            <span class="frame-editor-button-label">${I18n.translateString('Properties')}</span>
+                            <span class="frame-editor-button-label">${I18n.translateString('Block Inspector')}</span>
                         </button>
                     </div>
                 </div>
@@ -326,12 +328,12 @@ const FramesMode = {
                             aria-hidden="${leftSidebarCollapsed ? 'true' : 'false'}"
                         >
                             ${isCanvasOverviewMode
-                                ? `
+                ? `
                                     <div class="frame-editor-sidebar-body frame-editor-sidebar-body-overview">
                                         ${this.renderCanvasOverviewSidebar()}
                                     </div>
                                 `
-                                : `
+                : `
                                     <div class="frame-editor-tabs" role="tablist" aria-label="${I18n.translateString('Frame Editor panels')}">
                                         ${this.renderTabButton('frames', 'Frames', 'bi-collection')}
                                         ${this.renderTabButton('blocks', 'Blocks', 'bi-grid-3x3-gap')}
@@ -367,7 +369,7 @@ const FramesMode = {
                         <aside
                             id="frameEditorRightSidebarPanel"
                             class="frame-editor-right-sidebar-panel"
-                            aria-label="${I18n.translateString('Frame Editor properties')}"
+                            aria-label="${I18n.translateString('Block Inspector')}"
                             aria-hidden="${this.state.isRightSidebarCollapsed ? 'true' : 'false'}"
                         >
                             ${this.renderRightSidebar(selectedBlock)}
@@ -535,12 +537,12 @@ const FramesMode = {
                 ${this.renderCanvasOverviewCanvasItem(blockEntries.length)}
                 ${visibleBlockEntries.map(({ block, depth }, index) => this.renderCanvasOverviewItem(block, index + 1, depth)).join('')}
                 ${blockEntries.length && !isCanvasCollapsed
-                    ? `
+                ? `
                         <div class="frame-editor-overview-root-dropzone" data-frame-editor-overview-root-drop="end" role="note">
                             ${this.escapeHTML(I18n.translateString('Drop here to move a block back to the canvas'))}
                         </div>
                     `
-                    : ''}
+                : ''}
             </div>
         `;
     },
@@ -583,8 +585,8 @@ const FramesMode = {
                     </span>
                     <span class="frame-editor-overview-item-title">${this.escapeHTML(I18n.translateString('Canvas'))}</span>
                     ${isActive
-                        ? `<span class="frame-editor-overview-item-status">${I18n.translateString('Selected')}</span>`
-                        : '<span class="frame-editor-overview-item-layer">#1</span>'}
+                ? `<span class="frame-editor-overview-item-status">${I18n.translateString('Selected')}</span>`
+                : '<span class="frame-editor-overview-item-layer">#1</span>'}
                 </button>
             </div>
         `;
@@ -602,7 +604,7 @@ const FramesMode = {
         return `
             <div class="frame-editor-overview-item-shell" style="--frame-editor-overview-depth: ${this.escapeHTML(String(depth))};">
                 ${hasChildren
-                    ? `
+                ? `
                         <button
                             type="button"
                             class="frame-editor-overview-item-toggle"
@@ -613,7 +615,7 @@ const FramesMode = {
                             <i class="bi ${isCollapsed ? 'bi-chevron-right' : 'bi-chevron-down'}" aria-hidden="true"></i>
                         </button>
                     `
-                    : '<span class="frame-editor-overview-item-toggle-spacer" aria-hidden="true"></span>'}
+                : '<span class="frame-editor-overview-item-toggle-spacer" aria-hidden="true"></span>'}
                 <button
                     type="button"
                     class="frame-editor-overview-item${isActive ? ' active' : ''}"
@@ -784,13 +786,88 @@ const FramesMode = {
     },
 
     renderRightSidebar(selectedBlock) {
-        const sidebarContent = this.isCanvasSelected()
+        const isCanvasSelected = this.isCanvasSelected();
+        const activeRightSidebarTab = this.state.rightSidebarTab === 'events' ? 'events' : 'properties';
+        const sidebarPropertiesContent = isCanvasSelected
             ? this.renderRightSidebarCanvasContent()
             : this.renderRightSidebarBlockContent(selectedBlock);
+        const sidebarEventsContent = this.renderRightSidebarEventsContent(selectedBlock);
+        const inspectorSubtitle = isCanvasSelected
+            ? I18n.translateString('Workspace surface')
+            : selectedBlock
+                ? I18n.translateString(this.getBlockLabel(selectedBlock))
+                : I18n.translateString('No selection');
+        const rightSidebarSearchLabel = I18n.translateString('Search properties and events');
+        const rightSidebarEmptyTitle = I18n.translateString('No matching items');
+        const rightSidebarEmptyCopy = I18n.translateString('Try a broader search term or switch tabs.');
 
         return `
-            <div class="frame-editor-right-sidebar-body">
-                ${sidebarContent}
+            <div class="frame-editor-right-sidebar-shell">
+                <div class="frame-editor-right-sidebar-topbar">
+                    <div class="frame-editor-right-sidebar-selection">
+                        <span class="frame-editor-right-sidebar-selection-name">${this.escapeHTML(I18n.translateString('Block Inspector'))}</span>
+                        <span class="frame-editor-right-sidebar-selection-kind">${this.escapeHTML(inspectorSubtitle)}</span>
+                    </div>
+                </div>
+                <div class="frame-editor-right-sidebar-search search-field">
+                    <i class="bi bi-search search-icon" aria-hidden="true"></i>
+                    <input
+                        type="search"
+                        class="search-input"
+                        id="frameEditorRightSidebarSearchInput"
+                        value="${this.escapeHTML(this.state.rightSidebarSearchTerm || '')}"
+                        placeholder="${this.escapeHTML(rightSidebarSearchLabel)}"
+                        aria-label="${this.escapeHTML(rightSidebarSearchLabel)}"
+                    >
+                </div>
+                <div class="frame-editor-right-sidebar-tabs" role="tablist" aria-label="${this.escapeHTML(I18n.translateString('Block Inspector tabs'))}">
+                    <button type="button" id="frameEditorRightSidebarTabProperties" class="frame-editor-right-sidebar-tab${activeRightSidebarTab === 'properties' ? ' active' : ''}" data-frame-editor-right-sidebar-tab="properties" role="tab" aria-selected="${activeRightSidebarTab === 'properties' ? 'true' : 'false'}" aria-controls="frameEditorRightSidebarPropertiesPanel" tabindex="${activeRightSidebarTab === 'properties' ? '0' : '-1'}">
+                        ${this.escapeHTML(I18n.translateString('Properties'))}
+                    </button>
+                    <button type="button" id="frameEditorRightSidebarTabEvents" class="frame-editor-right-sidebar-tab${activeRightSidebarTab === 'events' ? ' active' : ''}" data-frame-editor-right-sidebar-tab="events" role="tab" aria-selected="${activeRightSidebarTab === 'events' ? 'true' : 'false'}" aria-controls="frameEditorRightSidebarEventsPanel" tabindex="${activeRightSidebarTab === 'events' ? '0' : '-1'}">
+                        ${this.escapeHTML(I18n.translateString('Events'))}
+                    </button>
+                </div>
+                <div class="frame-editor-right-sidebar-body">
+                    <div id="frameEditorRightSidebarPropertiesPanel" class="frame-editor-right-sidebar-content${activeRightSidebarTab === 'properties' ? ' active' : ''}" data-frame-editor-right-sidebar-panel="properties" data-frame-editor-right-sidebar-search-state="${isCanvasSelected || selectedBlock ? 'searchable' : 'selection-required'}" role="tabpanel" aria-labelledby="frameEditorRightSidebarTabProperties" ${activeRightSidebarTab === 'properties' ? '' : 'hidden'}>
+                        ${sidebarPropertiesContent}
+                    </div>
+                    <div id="frameEditorRightSidebarEventsPanel" class="frame-editor-right-sidebar-content${activeRightSidebarTab === 'events' ? ' active' : ''}" data-frame-editor-right-sidebar-panel="events" data-frame-editor-right-sidebar-search-state="${isCanvasSelected || selectedBlock ? 'future-empty' : 'selection-required'}" role="tabpanel" aria-labelledby="frameEditorRightSidebarTabEvents" ${activeRightSidebarTab === 'events' ? '' : 'hidden'}>
+                        ${sidebarEventsContent}
+                    </div>
+                    <div class="frame-editor-empty-state frame-editor-empty-state-compact frame-editor-right-sidebar-search-empty" data-frame-editor-right-sidebar-empty="filtered" hidden>
+                        <i class="bi bi-search" aria-hidden="true"></i>
+                        <div class="frame-editor-empty-title">${this.escapeHTML(rightSidebarEmptyTitle)}</div>
+                        <p>${this.escapeHTML(rightSidebarEmptyCopy)}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    renderRightSidebarEventsContent(selectedBlock) {
+        if (!selectedBlock && !this.isCanvasSelected()) {
+            return `
+                <div class="frame-editor-empty-state frame-editor-empty-state-compact">
+                    <i class="bi bi-lightning-charge" aria-hidden="true"></i>
+                    <div class="frame-editor-empty-title">${I18n.translateString('Nothing selected')}</div>
+                    <p>${I18n.translateString('Select a block or the canvas to inspect future events here.')}</p>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="frame-editor-sidebar-panel-section frame-editor-right-sidebar-events-section">
+                <div class="frame-editor-sidebar-summary">
+                    <span class="frame-editor-sidebar-title">${I18n.translateString('Events')}</span>
+                </div>
+                <div class="frame-editor-sidebar-form">
+                    <div class="frame-editor-empty-state frame-editor-empty-state-compact frame-editor-right-sidebar-events-empty">
+                        <i class="bi bi-lightning-charge" aria-hidden="true"></i>
+                        <div class="frame-editor-empty-title">${I18n.translateString('No events yet')}</div>
+                        <p>${I18n.translateString('Event triggers for this selection will appear here when they are added.')}</p>
+                    </div>
+                </div>
             </div>
         `;
     },
@@ -830,11 +907,11 @@ const FramesMode = {
                                 <span>${I18n.translateString('Font size')}</span>
                                 <div class="frame-editor-segmented-control">
                                     ${this.TEXT_BLOCK_FONT_SIZE_OPTIONS.map(option => this.renderTextOptionButton(
-                                        'fontSizePreset',
-                                        option.id,
-                                        option.label,
-                                        this.getTextBlockFontSizePreset(selectedBlock) === option.id
-                                    )).join('')}
+                'fontSizePreset',
+                option.id,
+                option.label,
+                this.getTextBlockFontSizePreset(selectedBlock) === option.id
+            )).join('')}
                                 </div>
                             </div>
                             <div class="frame-editor-inspector-grid frame-editor-text-grid">
@@ -897,7 +974,7 @@ const FramesMode = {
                             ${this.renderTextPaddingControls(selectedBlock)}
                         </div>
                         ${this.canSelectTextInnerBlock(selectedBlock)
-                            ? `
+                    ? `
                                 <div class="frame-editor-inspector-actions">
                                     <button type="button" class="frame-editor-action-button" data-block-action="${this.isTextInnerSelected(selectedBlock) ? 'deselect-text' : 'select-text'}">
                                         <i class="bi ${this.isTextInnerSelected(selectedBlock) ? 'bi-x-circle' : 'bi-cursor-text'}" aria-hidden="true"></i>
@@ -905,8 +982,8 @@ const FramesMode = {
                                     </button>
                                 </div>
                             `
-                            : ''
-                        }
+                    : ''
+                }
                         <div class="frame-editor-text-property-group">
                             ${this.renderTextPropertyGroupHeading('Border')}
                             <label class="frame-editor-field frame-editor-field-wide">
@@ -973,7 +1050,7 @@ const FramesMode = {
                         ${this.renderTextMeasurementField('QR size', 'size', selectedBlock.size ?? 180, 80, this.getCanvasMeasurementMax('size'), 4)}
                     </div>
                     ${this.canSelectQrInnerBlock(selectedBlock)
-                        ? `
+                ? `
                             <div class="frame-editor-inspector-actions">
                                 <button type="button" class="frame-editor-action-button" data-block-action="${this.isQrInnerSelected(selectedBlock) ? 'deselect-qr-code' : 'select-qr-code'}">
                                     <i class="bi ${this.isQrInnerSelected(selectedBlock) ? 'bi-x-circle' : 'bi-bullseye'}" aria-hidden="true"></i>
@@ -981,8 +1058,8 @@ const FramesMode = {
                                 </button>
                             </div>
                         `
-                        : ''
-                    }
+                : ''
+            }
                     <div class="frame-editor-text-property-group">
                         ${this.renderTextPaddingControls(selectedBlock, 'Container padding')}
                     </div>
@@ -1248,11 +1325,11 @@ const FramesMode = {
                     <span>${I18n.translateString('Horizontal alignment')}</span>
                     <div class="frame-editor-inline-options">
                         ${this.CONTAINER_ALIGNMENT_OPTIONS.map(option => this.renderTextOptionButton(
-                            'childAlignment',
-                            option.id,
-                            option.label.charAt(0),
-                            (selectedBlock.childAlignment || 'left') === option.id
-                        )).join('')}
+            'childAlignment',
+            option.id,
+            option.label.charAt(0),
+            (selectedBlock.childAlignment || 'left') === option.id
+        )).join('')}
                     </div>
                 </label>
                 ${this.renderTextMeasurementField('Child gap', 'childGap', selectedBlock.childGap ?? 12, 4, 80, 1)}
@@ -1293,8 +1370,8 @@ const FramesMode = {
                 </summary>
                 <div class="frame-editor-line-style-picker-menu" role="listbox" aria-label="${this.escapeHTML(I18n.translateString('Line style'))}">
                     ${this.LINE_BLOCK_STYLE_OPTIONS.map(option => {
-                        const isSelected = option.id === selectedLineStyle;
-                        return `
+            const isSelected = option.id === selectedLineStyle;
+            return `
                             <button
                                 type="button"
                                 class="frame-editor-line-style-picker-option${isSelected ? ' active' : ''}"
@@ -1311,7 +1388,7 @@ const FramesMode = {
                                 ${isSelected ? '<i class="bi bi-check2 frame-editor-line-style-picker-option-status" aria-hidden="true"></i>' : ''}
                             </button>
                         `;
-                    }).join('')}
+        }).join('')}
                 </div>
             </details>
         `;
@@ -1540,11 +1617,11 @@ const FramesMode = {
             `)}
             <div class="frame-editor-padding-controls">
                 ${isLinked
-                    ? `
+                ? `
                         ${this.renderTextPaddingField('Horizontal', 'paddingX', linkedPaddingX, 'bi-arrow-left-right', paddingLimits.paddingX)}
                         ${this.renderTextPaddingField('Vertical', 'paddingY', linkedPaddingY, 'bi-arrow-down-up', paddingLimits.paddingY)}
                     `
-                    : `
+                : `
                         ${this.renderTextPaddingField('Top', 'paddingTop', padding.top, 'bi-arrow-up', paddingLimits.top)}
                         ${this.renderTextPaddingField('Right', 'paddingRight', padding.right, 'bi-arrow-right', paddingLimits.right)}
                         ${this.renderTextPaddingField('Bottom', 'paddingBottom', padding.bottom, 'bi-arrow-down', paddingLimits.bottom)}
@@ -2435,8 +2512,8 @@ const FramesMode = {
                 <div class="frame-editor-image-block-surface" style="${imageSurfaceStyle}">
                     <div class="frame-editor-image-block-content" style="${imageContentStyle}">
                         ${block.src
-                            ? `<img src="${this.escapeHTML(block.src)}" alt="" draggable="false" style="object-fit: ${this.escapeHTML(block.objectFit || 'contain')};">`
-                            : `
+                    ? `<img src="${this.escapeHTML(block.src)}" alt="" draggable="false" style="object-fit: ${this.escapeHTML(block.objectFit || 'contain')};">`
+                    : `
                                 <div class="frame-editor-image-block-placeholder">
                                     <i class="bi bi-image" aria-hidden="true"></i>
                                     <span>${this.escapeHTML(I18n.translateString('Upload image'))}</span>
@@ -3785,10 +3862,89 @@ const FramesMode = {
         const scrollState = this.capturePanelScrollState(root);
         root.innerHTML = this.render();
         this.bindEvents(root);
+        this.applyRightSidebarFilter(root);
         this.restorePanelScrollState(root, scrollState);
         this.highlightJsonView(root);
         this.syncViewportLayout(root);
         this.restorePanelScrollState(root, scrollState);
+    },
+
+    applyRightSidebarFilter(root = this.getRoot()) {
+        const activeRightSidebarTab = this.state.rightSidebarTab === 'events' ? 'events' : 'properties';
+        const panels = Array.from(root?.querySelectorAll?.('[data-frame-editor-right-sidebar-panel]') || []);
+        const activePanel = panels.find(panel => panel.dataset.frameEditorRightSidebarPanel === activeRightSidebarTab) || null;
+        const filteredEmptyState = root?.querySelector?.('[data-frame-editor-right-sidebar-empty="filtered"]');
+        const normalizedSearchTerm = String(this.state.rightSidebarSearchTerm || '').trim().toLowerCase();
+
+        if (!panels.length) {
+            if (filteredEmptyState) {
+                filteredEmptyState.hidden = true;
+            }
+            return;
+        }
+
+        const filterPanel = panel => {
+            let panelHasVisibleMatch = !normalizedSearchTerm;
+
+            Array.from(panel.children).forEach(child => {
+                if (child.classList?.contains('frame-editor-empty-state')) {
+                    child.hidden = Boolean(normalizedSearchTerm);
+                }
+            });
+
+            panel.querySelectorAll('.frame-editor-sidebar-panel-section').forEach(section => {
+                const forms = Array.from(section.children).filter(child => child.classList?.contains('frame-editor-sidebar-form'));
+                if (!forms.length) {
+                    section.hidden = false;
+                    return;
+                }
+
+                let sectionHasMatch = false;
+                let sectionHasFilterableItems = false;
+
+                forms.forEach(form => {
+                    Array.from(form.children).forEach(child => {
+                        if (child.classList?.contains('frame-editor-empty-state')) {
+                            child.hidden = Boolean(normalizedSearchTerm);
+                            if (!normalizedSearchTerm) {
+                                sectionHasMatch = true;
+                            }
+                            return;
+                        }
+
+                        sectionHasFilterableItems = true;
+                        const normalizedChildText = String(child.textContent || '').trim().toLowerCase();
+                        const matches = !normalizedSearchTerm || normalizedChildText.includes(normalizedSearchTerm);
+                        child.hidden = !matches;
+                        if (matches) {
+                            sectionHasMatch = true;
+                        }
+                    });
+                });
+
+                if (!sectionHasFilterableItems && !normalizedSearchTerm) {
+                    sectionHasMatch = true;
+                }
+
+                section.hidden = !sectionHasMatch;
+                if (sectionHasMatch) {
+                    panelHasVisibleMatch = true;
+                }
+            });
+
+            return panelHasVisibleMatch;
+        };
+
+        const panelMatchState = panels.map(panel => filterPanel(panel));
+        const activePanelIndex = panels.findIndex(panel => panel.dataset.frameEditorRightSidebarPanel === activeRightSidebarTab);
+        const activePanelHasMatch = activePanelIndex >= 0 ? panelMatchState[activePanelIndex] : panelMatchState.some(Boolean);
+
+        if (filteredEmptyState) {
+            const searchState = activePanel?.dataset.frameEditorRightSidebarSearchState || 'searchable';
+            filteredEmptyState.hidden = !normalizedSearchTerm
+                || activePanelHasMatch
+                || searchState === 'selection-required';
+        }
     },
 
     highlightJsonView(root = this.getRoot()) {
@@ -3843,7 +3999,9 @@ const FramesMode = {
                     return;
                 }
 
-                const isDeleteKey = event.key === 'Delete' || event.key === 'Backspace';
+                // Only treat the explicit Delete key as the canvas-block deletion shortcut.
+                // Backspace should not delete a selected block (prevents accidental deletes).
+                const isDeleteKey = event.key === 'Delete';
                 if (!isDeleteKey || !this.shouldHandleCanvasDeleteShortcut(event)) {
                     const isModifierShortcut = (event.ctrlKey || event.metaKey) && !event.altKey;
                     if (!isModifierShortcut || !this.shouldHandleCanvasClipboardShortcut(event)) {
@@ -3954,6 +4112,21 @@ const FramesMode = {
             });
         });
 
+        root.querySelectorAll('[data-frame-editor-right-sidebar-tab]').forEach(button => {
+            button.addEventListener('click', () => {
+                const nextRightSidebarTab = button.dataset.frameEditorRightSidebarTab;
+                if (!nextRightSidebarTab || nextRightSidebarTab === this.state.rightSidebarTab) {
+                    return;
+                }
+
+                this.state = {
+                    ...this.state,
+                    rightSidebarTab: nextRightSidebarTab
+                };
+                this.renderIntoRoot();
+            });
+        });
+
         root.querySelectorAll('[data-frame-editor-tab]').forEach(button => {
             button.addEventListener('click', () => {
                 const nextTab = button.dataset.frameEditorTab;
@@ -4006,6 +4179,17 @@ const FramesMode = {
                 }
 
                 this.state = nextState;
+                this.renderIntoRoot();
+            });
+        }
+
+        const rightSidebarSearchInput = root.querySelector('#frameEditorRightSidebarSearchInput');
+        if (rightSidebarSearchInput) {
+            rightSidebarSearchInput.addEventListener('input', event => {
+                this.state = {
+                    ...this.state,
+                    rightSidebarSearchTerm: event.target.value
+                };
                 this.renderIntoRoot();
             });
         }
@@ -4188,7 +4372,7 @@ const FramesMode = {
         });
 
         root.querySelectorAll('[data-canvas-zoom-input]').forEach(input => {
-                const commitZoom = () => this.handleCanvasZoomInput(input, root);
+            const commitZoom = () => this.handleCanvasZoomInput(input, root);
 
             input.addEventListener('keydown', event => {
                 if (event.key === 'Enter') {
@@ -4390,7 +4574,7 @@ const FramesMode = {
                     return;
                 }
 
-                 if (block.parentId) {
+                if (block.parentId) {
                     return;
                 }
 
@@ -5103,20 +5287,20 @@ const FramesMode = {
             ? 24
             : block.type === 'qr'
                 ? Math.max(80 + (borderWidth * 2) + (qrPadding?.left || 0) + (qrPadding?.right || 0), 80)
-            : (block.type === 'section'
-                ? 220
-                : (block.type === 'columns'
-                    ? 280
-                    : Math.max(48 + minBorder, 48)));
+                : (block.type === 'section'
+                    ? 220
+                    : (block.type === 'columns'
+                        ? 280
+                        : Math.max(48 + minBorder, 48)));
         const minOuterHeight = block.type === 'line'
             ? 2
             : block.type === 'qr'
                 ? Math.max(80 + (borderWidth * 2) + (qrPadding?.top || 0) + (qrPadding?.bottom || 0), 80)
-            : (block.type === 'section'
-                ? 160
-                : (block.type === 'columns'
-                    ? 180
-                    : Math.max(48 + minBorder, 48)));
+                : (block.type === 'section'
+                    ? 160
+                    : (block.type === 'columns'
+                        ? 180
+                        : Math.max(48 + minBorder, 48)));
         let didResize = false;
         let nextPatch = null;
         let nextPosition = {
@@ -5209,20 +5393,20 @@ const FramesMode = {
                             )
                         )
                     }
-                : block.type === 'line'
-                    ? {
-                        width: Math.max(24, Math.round(outerWidth)),
-                        height: Math.max(2, Math.round(outerHeight))
-                    }
-                : (block.type === 'section' || block.type === 'columns')
-                    ? {
-                        width: Math.max(minOuterWidth, Math.round(outerWidth)),
-                        height: Math.max(minOuterHeight, Math.round(outerHeight))
-                    }
-                : {
-                    width: Math.max(48, Math.round(outerWidth)),
-                    height: Math.max(48, Math.round(outerHeight))
-                };
+                    : block.type === 'line'
+                        ? {
+                            width: Math.max(24, Math.round(outerWidth)),
+                            height: Math.max(2, Math.round(outerHeight))
+                        }
+                        : (block.type === 'section' || block.type === 'columns')
+                            ? {
+                                width: Math.max(minOuterWidth, Math.round(outerWidth)),
+                                height: Math.max(minOuterHeight, Math.round(outerHeight))
+                            }
+                            : {
+                                width: Math.max(48, Math.round(outerWidth)),
+                                height: Math.max(48, Math.round(outerHeight))
+                            };
 
             let resolvedOuterWidth = outerWidth;
             let resolvedOuterHeight = outerHeight;
@@ -5996,10 +6180,10 @@ const FramesMode = {
 
             let [y, x] = value.split('-');
             if (!x) {
-                if (['left','center','right'].includes(y)) {
+                if (['left', 'center', 'right'].includes(y)) {
                     x = y;
                     y = this.getTextBlockPositionY(block) || 'center';
-                } else if (['top','center','bottom'].includes(y)) {
+                } else if (['top', 'center', 'bottom'].includes(y)) {
                     x = this.getTextBlockPositionX(block) || 'center';
                 } else {
                     x = this.getTextBlockPositionX(block) || 'center';
@@ -6007,8 +6191,8 @@ const FramesMode = {
                 }
             }
 
-            x = ['left','center','right'].includes(x) ? x : 'center';
-            y = ['top','center','bottom'].includes(y) ? y : 'center';
+            x = ['left', 'center', 'right'].includes(x) ? x : 'center';
+            y = ['top', 'center', 'bottom'].includes(y) ? y : 'center';
 
             const patchX = this.getTextBlockInnerAlignmentPatch(block, 'textPositionX', x);
             const blockAfterX = {
