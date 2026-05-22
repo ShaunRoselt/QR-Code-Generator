@@ -68,6 +68,18 @@ const FramesMode = {
         { id: 'center', label: 'Center' },
         { id: 'right', label: 'Right' }
     ]),
+    PARENT_POSITION_OPTIONS: Object.freeze([
+        { id: 'top-left', label: 'Top left' },
+        { id: 'top-center', label: 'Top center' },
+        { id: 'top-right', label: 'Top right' },
+        { id: 'center-left', label: 'Left' },
+        { id: 'center', label: 'Center' },
+        { id: 'center-right', label: 'Right' },
+        { id: 'bottom-left', label: 'Bottom left' },
+        { id: 'bottom-center', label: 'Bottom' },
+        { id: 'bottom-right', label: 'Bottom right' },
+        { id: 'custom', label: 'Custom' }
+    ]),
     SHAPE_BLOCK_OPTIONS: Object.freeze([
         { id: 'rectangle', label: 'Rectangle' },
         { id: 'circle', label: 'Circle' },
@@ -557,6 +569,7 @@ const FramesMode = {
         // Render the canvas entry with no left-indent so it starts flush-left.
         return `
             <div class="frame-editor-overview-item-shell" style="--frame-editor-overview-depth: 0; grid-template-columns: 0px minmax(0, 1fr); gap: 0.15rem;">
+                <span class="frame-editor-overview-item-toggle-spacer" aria-hidden="true"></span>
                 <button
                     type="button"
                     class="frame-editor-overview-item${isActive ? ' active' : ''}"
@@ -1439,6 +1452,18 @@ const FramesMode = {
     renderBlockTransformControls(block) {
         return `
             ${this.renderTextPropertyGroupHeading('Transform')}
+            ${this.canUseParentPositionControl(block)
+                ? `
+                    <label class="frame-editor-field frame-editor-field-wide">
+                        <span>${this.escapeHTML(I18n.translateString('Position in parent'))}</span>
+                        <select class="frame-editor-select" data-block-setting="parentPositionCombined">
+                            ${this.PARENT_POSITION_OPTIONS.map(option => `
+                                <option value="${this.escapeHTML(option.id)}" ${this.getCombinedParentPositionSelected(block) === option.id ? 'selected' : ''}>${this.escapeHTML(I18n.translateString(option.label))}</option>
+                            `).join('')}
+                        </select>
+                    </label>
+                `
+                : ''}
             ${this.renderTextMeasurementField('Rotation', 'rotation', block.rotation ?? 0, -180, 180, 1)}
         `;
     },
@@ -1865,6 +1890,10 @@ const FramesMode = {
         return this.normalizeBlockRotation(block?.rotation || 0);
     },
 
+    canUseParentPositionControl(block, parentBlock = this.getParentBlock(block)) {
+        return Boolean(block?.parentId && parentBlock && !this.isContainerBlock(parentBlock));
+    },
+
     normalizeBlockRotation(value) {
         let rotation = Number.isFinite(Number(value)) ? Number(value) : 0;
         while (rotation <= -180) {
@@ -1878,6 +1907,95 @@ const FramesMode = {
 
     getCanvasBlockTransform(rotation = 0) {
         return `translate(-50%, -50%) rotate(${this.normalizeBlockRotation(rotation)}deg)`;
+    },
+
+    getNestedBlockPositionAnchors(parentBlock, block, parentLayout = this.getCanvasBlockLayout(parentBlock), footprintOverride = null) {
+        const frame = this.getContainerBlockInnerFrame(parentBlock, parentLayout);
+        const footprint = footprintOverride || this.getCanvasBlockFootprint(block);
+        const halfWidthPct = frame.width > 0 ? (((Number(footprint?.width) || 0) / 2 / frame.width) * 100) : 50;
+        const halfHeightPct = frame.height > 0 ? (((Number(footprint?.height) || 0) / 2 / frame.height) * 100) : 50;
+
+        return {
+            minXPct: halfWidthPct >= 50 ? 50 : halfWidthPct,
+            maxXPct: halfWidthPct >= 50 ? 50 : (100 - halfWidthPct),
+            minYPct: halfHeightPct >= 50 ? 50 : halfHeightPct,
+            maxYPct: halfHeightPct >= 50 ? 50 : (100 - halfHeightPct)
+        };
+    },
+
+    getNestedBlockAxisPositionValue(positionPct, startPct, centerPct, endPct, startValue, centerValue, endValue) {
+        const normalizedPosition = Number.isFinite(Number(positionPct)) ? Number(positionPct) : centerPct;
+        const tolerance = 1.5;
+
+        if (Math.abs(normalizedPosition - startPct) <= tolerance) {
+            return startValue;
+        }
+
+        if (Math.abs(normalizedPosition - endPct) <= tolerance) {
+            return endValue;
+        }
+
+        if (Math.abs(normalizedPosition - centerPct) <= tolerance) {
+            return centerValue;
+        }
+
+        return 'custom';
+    },
+
+    getCombinedParentPositionSelected(block) {
+        const parentBlock = this.getParentBlock(block);
+        if (!this.canUseParentPositionControl(block, parentBlock)) {
+            return 'center';
+        }
+
+        const parentLayout = this.getCanvasBlockLayout(parentBlock);
+        const position = this.getResolvedNestedBlockPosition(parentBlock, block, parentLayout);
+        const anchors = this.getNestedBlockPositionAnchors(parentBlock, block, parentLayout);
+        const x = this.getNestedBlockAxisPositionValue(position.xPct, anchors.minXPct, 50, anchors.maxXPct, 'left', 'center', 'right');
+        const y = this.getNestedBlockAxisPositionValue(position.yPct, anchors.minYPct, 50, anchors.maxYPct, 'top', 'center', 'bottom');
+
+        if (x === 'custom' || y === 'custom') {
+            return 'custom';
+        }
+
+        if (x === 'center' && y === 'center') {
+            return 'center';
+        }
+
+        return `${y}-${x}`;
+    },
+
+    getParentPositionPatch(block, combinedValue) {
+        const parentBlock = this.getParentBlock(block);
+        if (!this.canUseParentPositionControl(block, parentBlock)) {
+            return {};
+        }
+
+        const normalizedValue = String(combinedValue || '').trim().toLowerCase();
+        if (normalizedValue === 'custom') {
+            return {
+                nestedPositionMode: 'manual'
+            };
+        }
+
+        let x = 'center';
+        let y = 'center';
+        if (normalizedValue === 'center') {
+            x = 'center';
+            y = 'center';
+        } else {
+            const [vertical, horizontal] = normalizedValue.split('-');
+            y = ['top', 'center', 'bottom'].includes(vertical) ? vertical : 'center';
+            x = ['left', 'center', 'right'].includes(horizontal) ? horizontal : 'center';
+        }
+
+        const parentLayout = this.getCanvasBlockLayout(parentBlock);
+        const anchors = this.getNestedBlockPositionAnchors(parentBlock, block, parentLayout);
+        return {
+            nestedPositionMode: 'manual',
+            xPct: x === 'left' ? anchors.minXPct : (x === 'right' ? anchors.maxXPct : 50),
+            yPct: y === 'top' ? anchors.minYPct : (y === 'bottom' ? anchors.maxYPct : 50)
+        };
     },
 
     getTextBlockFontSizePreset(block) {
@@ -2080,6 +2198,29 @@ const FramesMode = {
             ? blockOrType
             : blockOrType?.type;
         return blockType === 'section' || blockType === 'columns';
+    },
+
+    usesManualNestedBlockPosition(parentBlock, childBlock) {
+        if (!parentBlock || this.isContainerBlock(parentBlock)) {
+            return false;
+        }
+
+        return String(childBlock?.nestedPositionMode || '').trim().toLowerCase() === 'manual';
+    },
+
+    getCanvasBlockSceneRotation(block, blocks = this.state.canvasBlocks) {
+        if (!block) {
+            return 0;
+        }
+
+        const parentBlock = block.parentId && Array.isArray(blocks)
+            ? blocks.find(candidate => candidate?.id === block.parentId)
+            : null;
+        const parentRotation = parentBlock
+            ? this.getCanvasBlockSceneRotation(parentBlock, blocks)
+            : 0;
+
+        return this.normalizeBlockRotation(parentRotation + this.getBlockRotation(block));
     },
 
     getParentBlock(block) {
@@ -2309,8 +2450,9 @@ const FramesMode = {
         }
 
         const layout = this.getQrBlockLayout(block);
-        const padding = this.getTextBlockPadding(block);
+        const padding = this.getQrBlockPadding(block);
         const isQrInnerSelected = this.isQrInnerSelected(block);
+        const shouldShowQrHandleLayer = isQrInnerSelected;
         const qrRotation = this.getQrBlockRotation(block);
         const childLayer = this.renderCanvasBlockChildLayer(block, layout);
         const qrSurfaceStyle = [
@@ -2331,7 +2473,7 @@ const FramesMode = {
                 </div>
             </div>
             ${childLayer}
-            ${isQrInnerSelected
+            ${shouldShowQrHandleLayer
                 ? this.renderQrBlockInteractionLayer(block)
                 : (this.state.selectedBlockId === block.id ? this.renderCanvasBlockHandles(block) : '')}
         `;
@@ -2384,7 +2526,9 @@ const FramesMode = {
 
         const childMarkup = block?.type === 'columns'
             ? this.renderColumnsContainerChildren(block, layout, childBlocks)
-            : this.renderSectionContainerChildren(block, layout, childBlocks);
+            : (block?.type === 'section'
+                ? this.renderSectionContainerChildren(block, layout, childBlocks)
+                : this.renderFreePositionedContainerChildren(block, layout, childBlocks));
 
         return `
             ${block?.type === 'columns' ? this.renderColumnsContainerGuides(block, layout) : ''}
@@ -2403,6 +2547,13 @@ const FramesMode = {
 
     renderColumnsContainerChildren(block, layout, childBlocks = this.getChildBlocks(block.id)) {
         const placements = this.getColumnsContainerChildPlacements(block, layout, childBlocks);
+        return placements.map(({ childBlock, centerX, centerY }, index) => {
+            return this.renderNestedCanvasBlock(childBlock, centerX, centerY, index);
+        }).join('');
+    },
+
+    renderFreePositionedContainerChildren(block, layout, childBlocks = this.getChildBlocks(block.id)) {
+        const placements = this.getFreePositionedContainerChildPlacements(block, layout, childBlocks);
         return placements.map(({ childBlock, centerX, centerY }, index) => {
             return this.renderNestedCanvasBlock(childBlock, centerX, centerY, index);
         }).join('');
@@ -2518,6 +2669,69 @@ const FramesMode = {
         });
     },
 
+    getFreePositionedContainerChildPlacements(block, layout = this.getCanvasBlockLayout(block), childBlocks = this.getChildBlocks(block.id)) {
+        const frame = this.getContainerBlockInnerFrame(block, layout);
+        const flowChildren = childBlocks.filter(childBlock => !this.usesManualNestedBlockPosition(block, childBlock));
+        const flowPlacementMap = new Map(
+            this.getSectionContainerChildPlacements(block, layout, flowChildren)
+                .map(placement => [placement.childBlock.id, placement])
+        );
+
+        return childBlocks.map(childBlock => {
+            if (this.usesManualNestedBlockPosition(block, childBlock)) {
+                const position = this.clampNestedBlockPosition(block, childBlock, {
+                    xPct: childBlock?.xPct,
+                    yPct: childBlock?.yPct
+                }, layout);
+
+                return {
+                    childBlock,
+                    centerX: frame.left + (frame.width * (position.xPct / 100)),
+                    centerY: frame.top + (frame.height * (position.yPct / 100))
+                };
+            }
+
+            const flowPlacement = flowPlacementMap.get(childBlock.id);
+            if (flowPlacement) {
+                return flowPlacement;
+            }
+
+            return {
+                childBlock,
+                centerX: frame.left + (frame.width / 2),
+                centerY: frame.top + (frame.height / 2)
+            };
+        });
+    },
+
+    getResolvedNestedBlockPosition(parentBlock, childBlock, parentLayout = this.getCanvasBlockLayout(parentBlock), childBlocks = this.getChildBlocks(parentBlock?.id)) {
+        const frame = this.getContainerBlockInnerFrame(parentBlock, parentLayout);
+        if (frame.width <= 0 || frame.height <= 0) {
+            return {
+                xPct: 50,
+                yPct: 50
+            };
+        }
+
+        const placements = this.isContainerBlock(parentBlock)
+            ? (parentBlock?.type === 'columns'
+                ? this.getColumnsContainerChildPlacements(parentBlock, parentLayout, childBlocks)
+                : this.getSectionContainerChildPlacements(parentBlock, parentLayout, childBlocks))
+            : this.getFreePositionedContainerChildPlacements(parentBlock, parentLayout, childBlocks);
+        const placement = placements.find(candidate => candidate.childBlock.id === childBlock?.id);
+        if (!placement) {
+            return {
+                xPct: 50,
+                yPct: 50
+            };
+        }
+
+        return {
+            xPct: Number((((placement.centerX - frame.left) / frame.width) * 100).toFixed(4)),
+            yPct: Number((((placement.centerY - frame.top) / frame.height) * 100).toFixed(4))
+        };
+    },
+
     getResolvedContainerChildCenterX(alignment, left, width, childWidth) {
         if (alignment === 'right') {
             return left + Math.max(childWidth / 2, width - (childWidth / 2));
@@ -2604,7 +2818,10 @@ const FramesMode = {
         }
 
         if (block.parentId) {
-            return '';
+            const parentBlock = this.getParentBlock(block);
+            if (!parentBlock || this.isContainerBlock(parentBlock)) {
+                return '';
+            }
         }
 
         if (block.type === 'qr' && this.isQrInnerSelected(block)) {
@@ -2613,6 +2830,13 @@ const FramesMode = {
 
         if (block.type === 'text' && this.isTextInnerSelected(block)) {
             return '';
+        }
+
+        if (block.type === 'qr' && this.canUseParentPositionControl(block)) {
+            return `
+                ${this.renderBlockRotateHandle()}
+                ${this.renderShapeImageResizeHandles()}
+            `;
         }
 
         if (block.type === 'shape' || block.type === 'image' || block.type === 'line' || block.type === 'section' || block.type === 'columns') {
@@ -2735,7 +2959,7 @@ const FramesMode = {
             return false;
         }
 
-        const padding = this.getTextBlockPadding(block);
+        const padding = this.getQrBlockPadding(block);
         const layout = this.getQrBlockLayout(block);
         const qrRotation = this.getQrBlockRotation(block);
         const isQrInnerSelected = this.isQrInnerSelected(block);
@@ -3043,8 +3267,21 @@ const FramesMode = {
         };
     },
 
+    getQrBlockPadding(block) {
+        if (this.canUseParentPositionControl(block)) {
+            return {
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0
+            };
+        }
+
+        return this.getTextBlockPadding(block);
+    },
+
     getQrBlockLayout(block) {
-        const padding = this.getTextBlockPadding(block);
+        const padding = this.getQrBlockPadding(block);
         const borderWidth = Math.max(0, Number(block?.borderWidth) || 0);
         const size = this.getQrBlockSize(block);
         return {
@@ -3596,6 +3833,16 @@ const FramesMode = {
         }
         if (!this.handleFrameEditorKeydown) {
             this.handleFrameEditorKeydown = event => {
+                if (event.key === 'Escape' && this.shouldHandleCanvasParentEscapeShortcut(event)) {
+                    const selectedBlock = this.getSelectedBlock();
+                    const parentBlock = this.getParentBlock(selectedBlock);
+                    if (parentBlock?.id) {
+                        event.preventDefault();
+                        this.selectBlock(parentBlock.id);
+                    }
+                    return;
+                }
+
                 const isDeleteKey = event.key === 'Delete' || event.key === 'Backspace';
                 if (!isDeleteKey || !this.shouldHandleCanvasDeleteShortcut(event)) {
                     const isModifierShortcut = (event.ctrlKey || event.metaKey) && !event.altKey;
@@ -3839,7 +4086,9 @@ const FramesMode = {
             });
 
             stage.addEventListener('dragover', event => {
-                if (!this.getDraggedBlockType(event)) {
+                const blockType = this.getDraggedBlockType(event);
+                const overviewBlockId = this.getDraggedOverviewBlockId(event) || this.overviewDragBlockId;
+                if (!blockType && !overviewBlockId) {
                     return;
                 }
 
@@ -3856,13 +4105,22 @@ const FramesMode = {
 
             stage.addEventListener('drop', event => {
                 const blockType = this.getDraggedBlockType(event);
+                const overviewBlockId = this.getDraggedOverviewBlockId(event) || this.overviewDragBlockId;
                 stage.classList.remove('is-drop-target');
-                if (!this.isSupportedBlockType(blockType)) {
+                if (!this.isSupportedBlockType(blockType) && !overviewBlockId) {
                     return;
                 }
 
                 event.preventDefault();
-                this.addBlock(blockType, this.getCanvasPositionFromPointer(root, event.clientX, event.clientY), root);
+                const dropPosition = this.getCanvasPositionFromPointer(root, event.clientX, event.clientY);
+                if (this.isSupportedBlockType(blockType)) {
+                    this.addBlock(blockType, dropPosition, root);
+                    return;
+                }
+
+                this.moveCanvasOverviewBlock(overviewBlockId, '', 'after', root, dropPosition);
+                this.clearCanvasOverviewDropIndicators(root);
+                this.overviewDragBlockId = '';
             });
 
             stage.addEventListener('wheel', event => {
@@ -4021,6 +4279,22 @@ const FramesMode = {
                 const qrContent = event.target.closest('[data-frame-editor-qr-content]');
                 const blockId = blockElement.dataset.frameEditorCanvasBlock;
                 const block = this.getBlockById(blockId);
+                const parentBlock = block ? this.getParentBlock(block) : null;
+                const clickedTransparentNestedQrSurface = block?.type === 'qr'
+                    && Boolean(block?.parentId)
+                    && Boolean(parentBlock)
+                    && Boolean(event.target.closest('.frame-editor-qr-block-surface'))
+                    && !qrContent
+                    && this.isTransparentTextBlockBackground(block)
+                    && Math.max(0, Number(block.borderWidth) || 0) === 0;
+
+                if (clickedTransparentNestedQrSurface) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    this.selectBlock(parentBlock.id);
+                    return;
+                }
+
                 if (textContent && block?.type === 'text' && this.canSelectTextInnerBlock(block)) {
                     event.preventDefault();
                     event.stopPropagation();
@@ -4065,7 +4339,7 @@ const FramesMode = {
                     return;
                 }
 
-                if (block?.parentId) {
+                if (block?.parentId && (!parentBlock || this.isContainerBlock(parentBlock))) {
                     event.preventDefault();
                     event.stopPropagation();
                     this.selectBlock(blockId);
@@ -4250,6 +4524,10 @@ const FramesMode = {
         });
 
         const overviewList = root.querySelector('[data-frame-editor-overview-list]');
+        const overviewSidebarPanel = root.querySelector('#frameEditorSidebarPanel');
+        const getOverviewInteractiveTarget = target => target instanceof Element
+            ? target.closest('[data-frame-editor-overview-block], [data-frame-editor-overview-toggle], [data-frame-editor-overview-canvas], [data-frame-editor-overview-root-drop]')
+            : null;
         root.querySelectorAll('[data-frame-editor-overview-toggle]').forEach(button => {
             button.addEventListener('click', event => {
                 event.preventDefault();
@@ -4337,33 +4615,75 @@ const FramesMode = {
             button.addEventListener('click', () => {
                 this.selectCanvas({ focusInspector: false });
             });
+
+            button.addEventListener('dragover', event => {
+                this.handleCanvasOverviewRootDropDragOver(event, root, button);
+            });
+
+            button.addEventListener('drop', event => {
+                this.handleCanvasOverviewRootDrop(event, root);
+            });
+        });
+
+        overviewList?.addEventListener('dragover', event => {
+            if (event.defaultPrevented) {
+                return;
+            }
+
+            const interactiveTarget = getOverviewInteractiveTarget(event.target);
+            if (interactiveTarget) {
+                return;
+            }
+
+            this.handleCanvasOverviewRootDropDragOver(event, root);
+        });
+
+        overviewList?.addEventListener('drop', event => {
+            if (event.defaultPrevented) {
+                return;
+            }
+
+            const interactiveTarget = getOverviewInteractiveTarget(event.target);
+            if (interactiveTarget) {
+                return;
+            }
+
+            this.handleCanvasOverviewRootDrop(event, root);
+        });
+
+        overviewSidebarPanel?.addEventListener('dragover', event => {
+            if (event.defaultPrevented) {
+                return;
+            }
+
+            const interactiveTarget = getOverviewInteractiveTarget(event.target);
+            if (interactiveTarget) {
+                return;
+            }
+
+            this.handleCanvasOverviewRootDropDragOver(event, root);
+        });
+
+        overviewSidebarPanel?.addEventListener('drop', event => {
+            if (event.defaultPrevented) {
+                return;
+            }
+
+            const interactiveTarget = getOverviewInteractiveTarget(event.target);
+            if (interactiveTarget) {
+                return;
+            }
+
+            this.handleCanvasOverviewRootDrop(event, root);
         });
 
         root.querySelectorAll('[data-frame-editor-overview-root-drop]').forEach(dropZone => {
             dropZone.addEventListener('dragover', event => {
-                const sourceBlockId = this.getDraggedOverviewBlockId(event) || this.overviewDragBlockId;
-                if (!sourceBlockId) {
-                    return;
-                }
-
-                event.preventDefault();
-                event.dataTransfer.dropEffect = 'move';
-                this.clearCanvasOverviewDropIndicators(root);
-                overviewList?.classList.add('is-dragging');
-                root.querySelector?.(`[data-frame-editor-overview-block="${this.overviewDragBlockId}"]`)?.classList?.add('is-dragging');
-                dropZone.classList.add('is-active');
+                this.handleCanvasOverviewRootDropDragOver(event, root, dropZone);
             });
 
             dropZone.addEventListener('drop', event => {
-                const sourceBlockId = this.getDraggedOverviewBlockId(event) || this.overviewDragBlockId;
-                if (!sourceBlockId) {
-                    return;
-                }
-
-                event.preventDefault();
-                this.moveCanvasOverviewBlock(sourceBlockId, '', 'after', root);
-                this.clearCanvasOverviewDropIndicators(root);
-                this.overviewDragBlockId = '';
+                this.handleCanvasOverviewRootDrop(event, root);
             });
         });
 
@@ -4520,7 +4840,10 @@ const FramesMode = {
             return;
         }
 
-        if (block.parentId) {
+        const parentBlock = this.getParentBlock(block);
+        const canDragWithinParent = parentBlock && !this.isContainerBlock(parentBlock);
+
+        if (block.parentId && !canDragWithinParent) {
             event.preventDefault();
             this.selectBlock(blockId);
             if (typeof options.onClick === 'function') {
@@ -4535,12 +4858,24 @@ const FramesMode = {
             x: event.clientX,
             y: event.clientY
         };
-        let nextPosition = {
-            xPct: block.xPct,
-            yPct: block.yPct
-        };
+        const startPosition = canDragWithinParent
+            ? this.getResolvedNestedBlockPosition(parentBlock, block)
+            : {
+                xPct: block.xPct,
+                yPct: block.yPct
+            };
+        let nextPosition = { ...startPosition };
         let didMove = false;
         const dragFootprint = this.getCanvasBlockFootprint(block, blockElement);
+        const parentLayout = canDragWithinParent
+            ? this.getCanvasBlockLayout(parentBlock)
+            : null;
+        const parentFrame = canDragWithinParent
+            ? this.getContainerBlockInnerFrame(parentBlock, parentLayout)
+            : null;
+        const parentRotationRadians = canDragWithinParent
+            ? ((this.getCanvasBlockSceneRotation(parentBlock) * Math.PI) / 180)
+            : 0;
 
         const onPointerMove = moveEvent => {
             const deltaX = moveEvent.clientX - startPointer.x;
@@ -4555,12 +4890,34 @@ const FramesMode = {
                 return;
             }
 
+            if (canDragWithinParent && parentFrame) {
+                const zoom = Math.max(this.state.canvasZoom, 0.01);
+                const localDeltaX = ((deltaX / zoom) * Math.cos(parentRotationRadians))
+                    + ((deltaY / zoom) * Math.sin(parentRotationRadians));
+                const localDeltaY = (-(deltaX / zoom) * Math.sin(parentRotationRadians))
+                    + ((deltaY / zoom) * Math.cos(parentRotationRadians));
+
+                nextPosition = this.clampNestedBlockPosition(
+                    parentBlock,
+                    block,
+                    {
+                        xPct: startPosition.xPct + ((localDeltaX / Math.max(parentFrame.width, 1)) * 100),
+                        yPct: startPosition.yPct + ((localDeltaY / Math.max(parentFrame.height, 1)) * 100)
+                    },
+                    parentLayout,
+                    dragFootprint
+                );
+                blockElement.style.left = `${parentFrame.left + (parentFrame.width * (nextPosition.xPct / 100))}px`;
+                blockElement.style.top = `${parentFrame.top + (parentFrame.height * (nextPosition.yPct / 100))}px`;
+                return;
+            }
+
             nextPosition = this.clampCanvasBlockPosition(
                 root,
                 block,
                 {
-                    xPct: block.xPct + (((deltaX / this.state.canvasZoom) / Math.max(canvasScroll.clientWidth, 1)) * 100),
-                    yPct: block.yPct + (((deltaY / this.state.canvasZoom) / Math.max(canvasScroll.clientHeight, 1)) * 100)
+                    xPct: startPosition.xPct + (((deltaX / this.state.canvasZoom) / Math.max(canvasScroll.clientWidth, 1)) * 100),
+                    yPct: startPosition.yPct + (((deltaY / this.state.canvasZoom) / Math.max(canvasScroll.clientHeight, 1)) * 100)
                 },
                 null,
                 dragFootprint
@@ -4576,7 +4933,14 @@ const FramesMode = {
             blockElement.classList.remove('dragging');
 
             if (didMove) {
-                this.updateBlock(blockId, nextPosition);
+                const patch = canDragWithinParent
+                    ? {
+                        ...nextPosition,
+                        nestedPositionMode: 'manual'
+                    }
+                    : nextPosition;
+                this.updateBlock(blockId, patch);
+                this.syncInspectorBlockControls(root, patch);
                 this.selectBlock(blockId);
                 return;
             }
@@ -4708,7 +5072,7 @@ const FramesMode = {
         const block = this.getBlockById(blockId);
         const canvasScroll = root.querySelector('[data-frame-editor-canvas-scroll]');
         const metrics = this.getCanvasLayoutMetrics(root);
-        if (!handle || !blockElement || !block || !canvasScroll || !metrics || (block.type !== 'shape' && block.type !== 'image' && block.type !== 'line' && block.type !== 'section' && block.type !== 'columns')) {
+        if (!handle || !blockElement || !block || !canvasScroll || !metrics || (block.type !== 'shape' && block.type !== 'image' && block.type !== 'line' && block.type !== 'section' && block.type !== 'columns' && block.type !== 'qr')) {
             return;
         }
 
@@ -4716,10 +5080,14 @@ const FramesMode = {
         event.stopPropagation();
 
         const zoom = Math.max(this.state.canvasZoom, 0.01);
-        const surfaceElement = blockElement.querySelector('.frame-editor-shape-block-surface, .frame-editor-image-block-surface, .frame-editor-line-block-surface, .frame-editor-container-block-surface') || blockElement;
+        const surfaceElement = blockElement.querySelector('.frame-editor-shape-block-surface, .frame-editor-image-block-surface, .frame-editor-line-block-surface, .frame-editor-container-block-surface, .frame-editor-qr-block-surface') || blockElement;
         const surfaceRect = surfaceElement.getBoundingClientRect();
         const startOuterWidth = surfaceRect.width / zoom;
         const startOuterHeight = surfaceRect.height / zoom;
+        const qrPadding = block.type === 'qr'
+            ? this.getQrBlockPadding(block)
+            : null;
+        const borderWidth = Math.max(0, Number(block.borderWidth) || 0);
         const startCenter = {
             x: (block.xPct / 100) * metrics.viewportWidth,
             y: (block.yPct / 100) * metrics.viewportHeight
@@ -4730,9 +5098,11 @@ const FramesMode = {
             top: startCenter.y - (startOuterHeight / 2),
             bottom: startCenter.y + (startOuterHeight / 2)
         };
-        const minBorder = block.type === 'image' ? (Math.max(0, Number(block.borderWidth) || 0) * 2) : 0;
+        const minBorder = block.type === 'image' ? (borderWidth * 2) : 0;
         const minOuterWidth = block.type === 'line'
             ? 24
+            : block.type === 'qr'
+                ? Math.max(80 + (borderWidth * 2) + (qrPadding?.left || 0) + (qrPadding?.right || 0), 80)
             : (block.type === 'section'
                 ? 220
                 : (block.type === 'columns'
@@ -4740,6 +5110,8 @@ const FramesMode = {
                     : Math.max(48 + minBorder, 48)));
         const minOuterHeight = block.type === 'line'
             ? 2
+            : block.type === 'qr'
+                ? Math.max(80 + (borderWidth * 2) + (qrPadding?.top || 0) + (qrPadding?.bottom || 0), 80)
             : (block.type === 'section'
                 ? 160
                 : (block.type === 'columns'
@@ -4767,7 +5139,11 @@ const FramesMode = {
             blockElement.style.top = `${previewBlock.yPct}%`;
             blockElement.style.width = `${layout.width}px`;
             blockElement.style.transform = this.getCanvasBlockTransform(previewBlock.rotation);
-            this.syncShapeImageBlockPreview(blockElement, previewBlock);
+            if (previewBlock.type === 'qr') {
+                this.syncQrBlockPreview(blockElement, previewBlock);
+            } else {
+                this.syncShapeImageBlockPreview(blockElement, previewBlock);
+            }
             this.syncInspectorBlockControls(root, nextPatch);
         };
 
@@ -4811,13 +5187,28 @@ const FramesMode = {
 
             const outerWidth = Math.max(minOuterWidth, nextRight - nextLeft);
             const outerHeight = Math.max(minOuterHeight, nextBottom - nextTop);
-            const borderWidth = Math.max(0, Number(block.borderWidth) || 0);
 
             nextPatch = block.type === 'image'
                 ? {
                     width: Math.max(48, Math.round(outerWidth - (borderWidth * 2))),
                     height: Math.max(48, Math.round(outerHeight - (borderWidth * 2)))
                 }
+                : block.type === 'qr'
+                    ? {
+                        size: Math.max(
+                            80,
+                            Math.round(
+                                (handle === 'left' || handle === 'right')
+                                    ? (outerWidth - (borderWidth * 2) - (qrPadding?.left || 0) - (qrPadding?.right || 0))
+                                    : ((handle === 'top' || handle === 'bottom')
+                                        ? (outerHeight - (borderWidth * 2) - (qrPadding?.top || 0) - (qrPadding?.bottom || 0))
+                                        : Math.min(
+                                            outerWidth - (borderWidth * 2) - (qrPadding?.left || 0) - (qrPadding?.right || 0),
+                                            outerHeight - (borderWidth * 2) - (qrPadding?.top || 0) - (qrPadding?.bottom || 0)
+                                        ))
+                            )
+                        )
+                    }
                 : block.type === 'line'
                     ? {
                         width: Math.max(24, Math.round(outerWidth)),
@@ -4836,10 +5227,15 @@ const FramesMode = {
             let resolvedOuterWidth = outerWidth;
             let resolvedOuterHeight = outerHeight;
 
-            if (block.type === 'line') {
+            if (block.type === 'line' || block.type === 'qr') {
                 nextPatch = this.normalizeLineBlockPatch(block, nextPatch);
-                resolvedOuterWidth = nextPatch.width;
-                resolvedOuterHeight = nextPatch.height;
+                if (block.type === 'qr') {
+                    resolvedOuterWidth = nextPatch.size + (borderWidth * 2) + (qrPadding?.left || 0) + (qrPadding?.right || 0);
+                    resolvedOuterHeight = nextPatch.size + (borderWidth * 2) + (qrPadding?.top || 0) + (qrPadding?.bottom || 0);
+                } else {
+                    resolvedOuterWidth = nextPatch.width;
+                    resolvedOuterHeight = nextPatch.height;
+                }
 
                 const provisionalCenterX = nextLeft + (outerWidth / 2);
                 const provisionalCenterY = nextTop + (outerHeight / 2);
@@ -5635,6 +6031,17 @@ const FramesMode = {
             this.clampUpdatedBlockToCanvas(root, updatedBlock);
             return;
         }
+
+        if (setting === 'parentPositionCombined') {
+            const patch = this.getParentPositionPatch(block, control.value);
+            this.updateBlock(block.id, patch);
+            this.syncInspectorBlockControls(root, patch);
+            const updatedBlock = this.getBlockById(block.id);
+            this.syncCanvasBlock(root, updatedBlock);
+            this.clampUpdatedBlockToCanvas(root, updatedBlock);
+            return;
+        }
+
         const numericSettings = new Set(['fontSize', 'width', 'height', 'size', 'lineHeight', 'letterSpacing', 'paddingX', 'paddingY', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderWidth', 'borderRadius', 'rotation', 'childGap', 'columnCount', 'columnGap']);
         let nextValue;
 
@@ -5793,6 +6200,21 @@ const FramesMode = {
                 control.value = String(value);
             });
         });
+
+        if (selectedBlock) {
+            const mergedBlock = {
+                ...selectedBlock,
+                ...patch
+            };
+
+            root.querySelectorAll('[data-block-setting="parentPositionCombined"]').forEach(control => {
+                if (control === document.activeElement) {
+                    return;
+                }
+
+                control.value = this.getCombinedParentPositionSelected(mergedBlock);
+            });
+        }
 
         if (selectedBlock?.type === 'text') {
             const mergedBlock = {
@@ -6672,7 +7094,7 @@ const FramesMode = {
         }
     },
 
-    moveCanvasOverviewBlock(sourceBlockId, targetBlockId = '', placement = 'after', root = this.getRoot()) {
+    moveCanvasOverviewBlock(sourceBlockId, targetBlockId = '', placement = 'after', root = this.getRoot(), rootPosition = null) {
         if (!sourceBlockId) {
             return false;
         }
@@ -6760,7 +7182,10 @@ const FramesMode = {
             }
             rootOrderIds.splice(insertIndex, 0, sourceBlockId);
 
-            if (previousCenterPosition) {
+            if (rootPosition && Number.isFinite(Number(rootPosition.xPct)) && Number.isFinite(Number(rootPosition.yPct))) {
+                sourceBlock.xPct = Number(rootPosition.xPct);
+                sourceBlock.yPct = Number(rootPosition.yPct);
+            } else if (previousCenterPosition) {
                 const nextPosition = this.getCanvasPercentPositionFromCenterPx(previousCenterPosition, root);
                 if (nextPosition) {
                     sourceBlock.xPct = nextPosition.xPct;
@@ -7232,6 +7657,36 @@ const FramesMode = {
         return event.dataTransfer?.getData('text/frame-editor-overview-block') || '';
     },
 
+    handleCanvasOverviewRootDropDragOver(event, root = this.getRoot(), activeTarget = null) {
+        const sourceBlockId = this.getDraggedOverviewBlockId(event) || this.overviewDragBlockId;
+        if (!sourceBlockId) {
+            return false;
+        }
+
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        this.clearCanvasOverviewDropIndicators(root);
+
+        const overviewList = root?.querySelector?.('[data-frame-editor-overview-list]');
+        overviewList?.classList.add('is-dragging');
+        root?.querySelector?.(`[data-frame-editor-overview-block="${sourceBlockId}"]`)?.classList?.add('is-dragging');
+        activeTarget?.classList?.add('is-active');
+        return true;
+    },
+
+    handleCanvasOverviewRootDrop(event, root = this.getRoot()) {
+        const sourceBlockId = this.getDraggedOverviewBlockId(event) || this.overviewDragBlockId;
+        if (!sourceBlockId) {
+            return false;
+        }
+
+        event.preventDefault();
+        const moved = this.moveCanvasOverviewBlock(sourceBlockId, '', 'after', root);
+        this.clearCanvasOverviewDropIndicators(root);
+        this.overviewDragBlockId = '';
+        return moved;
+    },
+
     getCanvasOverviewDropPlacement(button, clientY) {
         const targetBlock = this.getBlockById(button?.dataset?.frameEditorOverviewBlock || '');
         const rect = button?.getBoundingClientRect?.();
@@ -7343,9 +7798,11 @@ const FramesMode = {
 
         const parentLayout = this.getCanvasBlockLayout(parentBlock);
         const childBlocks = this.getChildBlocks(parentBlock.id, blocks);
-        const placements = parentBlock.type === 'columns'
-            ? this.getColumnsContainerChildPlacements(parentBlock, parentLayout, childBlocks)
-            : this.getSectionContainerChildPlacements(parentBlock, parentLayout, childBlocks);
+        const placements = this.isContainerBlock(parentBlock)
+            ? (parentBlock.type === 'columns'
+                ? this.getColumnsContainerChildPlacements(parentBlock, parentLayout, childBlocks)
+                : this.getSectionContainerChildPlacements(parentBlock, parentLayout, childBlocks))
+            : this.getFreePositionedContainerChildPlacements(parentBlock, parentLayout, childBlocks);
         const placement = placements.find(candidate => candidate.childBlock.id === block.id);
         if (!placement) {
             return parentCenter;
@@ -7353,7 +7810,7 @@ const FramesMode = {
 
         const localOffsetX = placement.centerX - (parentLayout.width / 2);
         const localOffsetY = placement.centerY - (parentLayout.height / 2);
-        const rotationRadians = (this.getBlockRotation(parentBlock) * Math.PI) / 180;
+        const rotationRadians = (this.getCanvasBlockSceneRotation(parentBlock, blocks) * Math.PI) / 180;
         const rotatedOffsetX = (localOffsetX * Math.cos(rotationRadians)) - (localOffsetY * Math.sin(rotationRadians));
         const rotatedOffsetY = (localOffsetX * Math.sin(rotationRadians)) + (localOffsetY * Math.cos(rotationRadians));
 
@@ -7492,6 +7949,20 @@ const FramesMode = {
         return target === document.body || Boolean(target.closest?.('.frame-editor-layout, .frame-editor-workspace-panel, [data-frame-editor-stage]'));
     },
 
+    shouldHandleCanvasParentEscapeShortcut(event) {
+        const selectedBlock = this.getSelectedBlock();
+        if (!selectedBlock?.parentId || !event?.target) {
+            return false;
+        }
+
+        const target = event.target;
+        if (target.closest?.('input, textarea, select, button, a, [contenteditable="true"]')) {
+            return false;
+        }
+
+        return target === document.body || Boolean(target.closest?.('.frame-editor-layout, .frame-editor-workspace-panel, [data-frame-editor-stage]'));
+    },
+
     shouldHandleCanvasClipboardShortcut(event) {
         if (!event?.target) {
             return false;
@@ -7560,6 +8031,39 @@ const FramesMode = {
 
         const layout = this.getCanvasBlockLayout(block);
         return this.getRotatedFootprint(layout.width, layout.height, block.rotation);
+    },
+
+    clampNestedBlockPosition(parentBlock, block, position, parentLayout = this.getCanvasBlockLayout(parentBlock), footprintOverride = null) {
+        const frame = this.getContainerBlockInnerFrame(parentBlock, parentLayout);
+        if (frame.width <= 0 || frame.height <= 0) {
+            return {
+                xPct: 50,
+                yPct: 50
+            };
+        }
+
+        const footprint = footprintOverride || this.getCanvasBlockFootprint(block);
+        const nextXPct = Number(position?.xPct);
+        const nextYPct = Number(position?.yPct);
+        const fallbackXPct = Number(block?.xPct);
+        const fallbackYPct = Number(block?.yPct);
+        const normalizedXPct = Number.isFinite(nextXPct)
+            ? nextXPct
+            : (Number.isFinite(fallbackXPct) ? fallbackXPct : 50);
+        const normalizedYPct = Number.isFinite(nextYPct)
+            ? nextYPct
+            : (Number.isFinite(fallbackYPct) ? fallbackYPct : 50);
+        const halfWidthPct = ((Number(footprint?.width) || 0) / 2 / frame.width) * 100;
+        const halfHeightPct = ((Number(footprint?.height) || 0) / 2 / frame.height) * 100;
+        const minXPct = halfWidthPct >= 50 ? 50 : halfWidthPct;
+        const maxXPct = halfWidthPct >= 50 ? 50 : (100 - halfWidthPct);
+        const minYPct = halfHeightPct >= 50 ? 50 : halfHeightPct;
+        const maxYPct = halfHeightPct >= 50 ? 50 : (100 - halfHeightPct);
+
+        return {
+            xPct: Number(this.clamp(normalizedXPct, minXPct, maxXPct).toFixed(4)),
+            yPct: Number(this.clamp(normalizedYPct, minYPct, maxYPct).toFixed(4))
+        };
     },
 
     clampCanvasBlockPosition(root, block, position, blockElement = null, footprintOverride = null) {
