@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "frame": {
+    "key": "preset:none",
+    "name": "None",
+    "frameType": "none",
+    "source": "preset",
+    "customFrameId": null
+  },
+  "frameCustomization": {
+    "frameText": "",
+    "frameColor": "#000000",
+    "backgroundColor": "#ffffff",
+    "textColor": null,
+    "qrRotation": 0,
+    "textRect": null,
+    "transparentBackground": false
+  },
+  "frameQRRect": {
+    "xPct": 0,
+    "yPct": 0,
+    "widthPct": 1,
+    "heightPct": 1,
+    "sizePct": 1
+  },
+  "customFrame": null,
+  "canvas": {
+    "backgroundColor": "#2d2d2d",
+    "gridColor": "#66c0f4",
+    "gridOpacity": 0.08,
+    "gridBaseSize": 32
+  },
+  "blocks": [
+    {
+      "id": "block-1",
+      "type": "qr",
+      "xPct": 46.4304,
+      "yPct": 18.9347,
+      "size": 180,
+      "colorDark": "#111111",
+      "colorLight": "transparent",
+      "backgroundColor": "transparent",
+      "paddingTop": 0,
+      "paddingRight": 0,
+      "paddingBottom": 0,
+      "paddingLeft": 0,
+      "paddingX": 0,
+      "paddingY": 0,
+      "paddingLinked": true,
+      "borderWidth": 0,
+      "borderRadius": 0,
+      "borderColor": "#ffffff",
+      "rotation": 0,
+      "qrRotation": 0,
+      "parentId": "",
+      "childOrder": 0,
+      "columnIndex": 0
+    }
+  ]
+}

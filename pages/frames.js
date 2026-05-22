@@ -156,6 +156,8 @@ const FramesMode = {
         searchTerm: '',
         rightSidebarTab: 'properties',
         rightSidebarSearchTerm: '',
+        isLoadJsonDialogOpen: false,
+        loadJsonDialogError: '',
         selectedFrameKey: '',
         selectedBlockId: '',
         workspaceView: 'grid',
@@ -181,6 +183,8 @@ const FramesMode = {
         errorMessage: '',
         canvasBlocks: []
     },
+
+    loadJsonDialogDraftText: '',
 
 
     render() {
@@ -253,6 +257,15 @@ const FramesMode = {
                         >
                             <i class="bi bi-floppy" aria-hidden="true"></i>
                             <span class="frame-editor-button-label">${I18n.translateString('Save JSON')}</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="frame-editor-sidebar-toggle"
+                            data-frame-editor-load-json
+                            title="${this.escapeHTML(I18n.translateString('Load frame from JSON'))}"
+                        >
+                            <i class="bi bi-folder2-open" aria-hidden="true"></i>
+                            <span class="frame-editor-button-label">${I18n.translateString('Load JSON')}</span>
                         </button>
                         <button
                             type="button"
@@ -377,6 +390,7 @@ const FramesMode = {
                     </div>
                 </div>
                 ${this.renderFrameEditorContextMenu()}
+                ${this.renderFrameEditorLoadJsonDialog()}
             </div>
         `;
     },
@@ -390,6 +404,51 @@ const FramesMode = {
                 role="menu"
                 aria-label="${this.escapeHTML(I18n.translateString('Frame editor context menu'))}"
             ></div>
+        `;
+    },
+
+    renderFrameEditorLoadJsonDialog() {
+        const isOpen = Boolean(this.state.isLoadJsonDialogOpen);
+        const dialogError = String(this.state.loadJsonDialogError || '').trim();
+        const draftText = this.escapeHTML(this.loadJsonDialogDraftText || '');
+
+        return `
+            <div class="frame-editor-json-load-dialog" data-frame-editor-load-json-dialog ${isOpen ? '' : 'hidden'} aria-hidden="${isOpen ? 'false' : 'true'}">
+                <div class="frame-editor-json-load-dialog-backdrop" data-frame-editor-load-json-close="true" aria-hidden="true"></div>
+                <div class="frame-editor-json-load-dialog-panel" role="dialog" aria-modal="true" aria-labelledby="frameEditorLoadJsonTitle" aria-describedby="frameEditorLoadJsonDescription">
+                    <div class="frame-editor-json-load-dialog-header">
+                        <div class="frame-editor-json-load-dialog-copy">
+                            <span class="frame-editor-json-load-dialog-kicker">${I18n.translateString('Frame Editor')}</span>
+                            <h2 class="frame-editor-json-load-dialog-title" id="frameEditorLoadJsonTitle">${I18n.translateString('Load JSON')}</h2>
+                            <p class="frame-editor-json-load-dialog-description" id="frameEditorLoadJsonDescription">${I18n.translateString('Paste a frame JSON export or choose a .json file to restore the frame, canvas settings, and blocks.')}</p>
+                        </div>
+                        <button type="button" class="frame-editor-json-load-dialog-close" data-frame-editor-load-json-close="true" aria-label="${this.escapeHTML(I18n.translateString('Close load dialog'))}">
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <form class="frame-editor-json-load-dialog-form" data-frame-editor-load-json-form>
+                        <label class="frame-editor-field frame-editor-field-wide frame-editor-json-load-textarea-field">
+                            <span>${I18n.translateString('Paste JSON')}</span>
+                            <textarea
+                                class="frame-editor-json-load-textarea"
+                                data-frame-editor-load-json-input
+                                rows="16"
+                                spellcheck="false"
+                                placeholder="${this.escapeHTML(I18n.translateString('Paste the exported frame JSON here.'))}"
+                            >${draftText}</textarea>
+                        </label>
+                        <label class="frame-editor-field frame-editor-field-wide frame-editor-json-load-file-field">
+                            <span>${I18n.translateString('Load from file')}</span>
+                            <input type="file" accept=".json,application/json,text/json" data-frame-editor-load-json-file>
+                        </label>
+                        ${dialogError ? `<div class="frame-editor-json-load-error" role="alert">${this.escapeHTML(dialogError)}</div>` : ''}
+                        <div class="frame-editor-json-load-actions">
+                            <button type="button" class="frame-editor-action-button" data-frame-editor-load-json-close="true">${I18n.translateString('Cancel')}</button>
+                            <button type="submit" class="frame-editor-action-button primary">${I18n.translateString('Load JSON')}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         `;
     },
 
@@ -3999,6 +4058,12 @@ const FramesMode = {
                     return;
                 }
 
+                if (this.isCanvasArrowNudgeKey(event.key) && this.shouldHandleCanvasArrowShortcut(event)) {
+                    event.preventDefault();
+                    this.nudgeCanvasBlockByKeyboard(this.state.selectedBlockId, event.key, event.shiftKey ? 2 : 1, this.getRoot());
+                    return;
+                }
+
                 // Only treat the explicit Delete key as the canvas-block deletion shortcut.
                 // Backspace should not delete a selected block (prevents accidental deletes).
                 const isDeleteKey = event.key === 'Delete';
@@ -4163,6 +4228,39 @@ const FramesMode = {
                 this.saveFrameAsJson(root);
             });
         });
+
+        root.querySelectorAll('[data-frame-editor-load-json]').forEach(button => {
+            button.addEventListener('click', () => {
+                this.openLoadJsonDialog(root);
+            });
+        });
+
+        root.querySelectorAll('[data-frame-editor-load-json-close]').forEach(button => {
+            button.addEventListener('click', () => {
+                this.closeLoadJsonDialog();
+            });
+        });
+
+        const loadJsonForm = root.querySelector('[data-frame-editor-load-json-form]');
+        if (loadJsonForm) {
+            loadJsonForm.addEventListener('submit', event => {
+                event.preventDefault();
+                void this.loadFrameFromJsonInput(root);
+            });
+        }
+
+        const loadJsonFileInput = root.querySelector('[data-frame-editor-load-json-file]');
+        if (loadJsonFileInput) {
+            loadJsonFileInput.addEventListener('change', event => {
+                const file = event.target.files?.[0] || null;
+                event.target.value = '';
+                if (!file) {
+                    return;
+                }
+
+                void this.loadFrameFromJsonFile(file, root);
+            });
+        }
 
         const searchInput = root.querySelector('#frameEditorSearchInput');
         if (searchInput) {
@@ -4437,6 +4535,12 @@ const FramesMode = {
 
         root.addEventListener('keydown', event => {
             if (event.key === 'Escape') {
+                if (this.state.isLoadJsonDialogOpen) {
+                    event.preventDefault();
+                    this.closeLoadJsonDialog();
+                    return;
+                }
+
                 this.hideCanvasZoomContextMenu(root);
                 this.hideFrameEditorContextMenu(root);
             }
@@ -4574,24 +4678,12 @@ const FramesMode = {
                     return;
                 }
 
-                if (block.parentId) {
-                    return;
-                }
-
-                const step = event.shiftKey ? 2 : 1;
-                const updates = {
-                    ArrowLeft: { xPct: block.xPct - step },
-                    ArrowRight: { xPct: block.xPct + step },
-                    ArrowUp: { yPct: block.yPct - step },
-                    ArrowDown: { yPct: block.yPct + step }
-                };
-                if (!updates[event.key]) {
+                if (!this.isCanvasArrowNudgeKey(event.key)) {
                     return;
                 }
 
                 event.preventDefault();
-                this.updateBlock(blockId, updates[event.key]);
-                this.renderIntoRoot();
+                this.nudgeCanvasBlockByKeyboard(blockId, event.key, event.shiftKey ? 2 : 1, root);
             });
         });
 
@@ -7723,6 +7815,43 @@ const FramesMode = {
         };
     },
 
+    isCanvasArrowNudgeKey(key) {
+        return key === 'ArrowLeft'
+            || key === 'ArrowRight'
+            || key === 'ArrowUp'
+            || key === 'ArrowDown';
+    },
+
+    nudgeCanvasBlockByKeyboard(blockId, key, step = 1, root = this.getRoot()) {
+        const block = this.getBlockById(blockId);
+        if (!block || !this.isCanvasArrowNudgeKey(key)) {
+            return false;
+        }
+
+        const deltaByKey = {
+            ArrowLeft: { xPct: -step, yPct: 0 },
+            ArrowRight: { xPct: step, yPct: 0 },
+            ArrowUp: { xPct: 0, yPct: -step },
+            ArrowDown: { xPct: 0, yPct: step }
+        };
+        const delta = deltaByKey[key];
+        const nextPosition = {
+            xPct: (Number(block.xPct) || 50) + delta.xPct,
+            yPct: (Number(block.yPct) || 50) + delta.yPct
+        };
+
+        const patch = block.parentId
+            ? {
+                ...this.clampNestedBlockPosition(this.getParentBlock(block), block, nextPosition),
+                nestedPositionMode: 'manual'
+            }
+            : this.clampCanvasBlockPosition(root, block, nextPosition);
+
+        this.updateBlock(blockId, patch);
+        this.renderIntoRoot();
+        return true;
+    },
+
     getDescendantBlockIds(parentId, blocks = this.state.canvasBlocks) {
         const descendants = [];
         const visit = currentParentId => {
@@ -8133,6 +8262,19 @@ const FramesMode = {
         return target === document.body || Boolean(target.closest?.('.frame-editor-layout, .frame-editor-workspace-panel, [data-frame-editor-stage]'));
     },
 
+    shouldHandleCanvasArrowShortcut(event) {
+        if (!this.state.selectedBlockId || !event?.target || event.altKey || event.ctrlKey || event.metaKey) {
+            return false;
+        }
+
+        const target = event.target;
+        if (target.closest?.('input, textarea, select, button, a, [contenteditable="true"]')) {
+            return false;
+        }
+
+        return target === document.body || Boolean(target.closest?.('.frame-editor-layout, .frame-editor-workspace-panel, [data-frame-editor-stage]'));
+    },
+
     shouldHandleCanvasParentEscapeShortcut(event) {
         const selectedBlock = this.getSelectedBlock();
         if (!selectedBlock?.parentId || !event?.target) {
@@ -8508,6 +8650,286 @@ const FramesMode = {
             console.error('Failed to save frame JSON.', error);
             this.showToast(I18n.translateString('Failed to save frame JSON.'), 'error');
         }
+    },
+
+    openLoadJsonDialog(root = this.getRoot()) {
+        this.state = {
+            ...this.state,
+            isLoadJsonDialogOpen: true,
+            loadJsonDialogError: ''
+        };
+        this.renderIntoRoot();
+        window.requestAnimationFrame(() => {
+            const dialogRoot = root || this.getRoot();
+            const input = dialogRoot?.querySelector?.('[data-frame-editor-load-json-input]');
+            if (input) {
+                input.focus();
+                if (typeof input.select === 'function' && !this.loadJsonDialogDraftText) {
+                    input.select();
+                }
+            }
+        });
+    },
+
+    closeLoadJsonDialog() {
+        if (!this.state.isLoadJsonDialogOpen && !this.state.loadJsonDialogError) {
+            return;
+        }
+
+        this.state = {
+            ...this.state,
+            isLoadJsonDialogOpen: false,
+            loadJsonDialogError: ''
+        };
+        this.renderIntoRoot();
+    },
+
+    async loadFrameFromJsonInput(root = this.getRoot()) {
+        const textarea = root?.querySelector?.('[data-frame-editor-load-json-input]');
+        const jsonText = String(textarea?.value || '');
+        this.loadJsonDialogDraftText = jsonText;
+        try {
+            await this.loadFrameFromJsonText(jsonText);
+        } catch (error) {
+            this.handleLoadJsonError(error, root);
+        }
+    },
+
+    async loadFrameFromJsonFile(file, root = this.getRoot()) {
+        if (!file) {
+            return;
+        }
+
+        try {
+            const jsonText = await this.readFileAsText(file);
+            this.loadJsonDialogDraftText = jsonText;
+            await this.loadFrameFromJsonText(jsonText);
+        } catch (error) {
+            this.handleLoadJsonError(error, root);
+        }
+    },
+
+    async loadFrameFromJsonText(jsonText) {
+        const rawText = String(jsonText || '').trim();
+        if (!rawText) {
+            throw new Error(I18n.translateString('Paste JSON or choose a file.'));
+        }
+
+        let document;
+        try {
+            document = JSON.parse(rawText);
+        } catch (error) {
+            throw new Error(I18n.translateString('The JSON could not be parsed.'));
+        }
+
+        if (!document || typeof document !== 'object' || Array.isArray(document)) {
+            throw new Error(I18n.translateString('The JSON must be an object exported from the frame editor.'));
+        }
+
+        const importedFrame = document.frame && typeof document.frame === 'object' ? document.frame : null;
+        const importedCanvas = document.canvas && typeof document.canvas === 'object' ? document.canvas : null;
+        const importedBlocks = Array.isArray(document.blocks)
+            ? document.blocks.map(block => ({ ...block }))
+            : null;
+
+        if (!importedBlocks) {
+            throw new Error(I18n.translateString('The JSON does not include any frame blocks.'));
+        }
+
+        let importedCustomFrameId = '';
+        if (importedFrame?.frameType === QRFrames.FRAME_TYPES.CUSTOM) {
+            if (document.customFrame?.dataUrl) {
+                importedCustomFrameId = await this.restoreCustomFrameFromJson(document.customFrame, importedFrame);
+            } else if (importedFrame.customFrameId) {
+                const existingCustomFrame = QRFrames.customFrames.find(frame => frame.id === importedFrame.customFrameId);
+                if (existingCustomFrame) {
+                    QRFrames.setActiveCustomFrame(existingCustomFrame.id);
+                    importedCustomFrameId = existingCustomFrame.id;
+                } else {
+                    throw new Error(I18n.translateString('The JSON is missing the custom frame image data.'));
+                }
+            } else {
+                throw new Error(I18n.translateString('The JSON is missing the custom frame image data.'));
+            }
+        } else if (importedFrame?.customFrameId) {
+            const existingCustomFrame = QRFrames.customFrames.find(frame => frame.id === importedFrame.customFrameId);
+            if (existingCustomFrame) {
+                QRFrames.setActiveCustomFrame(existingCustomFrame.id);
+                importedCustomFrameId = existingCustomFrame.id;
+            }
+        }
+
+        this.framePreviewCache.clear();
+        this.frameLibraryCache = null;
+
+        const allFrames = this.getAllFrames(false);
+        const selectedFrameKey = this.resolveImportedFrameKey(importedFrame, importedCustomFrameId, allFrames);
+        const nextCanvasBlocks = importedBlocks.map(block => this.cloneBlockData(block)).filter(Boolean);
+
+        this.applyImportedFrameDesign(importedFrame, document.frameCustomization, document.frameQRRect);
+        this.blockIdCounter = this.getImportedBlockCounter(nextCanvasBlocks);
+
+        this.state = {
+            ...this.state,
+            canvasBackgroundColor: this.normalizeLoadedColor(importedCanvas?.backgroundColor, this.state.canvasBackgroundColor),
+            canvasGridColor: this.normalizeLoadedColor(importedCanvas?.gridColor, this.state.canvasGridColor),
+            canvasGridOpacity: this.normalizeLoadedNumber(importedCanvas?.gridOpacity, this.state.canvasGridOpacity, 0, 0.3),
+            canvasGridBaseSize: this.normalizeLoadedNumber(importedCanvas?.gridBaseSize, this.state.canvasGridBaseSize, 16, 64),
+            canvasBlocks: nextCanvasBlocks,
+            selectedFrameKey,
+            selectedBlockId: '',
+            selectedCanvas: false,
+            selectedQrBlockId: '',
+            selectedTextBlockId: '',
+            loadJsonDialogError: '',
+            isLoadJsonDialogOpen: false
+        };
+        this.loadJsonDialogDraftText = '';
+        this.renderIntoRoot();
+        window.requestAnimationFrame(() => {
+            const root = this.getRoot();
+            if (nextCanvasBlocks.length) {
+                this.fitCanvasToBlocks(root);
+                return;
+            }
+
+            this.resetCanvasView(root);
+        });
+        this.showToast(I18n.translateString('Frame JSON loaded.'));
+    },
+
+    applyImportedFrameDesign(importedFrame, frameCustomization, frameQRRect) {
+        const frameType = typeof importedFrame?.frameType === 'string'
+            ? importedFrame.frameType
+            : '';
+        if (!frameType) {
+            return;
+        }
+
+        if (frameCustomization && typeof frameCustomization === 'object' && !Array.isArray(frameCustomization)) {
+            QRFrames.setFrameCustomization(frameType, frameCustomization);
+        } else {
+            QRFrames.resetFrameToDefaults(frameType);
+        }
+
+        if (frameQRRect && typeof frameQRRect === 'object' && !Array.isArray(frameQRRect)) {
+            QRFrames.setFrameQRRect(frameType, frameQRRect);
+            return;
+        }
+
+        QRFrames.resetFrameQRRect(frameType);
+    },
+
+    handleLoadJsonError(error, root = this.getRoot()) {
+        const message = error instanceof Error
+            ? error.message
+            : I18n.translateString('Failed to load frame JSON.');
+
+        this.state = {
+            ...this.state,
+            isLoadJsonDialogOpen: true,
+            loadJsonDialogError: message
+        };
+        this.renderIntoRoot();
+        window.requestAnimationFrame(() => {
+            const dialogRoot = root || this.getRoot();
+            const input = dialogRoot?.querySelector?.('[data-frame-editor-load-json-input]');
+            if (input) {
+                input.focus();
+            }
+        });
+        this.showToast(message, 'error');
+    },
+
+    async restoreCustomFrameFromJson(customFrame, importedFrame) {
+        if (!customFrame || typeof customFrame !== 'object' || !customFrame.dataUrl) {
+            throw new Error(I18n.translateString('The JSON is missing the custom frame image data.'));
+        }
+
+        const frameName = String(customFrame.name || importedFrame?.name || I18n.translateString('Custom'));
+        const loadedCustomFrame = await QRFrames.loadCustomFrameFromDataUrl(customFrame.dataUrl, { name: frameName });
+        if (!loadedCustomFrame) {
+            throw new Error(I18n.translateString('The custom frame image could not be loaded.'));
+        }
+
+        const importedCustomFrameId = String(customFrame.id || loadedCustomFrame.id);
+        QRFrames.customFrames = QRFrames.customFrames.filter(frame => frame.id !== loadedCustomFrame.id && frame.id !== importedCustomFrameId);
+        loadedCustomFrame.id = importedCustomFrameId;
+
+        if (customFrame.qrRect) {
+            const nextQrRect = { ...customFrame.qrRect };
+            loadedCustomFrame.qrRect = typeof QRFrames.clampFrameQRRect === 'function'
+                ? QRFrames.clampFrameQRRect(nextQrRect, loadedCustomFrame.naturalHeight / loadedCustomFrame.naturalWidth || 1)
+                : nextQrRect;
+        }
+
+        QRFrames.customFrames.unshift(loadedCustomFrame);
+        QRFrames.setActiveCustomFrame(loadedCustomFrame.id);
+        return loadedCustomFrame.id;
+    },
+
+    resolveImportedFrameKey(importedFrame, importedCustomFrameId, allFrames = this.getAllFrames(false)) {
+        if (!Array.isArray(allFrames) || !allFrames.length) {
+            return '';
+        }
+
+        const customFrameId = importedCustomFrameId || importedFrame?.customFrameId || '';
+        if (importedFrame?.frameType === QRFrames.FRAME_TYPES.CUSTOM && customFrameId) {
+            const customFrameKey = `custom:${customFrameId}`;
+            if (allFrames.some(frame => frame.key === customFrameKey)) {
+                return customFrameKey;
+            }
+        }
+
+        if (importedFrame?.key && allFrames.some(frame => frame.key === importedFrame.key)) {
+            return importedFrame.key;
+        }
+
+        if (importedFrame?.frameType) {
+            const matchingFrame = allFrames.find(frame => frame.frameType === importedFrame.frameType && (!customFrameId || frame.customFrameId === customFrameId));
+            if (matchingFrame) {
+                return matchingFrame.key;
+            }
+        }
+
+        return this.resolveSelectedFrameKey(allFrames);
+    },
+
+    getImportedBlockCounter(blocks = []) {
+        return blocks.reduce((maxValue, block) => {
+            const match = String(block?.id || '').match(/^block-(\d+)$/);
+            if (!match) {
+                return maxValue;
+            }
+
+            const parsed = Number.parseInt(match[1], 10);
+            return Number.isFinite(parsed) ? Math.max(maxValue, parsed) : maxValue;
+        }, 0);
+    },
+
+    normalizeLoadedColor(value, fallback) {
+        const normalized = String(value || '').trim();
+        return /^#[0-9a-f]{6}$/i.test(normalized) || /^#[0-9a-f]{3}$/i.test(normalized)
+            ? normalized
+            : fallback;
+    },
+
+    normalizeLoadedNumber(value, fallback, min, max) {
+        const parsed = Number.parseFloat(value);
+        if (!Number.isFinite(parsed)) {
+            return fallback;
+        }
+
+        return this.clamp(parsed, min, max);
+    },
+
+    readFileAsText(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ''));
+            reader.onerror = () => reject(reader.error || new Error('Unable to read file.'));
+            reader.readAsText(file);
+        });
     },
 
     getAllFrames(includePreview = true) {

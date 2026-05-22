@@ -982,6 +982,17 @@
     color: #ff8a65;
 }
 
+.frame-editor-action-button.primary {
+    border-color: color-mix(in srgb, var(--accent-primary) 60%, var(--border-color));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 22%, var(--bg-card)) 0%, color-mix(in srgb, var(--accent-primary) 10%, var(--bg-card)) 100%);
+    color: var(--accent-primary);
+}
+
+.frame-editor-action-button.primary:hover {
+    border-color: var(--accent-primary);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent-primary) 28%, var(--bg-card)) 0%, color-mix(in srgb, var(--accent-primary) 16%, var(--bg-card)) 100%);
+}
+
 .frame-editor-upload-button {
     width: fit-content;
 }
@@ -1904,6 +1915,147 @@
 .frame-editor-right-sidebar-panel .frame-editor-action-button {
     width: 100%;
     min-height: 38px;
+}
+
+.frame-editor-json-load-dialog[hidden] {
+    display: none !important;
+}
+
+.frame-editor-json-load-dialog {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.frame-editor-json-load-dialog-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 12, 20, 0.72);
+    backdrop-filter: blur(6px);
+}
+
+.frame-editor-json-load-dialog-panel {
+    position: relative;
+    z-index: 1;
+    width: min(920px, 100%);
+    max-height: min(92vh, 920px);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid color-mix(in srgb, var(--border-color) 76%, rgba(255, 255, 255, 0.08));
+    border-radius: 18px;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--bg-card) 95%, rgba(255, 255, 255, 0.03)) 0%, color-mix(in srgb, var(--bg-card) 100%, transparent) 100%),
+        var(--bg-card);
+    box-shadow: 0 28px 64px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+}
+
+.frame-editor-json-load-dialog-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.frame-editor-json-load-dialog-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.frame-editor-json-load-dialog-kicker {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-primary);
+}
+
+.frame-editor-json-load-dialog-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.frame-editor-json-load-dialog-description {
+    margin: 0;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.frame-editor-json-load-dialog-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.frame-editor-json-load-dialog-close:hover {
+    border-color: rgba(102, 192, 244, 0.45);
+    background-color: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.frame-editor-json-load-dialog-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.frame-editor-json-load-textarea-field {
+    min-height: 0;
+}
+
+.frame-editor-json-load-textarea {
+    min-height: 300px;
+    resize: vertical;
+    font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Monaco, Consolas, monospace;
+    line-height: 1.5;
+    tab-size: 2;
+}
+
+.frame-editor-json-load-file-field input[type="file"] {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background-color: var(--bg-card);
+    color: var(--text-secondary);
+}
+
+.frame-editor-json-load-error {
+    padding: 0.75rem 0.85rem;
+    border: 1px solid rgba(255, 138, 101, 0.35);
+    border-radius: 10px;
+    background: rgba(255, 138, 101, 0.12);
+    color: #ffb7a3;
+    line-height: 1.45;
+}
+
+.frame-editor-json-load-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    flex-wrap: wrap;
 }
 
 .frame-editor-canvas-camera {
