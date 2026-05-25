@@ -19,50 +19,7 @@ const FramesMode = {
         correctLevel: 'Q',
         margin: 4
     }),
-    BLOCK_LIBRARY: Object.freeze([
-        {
-            type: 'qr',
-            name: 'QR Code Block',
-            description: 'Drop a QR code anywhere on the canvas.',
-            icon: 'bi-qr-code'
-        },
-        {
-            type: 'text',
-            name: 'Text Block',
-            description: 'Place editable text anywhere in the layout.',
-            icon: 'bi-type-h2'
-        },
-        {
-            type: 'shape',
-            name: 'Shape Block',
-            description: 'Add vector-style shapes anywhere on the canvas.',
-            icon: 'bi-square'
-        },
-        {
-            type: 'line',
-            name: 'Line Block',
-            description: 'Add divider and accent lines anywhere on the canvas.',
-            icon: 'bi-slash-lg'
-        },
-        {
-            type: 'section',
-            name: 'Section Block',
-            description: 'Create a vertical container that holds and aligns child blocks.',
-            icon: 'bi-layout-text-window'
-        },
-        {
-            type: 'columns',
-            name: 'Columns Block',
-            description: 'Create a multi-column container for nested blocks.',
-            icon: 'bi-columns-gap'
-        },
-        {
-            type: 'image',
-            name: 'Image Block',
-            description: 'Upload and place custom images on the canvas.',
-            icon: 'bi-image'
-        }
-    ]),
+    BLOCK_LIBRARY: Object.freeze(window.FrameEditorBlockCatalog?.getLibrary?.() || []),
     CONTAINER_ALIGNMENT_OPTIONS: Object.freeze([
         { id: 'left', label: 'Left' },
         { id: 'center', label: 'Center' },
@@ -942,6 +899,8 @@ const FramesMode = {
             `;
         }
 
+        return this.renderObjectInspectorBlockContent(selectedBlock);
+
         if (selectedBlock.type === 'text') {
             return `
                 <div class="frame-editor-sidebar-panel-section">
@@ -1147,6 +1106,170 @@ const FramesMode = {
                 </div>
             </div>
         `;
+    },
+
+    renderObjectInspectorBlockContent(selectedBlock) {
+        const blockDefinition = window.FrameEditorBlockCatalog?.getDefinition?.(selectedBlock.type);
+        const blockTitle = blockDefinition?.name || this.getBlockLabel(selectedBlock);
+        return `
+            <div class="frame-editor-sidebar-panel-section">
+                <div class="frame-editor-sidebar-summary">
+                    <span class="frame-editor-sidebar-title">${this.escapeHTML(I18n.translateString(blockTitle))}</span>
+                </div>
+                <div class="frame-editor-sidebar-form frame-editor-object-inspector-form">
+                    ${this.renderBlockPropertyGrid(selectedBlock)}
+                    ${this.renderBlockSpecialActions(selectedBlock)}
+                    ${this.renderBlockActionButtons()}
+                </div>
+            </div>
+        `;
+    },
+
+    renderBlockPropertyGrid(block) {
+        const properties = this.getSortedBlockProperties(block);
+        if (!properties.length) {
+            return '';
+        }
+
+        return `
+            <div class="frame-editor-object-inspector" role="group" aria-label="${this.escapeHTML(I18n.translateString('Object Inspector Properties'))}">
+                ${properties.map(property => this.renderBlockPropertyRow(block, property)).join('')}
+            </div>
+        `;
+    },
+
+    getSortedBlockProperties(block) {
+        return (window.FrameEditorBlockCatalog?.getProperties?.(block?.type) || [])
+            .filter(property => this.isBlockPropertyVisible(block, property))
+            .sort((left, right) => {
+                const leftLabel = I18n.translateString(left.label || left.setting || '').toLocaleLowerCase();
+                const rightLabel = I18n.translateString(right.label || right.setting || '').toLocaleLowerCase();
+                return leftLabel.localeCompare(rightLabel);
+            });
+    },
+
+    isBlockPropertyVisible(block, property) {
+        if (!block || !property) {
+            return false;
+        }
+        if (typeof property.visible === 'function') {
+            return Boolean(property.visible(block));
+        }
+        return true;
+    },
+
+    renderBlockPropertyRow(block, property) {
+        const label = this.escapeHTML(I18n.translateString(property.label || property.setting || ''));
+        return `
+            <div class="frame-editor-object-inspector-row${property.type === 'textarea' ? ' is-tall' : ''}">
+                <span class="frame-editor-object-inspector-name">${label}</span>
+                <span class="frame-editor-object-inspector-value">
+                    ${this.renderBlockPropertyControl(block, property)}
+                </span>
+            </div>
+        `;
+    },
+
+    renderBlockPropertyControl(block, property) {
+        const setting = property.setting;
+        const value = this.getBlockPropertyValue(block, property);
+        const escapedSetting = this.escapeHTML(setting);
+
+        if (property.type === 'select') {
+            const options = Array.isArray(property.options) ? property.options : [];
+            return `
+                <select class="frame-editor-object-inspector-input frame-editor-select" data-block-setting="${escapedSetting}">
+                    ${options.map(option => `
+                        <option value="${this.escapeHTML(String(option.id))}" ${String(value) === String(option.id) ? 'selected' : ''}>${this.escapeHTML(I18n.translateString(option.label || option.id))}</option>
+                    `).join('')}
+                </select>
+            `;
+        }
+
+        if (property.type === 'checkbox') {
+            return `<input class="frame-editor-object-inspector-checkbox" type="checkbox" data-block-setting="${escapedSetting}" ${value ? 'checked' : ''}>`;
+        }
+
+        if (property.type === 'textarea') {
+            return `<textarea class="frame-editor-object-inspector-input" rows="3" data-block-setting="${escapedSetting}">${this.escapeHTML(String(value ?? ''))}</textarea>`;
+        }
+
+        if (property.type === 'color') {
+            const colorValue = this.getTextBlockColorInputValue(value, property.fallback || this.getTextBlockDefaultColor());
+            return `<input class="frame-editor-object-inspector-input" type="color" value="${this.escapeHTML(colorValue)}" data-block-setting="${escapedSetting}">`;
+        }
+
+        if (property.type === 'imageUpload') {
+            return `
+                <label class="frame-editor-object-inspector-upload frame-editor-action-button">
+                    <i class="bi bi-upload" aria-hidden="true"></i>
+                    <span>${this.escapeHTML(I18n.translateString(block.src ? 'Replace image' : 'Upload image'))}</span>
+                    <input class="frame-editor-visually-hidden" type="file" accept="image/*" data-block-image-upload>
+                </label>
+            `;
+        }
+
+        if (property.type === 'readonly') {
+            const readonlyValue = String(value || I18n.translateString('None'));
+            return `<input class="frame-editor-object-inspector-input" type="text" value="${this.escapeHTML(readonlyValue)}" readonly>`;
+        }
+
+        if (property.type === 'number') {
+            const numericValue = Number.isFinite(Number(value)) ? Number(value) : 0;
+            const min = Number.isFinite(Number(property.min)) ? Number(property.min) : '';
+            const max = Number.isFinite(Number(property.max)) ? Math.max(Number(property.max), numericValue) : '';
+            const step = Number.isFinite(Number(property.step)) ? Number(property.step) : 1;
+            return `
+                <span class="frame-editor-object-inspector-number">
+                    <input class="frame-editor-object-inspector-input" type="number" ${min !== '' ? `min="${min}"` : ''} ${max !== '' ? `max="${max}"` : ''} step="${step}" value="${this.escapeHTML(String(numericValue))}" data-block-setting="${escapedSetting}">
+                    ${property.unit ? `<span>${this.escapeHTML(property.unit)}</span>` : ''}
+                </span>
+            `;
+        }
+
+        return `<input class="frame-editor-object-inspector-input" type="text" value="${this.escapeHTML(String(value ?? ''))}" data-block-setting="${escapedSetting}">`;
+    },
+
+    getBlockPropertyValue(block, property) {
+        if (!block || !property) {
+            return '';
+        }
+        if (typeof property.value === 'function') {
+            return property.value(block);
+        }
+        if (property.setting === 'align') {
+            return window.FrameEditorBlockCatalog?.normalizeAlign?.(block.align) || 'none';
+        }
+        if (['marginTop', 'marginRight', 'marginBottom', 'marginLeft'].includes(property.setting)) {
+            return Math.max(0, Number(block[property.setting]) || 0);
+        }
+        const key = property.valueKey || property.setting;
+        return block[key];
+    },
+
+    renderBlockSpecialActions(block) {
+        if (this.canSelectTextInnerBlock(block) || this.canSelectQrInnerBlock(block)) {
+            const textAction = this.canSelectTextInnerBlock(block)
+                ? `
+                    <button type="button" class="frame-editor-action-button" data-block-action="${this.isTextInnerSelected(block) ? 'deselect-text' : 'select-text'}">
+                        <i class="bi ${this.isTextInnerSelected(block) ? 'bi-x-circle' : 'bi-cursor-text'}" aria-hidden="true"></i>
+                        <span>${I18n.translateString(this.isTextInnerSelected(block) ? 'Deselect text' : 'Select text')}</span>
+                    </button>
+                `
+                : '';
+            const qrAction = this.canSelectQrInnerBlock(block)
+                ? `
+                    <button type="button" class="frame-editor-action-button" data-block-action="${this.isQrInnerSelected(block) ? 'deselect-qr-code' : 'select-qr-code'}">
+                        <i class="bi ${this.isQrInnerSelected(block) ? 'bi-x-circle' : 'bi-bullseye'}" aria-hidden="true"></i>
+                        <span>${I18n.translateString(this.isQrInnerSelected(block) ? 'Deselect QR code' : 'Select QR code')}</span>
+                    </button>
+                `
+                : '';
+
+            return `<div class="frame-editor-inspector-actions">${textAction}${qrAction}</div>`;
+        }
+
+        return '';
     },
 
     renderRightSidebarCanvasContent() {
@@ -2022,6 +2145,193 @@ const FramesMode = {
         };
     },
 
+    getBlockMargins(block) {
+        return {
+            top: Math.max(0, Number(block?.marginTop) || 0),
+            right: Math.max(0, Number(block?.marginRight) || 0),
+            bottom: Math.max(0, Number(block?.marginBottom) || 0),
+            left: Math.max(0, Number(block?.marginLeft) || 0)
+        };
+    },
+
+    hasLayoutAlign(block) {
+        const align = window.FrameEditorBlockCatalog?.normalizeAlign?.(block?.align) || 'none';
+        return align !== 'none';
+    },
+
+    getBlockParentAlignFrame(block, root = this.getRoot()) {
+        const parentBlock = this.getParentBlock(block);
+        if (parentBlock) {
+            return this.getContainerBlockInnerFrame(parentBlock, this.getCanvasBlockLayout(parentBlock));
+        }
+
+        const metrics = this.getCanvasLayoutMetrics(root);
+        if (!metrics) {
+            return null;
+        }
+
+        return {
+            left: 0,
+            top: 0,
+            width: metrics.viewportWidth,
+            height: metrics.viewportHeight
+        };
+    },
+
+    getBlockAlignPatch(block, alignValue, root = this.getRoot()) {
+        const align = window.FrameEditorBlockCatalog?.normalizeAlign?.(alignValue) || 'none';
+        const patch = { align };
+        if (!block || align === 'none') {
+            return patch;
+        }
+
+        const frame = this.getBlockParentAlignFrame(block, root);
+        if (!frame || frame.width <= 0 || frame.height <= 0) {
+            return patch;
+        }
+
+        const layout = this.getCanvasBlockLayout(block);
+        const margins = this.getBlockMargins(block);
+        const currentCenter = block.parentId
+            ? {
+                x: frame.left + (frame.width * ((Number(block.xPct) || 50) / 100)),
+                y: frame.top + (frame.height * ((Number(block.yPct) || 50) / 100))
+            }
+            : {
+                x: frame.left + (frame.width * ((Number(block.xPct) || 50) / 100)),
+                y: frame.top + (frame.height * ((Number(block.yPct) || 50) / 100))
+            };
+        const rect = this.resolveAlignLayoutRect(align, frame, layout, margins, currentCenter);
+        const centerX = rect.left + (rect.width / 2);
+        const centerY = rect.top + (rect.height / 2);
+
+        patch.xPct = Number((((centerX - frame.left) / Math.max(frame.width, 1)) * 100).toFixed(4));
+        patch.yPct = Number((((centerY - frame.top) / Math.max(frame.height, 1)) * 100).toFixed(4));
+        if (block.parentId) {
+            patch.nestedPositionMode = 'manual';
+        }
+
+        return {
+            ...patch,
+            ...this.getAlignedBlockSizePatch(block, rect)
+        };
+    },
+
+    resolveAlignLayoutRect(align, frame, layout, margins = this.getBlockMargins(), currentCenter = null) {
+        const left = frame.left + margins.left;
+        const top = frame.top + margins.top;
+        const width = Math.max(1, frame.width - margins.left - margins.right);
+        const height = Math.max(1, frame.height - margins.top - margins.bottom);
+        const naturalWidth = Math.max(1, Number(layout?.width) || 1);
+        const naturalHeight = Math.max(1, Number(layout?.height) || 1);
+        const centered = {
+            left: left + ((width - naturalWidth) / 2),
+            top: top + ((height - naturalHeight) / 2),
+            width: naturalWidth,
+            height: naturalHeight
+        };
+
+        if (align === 'client' || align === 'contents') {
+            return { left, top, width, height };
+        }
+        if (align === 'top' || align === 'mostTop') {
+            return { left, top, width, height: naturalHeight };
+        }
+        if (align === 'bottom' || align === 'mostBottom') {
+            return { left, top: top + height - naturalHeight, width, height: naturalHeight };
+        }
+        if (align === 'left' || align === 'mostLeft') {
+            return { left, top, width: naturalWidth, height };
+        }
+        if (align === 'right' || align === 'mostRight') {
+            return { left: left + width - naturalWidth, top, width: naturalWidth, height };
+        }
+        if (align === 'horizontal') {
+            return { left, top: centered.top, width, height: naturalHeight };
+        }
+        if (align === 'vertical') {
+            return { left: centered.left, top, width: naturalWidth, height };
+        }
+        if (align === 'horzCenter') {
+            const centerY = currentCenter?.y ?? (top + (height / 2));
+            return { left: centered.left, top: centerY - (naturalHeight / 2), width: naturalWidth, height: naturalHeight };
+        }
+        if (align === 'vertCenter') {
+            const centerX = currentCenter?.x ?? (left + (width / 2));
+            return { left: centerX - (naturalWidth / 2), top: centered.top, width: naturalWidth, height: naturalHeight };
+        }
+        if (align === 'fit' || align === 'fitLeft' || align === 'fitRight' || align === 'scale') {
+            const scale = Math.min(width / naturalWidth, height / naturalHeight);
+            const fitWidth = Math.max(1, naturalWidth * scale);
+            const fitHeight = Math.max(1, naturalHeight * scale);
+            const fitLeft = align === 'fitLeft'
+                ? left
+                : (align === 'fitRight' ? left + width - fitWidth : left + ((width - fitWidth) / 2));
+            return {
+                left: fitLeft,
+                top: top + ((height - fitHeight) / 2),
+                width: fitWidth,
+                height: fitHeight
+            };
+        }
+
+        return centered;
+    },
+
+    getAlignedBlockSizePatch(block, rect) {
+        const width = Math.max(1, Math.round(Number(rect?.width) || 1));
+        const height = Math.max(1, Math.round(Number(rect?.height) || 1));
+        if (block?.type === 'qr') {
+            return { size: Math.max(80, Math.min(width, height)) };
+        }
+        if (['shape', 'line', 'section', 'columns', 'image'].includes(block?.type)) {
+            return { width, height };
+        }
+        if (block?.type === 'text' && Number(block.width) > 0) {
+            return { width };
+        }
+        return {};
+    },
+
+    applyAlignedChildPlacements(parentBlock, layout, childBlocks, fallbackPlacements) {
+        const fallbackById = new Map((fallbackPlacements || []).map(placement => [placement.childBlock.id, placement]));
+        const frame = this.getContainerBlockInnerFrame(parentBlock, layout);
+        const client = { ...frame };
+
+        return childBlocks.map(childBlock => {
+            const align = window.FrameEditorBlockCatalog?.normalizeAlign?.(childBlock?.align) || 'none';
+            if (align === 'none') {
+                return fallbackById.get(childBlock.id) || {
+                    childBlock,
+                    centerX: frame.left + (frame.width / 2),
+                    centerY: frame.top + (frame.height / 2)
+                };
+            }
+
+            const rect = this.resolveAlignLayoutRect(align, client, this.getCanvasBlockLayout(childBlock), this.getBlockMargins(childBlock), null);
+            if (align === 'top') {
+                client.top = rect.top + rect.height + this.getBlockMargins(childBlock).bottom;
+                client.height = Math.max(0, (frame.top + frame.height) - client.top);
+            } else if (align === 'bottom') {
+                client.height = Math.max(0, rect.top - client.top - this.getBlockMargins(childBlock).top);
+            } else if (align === 'left') {
+                client.left = rect.left + rect.width + this.getBlockMargins(childBlock).right;
+                client.width = Math.max(0, (frame.left + frame.width) - client.left);
+            } else if (align === 'right') {
+                client.width = Math.max(0, rect.left - client.left - this.getBlockMargins(childBlock).left);
+            } else if (align === 'client' || align === 'contents') {
+                client.width = 0;
+                client.height = 0;
+            }
+
+            return {
+                childBlock,
+                centerX: rect.left + (rect.width / 2),
+                centerY: rect.top + (rect.height / 2)
+            };
+        });
+    },
+
     getBlockRotation(block) {
         return this.normalizeBlockRotation(block?.rotation || 0);
     },
@@ -2759,7 +3069,7 @@ const FramesMode = {
         const childAlignment = block?.childAlignment || 'left';
         let nextTop = frame.top;
 
-        return childBlocks.map(childBlock => {
+        const fallbackPlacements = childBlocks.map(childBlock => {
             const childFootprint = this.getCanvasBlockFootprint(childBlock);
             const childWidth = childFootprint.width;
             const childHeight = childFootprint.height;
@@ -2773,6 +3083,10 @@ const FramesMode = {
                 centerY
             };
         });
+
+        return childBlocks.some(childBlock => this.hasLayoutAlign(childBlock))
+            ? this.applyAlignedChildPlacements(block, layout, childBlocks, fallbackPlacements)
+            : fallbackPlacements;
     },
 
     getColumnsContainerChildPlacements(block, layout = this.getCanvasBlockLayout(block), childBlocks = this.getChildBlocks(block.id)) {
@@ -2786,7 +3100,7 @@ const FramesMode = {
             : frame.width;
         const columnOffsets = Array.from({ length: Math.max(columnCount, 1) }, () => frame.top);
 
-        return childBlocks.map((childBlock, index) => {
+        const fallbackPlacements = childBlocks.map((childBlock, index) => {
             const requestedColumnIndex = Number.isFinite(Number(childBlock?.columnIndex))
                 ? Number(childBlock.columnIndex)
                 : index;
@@ -2803,6 +3117,10 @@ const FramesMode = {
                 centerY
             };
         });
+
+        return childBlocks.some(childBlock => this.hasLayoutAlign(childBlock))
+            ? this.applyAlignedChildPlacements(block, layout, childBlocks, fallbackPlacements)
+            : fallbackPlacements;
     },
 
     getFreePositionedContainerChildPlacements(block, layout = this.getCanvasBlockLayout(block), childBlocks = this.getChildBlocks(block.id)) {
@@ -2813,7 +3131,7 @@ const FramesMode = {
                 .map(placement => [placement.childBlock.id, placement])
         );
 
-        return childBlocks.map(childBlock => {
+        const fallbackPlacements = childBlocks.map(childBlock => {
             if (this.usesManualNestedBlockPosition(block, childBlock)) {
                 const position = this.clampNestedBlockPosition(block, childBlock, {
                     xPct: childBlock?.xPct,
@@ -2838,6 +3156,10 @@ const FramesMode = {
                 centerY: frame.top + (frame.height / 2)
             };
         });
+
+        return childBlocks.some(childBlock => this.hasLayoutAlign(childBlock))
+            ? this.applyAlignedChildPlacements(block, layout, childBlocks, fallbackPlacements)
+            : fallbackPlacements;
     },
 
     getResolvedNestedBlockPosition(parentBlock, childBlock, parentLayout = this.getCanvasBlockLayout(parentBlock), childBlocks = this.getChildBlocks(parentBlock?.id)) {
@@ -6318,7 +6640,16 @@ const FramesMode = {
             return;
         }
 
-        const numericSettings = new Set(['fontSize', 'width', 'height', 'size', 'lineHeight', 'letterSpacing', 'paddingX', 'paddingY', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderWidth', 'borderRadius', 'rotation', 'childGap', 'columnCount', 'columnGap']);
+        if (setting === 'align') {
+            const patch = this.getBlockAlignPatch(block, control.value, root);
+            this.updateBlock(block.id, patch);
+            this.syncInspectorBlockControls(root, patch);
+            this.renderIntoRoot();
+            this.clampUpdatedBlockToCanvas(this.getRoot(), this.getBlockById(block.id));
+            return;
+        }
+
+        const numericSettings = new Set(['fontSize', 'fontWeight', 'width', 'height', 'size', 'lineHeight', 'letterSpacing', 'paddingX', 'paddingY', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderWidth', 'borderRadius', 'rotation', 'qrRotation', 'childGap', 'columnCount', 'columnGap', 'xPct', 'yPct', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft']);
         let nextValue;
 
         if (setting === 'backgroundColorRaw') {
@@ -6331,8 +6662,10 @@ const FramesMode = {
                 : control.value;
         }
 
-        if (setting === 'rotation') {
+        if (setting === 'rotation' || setting === 'qrRotation') {
             nextValue = this.normalizeBlockRotation(nextValue);
+        } else if (setting === 'xPct' || setting === 'yPct') {
+            nextValue = this.clamp(nextValue, 0, 100);
         } else if (setting === 'width') {
             nextValue = this.clamp(
                 nextValue,
@@ -6356,11 +6689,15 @@ const FramesMode = {
         } else if (setting === 'size') {
             nextValue = this.clamp(nextValue, 80, this.getCanvasMeasurementMax('size', root));
         } else if (setting === 'childGap') {
-            nextValue = this.clamp(nextValue, 4, 80);
+            nextValue = this.clamp(nextValue, 0, 2000);
         } else if (setting === 'columnCount') {
             nextValue = this.clamp(Math.round(nextValue), 2, 6);
         } else if (setting === 'columnGap') {
-            nextValue = this.clamp(nextValue, 0, 120);
+            nextValue = this.clamp(nextValue, 0, 2000);
+        } else if (['marginTop', 'marginRight', 'marginBottom', 'marginLeft'].includes(setting)) {
+            nextValue = this.clamp(nextValue, 0, 2000);
+        } else if (['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'paddingX', 'paddingY'].includes(setting)) {
+            nextValue = this.clamp(nextValue, 0, 2000);
         }
 
         let patch = setting === 'backgroundColorRaw'
@@ -6369,6 +6706,19 @@ const FramesMode = {
 
         if (block.type === 'line') {
             patch = this.normalizeLineBlockPatch(block, patch);
+        }
+
+        if ((setting === 'xPct' || setting === 'yPct') && this.hasLayoutAlign(block)) {
+            patch.align = 'none';
+        } else if (this.hasLayoutAlign(block) && ['width', 'height', 'size', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft'].includes(setting)) {
+            const alignedBlock = {
+                ...block,
+                ...patch
+            };
+            patch = {
+                ...patch,
+                ...this.getBlockAlignPatch(alignedBlock, alignedBlock.align, root)
+            };
         }
 
         this.updateBlock(block.id, patch);
@@ -7080,7 +7430,22 @@ const FramesMode = {
     },
 
     cloneBlockData(block) {
-        return block ? JSON.parse(JSON.stringify(block)) : null;
+        return this.normalizeFrameEditorBlockData(block ? JSON.parse(JSON.stringify(block)) : null);
+    },
+
+    normalizeFrameEditorBlockData(block) {
+        if (!block || typeof block !== 'object') {
+            return null;
+        }
+
+        const normalizedBlock = window.FrameEditorBlockCatalog?.normalizeBlock?.(block) || block;
+        return {
+            ...normalizedBlock,
+            marginTop: Math.max(0, Number(normalizedBlock.marginTop) || 0),
+            marginRight: Math.max(0, Number(normalizedBlock.marginRight) || 0),
+            marginBottom: Math.max(0, Number(normalizedBlock.marginBottom) || 0),
+            marginLeft: Math.max(0, Number(normalizedBlock.marginLeft) || 0)
+        };
     },
 
     getBlockSubtreeBlocks(blockId, blocks = this.state.canvasBlocks) {
@@ -7607,6 +7972,20 @@ const FramesMode = {
         const parentId = nestedOptions?.parentId || '';
         const childOrder = Number.isFinite(Number(nestedOptions?.childOrder)) ? Number(nestedOptions.childOrder) : 0;
         const columnIndex = Number.isFinite(Number(nestedOptions?.columnIndex)) ? Number(nestedOptions.columnIndex) : 0;
+
+        const catalogBlock = window.FrameEditorBlockCatalog?.createBlock?.(blockType, {
+            id: this.getNextBlockId(),
+            xPct,
+            yPct,
+            parentId,
+            childOrder,
+            columnIndex,
+            getDefaultColor: () => this.getTextBlockDefaultColor(),
+            translate: text => I18n.translateString(text)
+        });
+        if (catalogBlock) {
+            return catalogBlock;
+        }
 
         if (blockType === 'text') {
             return {

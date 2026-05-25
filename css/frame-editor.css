@@ -928,6 +928,118 @@
     flex: 0 0 auto;
 }
 
+.frame-editor-object-inspector-form {
+    gap: 0.9rem;
+}
+
+.frame-editor-object-inspector {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-card);
+}
+
+.frame-editor-object-inspector-row {
+    display: grid;
+    grid-template-columns: minmax(104px, 42%) minmax(0, 1fr);
+    min-height: 34px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.frame-editor-object-inspector-row:last-child {
+    border-bottom: 0;
+}
+
+.frame-editor-object-inspector-row:focus-within,
+.frame-editor-object-inspector-row:hover {
+    background-color: color-mix(in srgb, var(--accent-primary) 8%, var(--bg-card));
+}
+
+.frame-editor-object-inspector-row.is-tall {
+    min-height: 78px;
+}
+
+.frame-editor-object-inspector-name,
+.frame-editor-object-inspector-value {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    padding: 0.35rem 0.55rem;
+}
+
+.frame-editor-object-inspector-name {
+    border-right: 1px solid rgba(148, 163, 184, 0.2);
+    color: var(--text-primary);
+    font-size: 0.78rem;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.frame-editor-object-inspector-value {
+    color: var(--text-primary);
+}
+
+.frame-editor-object-inspector-input {
+    width: 100%;
+    min-width: 0;
+    min-height: 28px;
+    padding: 0.25rem 0.4rem;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background-color: color-mix(in srgb, var(--bg-card) 82%, var(--bg-primary));
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.8rem;
+}
+
+.frame-editor-object-inspector-input:focus {
+    border-color: var(--accent-primary);
+    outline: 0;
+}
+
+.frame-editor-object-inspector-value textarea.frame-editor-object-inspector-input {
+    min-height: 64px;
+    resize: vertical;
+}
+
+.frame-editor-object-inspector-value input[type="color"].frame-editor-object-inspector-input {
+    min-height: 28px;
+    padding: 0.1rem;
+    border-color: transparent;
+    border-radius: 4px;
+}
+
+.frame-editor-object-inspector-checkbox {
+    width: 16px;
+    min-width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--accent-primary);
+}
+
+.frame-editor-object-inspector-number {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.35rem;
+    width: 100%;
+}
+
+.frame-editor-object-inspector-number>span {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+}
+
+.frame-editor-object-inspector-upload {
+    width: 100%;
+    min-height: 30px;
+    padding: 0.3rem 0.45rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+}
+
 .frame-editor-field input[type="range"] {
     padding: 0;
     min-height: 30px;
