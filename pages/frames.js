@@ -19,7 +19,7 @@ const FramesMode = {
         correctLevel: 'Q',
         margin: 4
     }),
-    BLOCK_LIBRARY: Object.freeze(window.FrameEditorBlockCatalog?.getLibrary?.() || []),
+    COMPONENT_LIBRARY: Object.freeze(window.FrameEditorComponentCatalog?.getLibrary?.() || []),
     CONTAINER_ALIGNMENT_OPTIONS: Object.freeze([
         { id: 'left', label: 'Left' },
         { id: 'center', label: 'Center' },
@@ -158,7 +158,7 @@ const FramesMode = {
         const totalFrameCount = allFrames.length;
         const searchLabel = this.state.activeTab === 'frames'
             ? I18n.translateString('Search frames')
-            : I18n.translateString('Search blocks');
+            : I18n.translateString('Search components');
         const leftSidebarCollapsed = this.isLeftSidebarCollapsed();
         const isCanvasOverviewMode = (this.state.leftPanelMode || 'library') === 'overview';
         const isSidebarLibraryMode = !isCanvasOverviewMode;
@@ -172,8 +172,8 @@ const FramesMode = {
             ? I18n.translateString('Canvas Overview')
             : I18n.translateString('Frame Editor sidebar');
         const rightSidebarToggleLabel = this.state.isRightSidebarCollapsed
-            ? I18n.translateString('Expand Block Inspector')
-            : I18n.translateString('Collapse Block Inspector');
+            ? I18n.translateString('Expand Component Inspector')
+            : I18n.translateString('Collapse Component Inspector');
         const isDeveloperMode = this.isDeveloperMode();
 
         return `
@@ -228,11 +228,11 @@ const FramesMode = {
                             type="button"
                             class="frame-editor-sidebar-toggle"
                             data-canvas-action="fit-blocks"
-                            title="${this.escapeHTML(I18n.translateString('Fit blocks in view'))}"
-                            aria-label="${this.escapeHTML(I18n.translateString('Fit blocks in view'))}"
+                            title="${this.escapeHTML(I18n.translateString('Fit components in view'))}"
+                            aria-label="${this.escapeHTML(I18n.translateString('Fit components in view'))}"
                         >
                             <i class="bi bi-arrows-angle-expand" aria-hidden="true"></i>
-                            <span class="frame-editor-button-label">${I18n.translateString('Fit blocks')}</span>
+                            <span class="frame-editor-button-label">${I18n.translateString('Fit components')}</span>
                         </button>
                         <div class="frame-editor-header-zoom" data-frame-editor-zoom-group>
                             <div class="frame-editor-canvas-controls" role="group" aria-label="${this.escapeHTML(I18n.translateString('Canvas controls'))}">
@@ -284,7 +284,7 @@ const FramesMode = {
                             title="${this.escapeHTML(rightSidebarToggleLabel)}"
                         >
                             <i class="bi ${this.state.isRightSidebarCollapsed ? 'bi-layout-sidebar-reverse' : 'bi-layout-sidebar'}" aria-hidden="true"></i>
-                            <span class="frame-editor-button-label">${I18n.translateString('Block Inspector')}</span>
+                            <span class="frame-editor-button-label">${I18n.translateString('Component Inspector')}</span>
                         </button>
                     </div>
                 </div>
@@ -306,7 +306,7 @@ const FramesMode = {
                 : `
                                     <div class="frame-editor-tabs" role="tablist" aria-label="${I18n.translateString('Frame Editor panels')}">
                                         ${this.renderTabButton('frames', 'Frames', 'bi-collection')}
-                                        ${this.renderTabButton('blocks', 'Blocks', 'bi-grid-3x3-gap')}
+                                        ${this.renderTabButton('blocks', 'Components', 'bi-grid-3x3-gap')}
                                     </div>
 
                                     <div class="frame-editor-sidebar-search search-field">
@@ -339,7 +339,7 @@ const FramesMode = {
                         <aside
                             id="frameEditorRightSidebarPanel"
                             class="frame-editor-right-sidebar-panel"
-                            aria-label="${I18n.translateString('Block Inspector')}"
+                            aria-label="${I18n.translateString('Component Inspector')}"
                             aria-hidden="${this.state.isRightSidebarCollapsed ? 'true' : 'false'}"
                         >
                             ${this.renderRightSidebar(selectedBlock)}
@@ -377,7 +377,7 @@ const FramesMode = {
                         <div class="frame-editor-json-load-dialog-copy">
                             <span class="frame-editor-json-load-dialog-kicker">${I18n.translateString('Frame Editor')}</span>
                             <h2 class="frame-editor-json-load-dialog-title" id="frameEditorLoadJsonTitle">${I18n.translateString('Load JSON')}</h2>
-                            <p class="frame-editor-json-load-dialog-description" id="frameEditorLoadJsonDescription">${I18n.translateString('Paste a frame JSON export or choose a .json file to restore the frame, canvas settings, and blocks.')}</p>
+                            <p class="frame-editor-json-load-dialog-description" id="frameEditorLoadJsonDescription">${I18n.translateString('Paste a frame JSON export or choose a .json file to restore the frame, canvas settings, and components.')}</p>
                         </div>
                         <button type="button" class="frame-editor-json-load-dialog-close" data-frame-editor-load-json-close="true" aria-label="${this.escapeHTML(I18n.translateString('Close load dialog'))}">
                             <i class="bi bi-x-lg" aria-hidden="true"></i>
@@ -506,25 +506,25 @@ const FramesMode = {
     },
 
     renderBlocksSidebar(filteredBlocks) {
-        const totalBlocks = this.BLOCK_LIBRARY.length;
+        const totalBlocks = this.COMPONENT_LIBRARY.length;
 
         if (!filteredBlocks.length) {
             return `
                 <div class="frame-editor-sidebar-summary">
-                    <span class="frame-editor-sidebar-title">${I18n.translateString('Blocks')}</span>
+                    <span class="frame-editor-sidebar-title">${I18n.translateString('Components')}</span>
                     <span class="frame-editor-sidebar-count">${I18n.translate('{count} available', { count: String(totalBlocks) })}</span>
                 </div>
                 <div class="frame-editor-empty-state">
                     <i class="bi bi-search" aria-hidden="true"></i>
-                    <div class="frame-editor-empty-title">${I18n.translateString('No matching blocks')}</div>
-                    <p>${I18n.translateString('Try a different keyword or clear the search to see all available blocks.')}</p>
+                    <div class="frame-editor-empty-title">${I18n.translateString('No matching components')}</div>
+                    <p>${I18n.translateString('Try a different keyword or clear the search to see all available components.')}</p>
                 </div>
             `;
         }
 
         return `
             <div class="frame-editor-sidebar-summary">
-                <span class="frame-editor-sidebar-title">${I18n.translateString('Blocks')}</span>
+                <span class="frame-editor-sidebar-title">${I18n.translateString('Components')}</span>
                 <span class="frame-editor-sidebar-count">${I18n.translate('{count} available', { count: String(filteredBlocks.length) })}</span>
             </div>
             <div class="frame-editor-library-list" role="list">
@@ -555,7 +555,7 @@ const FramesMode = {
                 ${blockEntries.length && !isCanvasCollapsed
                 ? `
                         <div class="frame-editor-overview-root-dropzone" data-frame-editor-overview-root-drop="end" role="note">
-                            ${this.escapeHTML(I18n.translateString('Drop here to move a block back to the canvas'))}
+                            ${this.escapeHTML(I18n.translateString('Drop here to move a component back to the canvas'))}
                         </div>
                     `
                 : ''}
@@ -625,7 +625,7 @@ const FramesMode = {
                             type="button"
                             class="frame-editor-overview-item-toggle"
                             data-frame-editor-overview-toggle="${block.id}"
-                            aria-label="${this.escapeHTML(isCollapsed ? I18n.translateString('Expand block children') : I18n.translateString('Collapse block children'))}"
+                            aria-label="${this.escapeHTML(isCollapsed ? I18n.translateString('Expand component children') : I18n.translateString('Collapse component children'))}"
                             aria-expanded="${isCollapsed ? 'false' : 'true'}"
                         >
                             <i class="bi ${isCollapsed ? 'bi-chevron-right' : 'bi-chevron-down'}" aria-hidden="true"></i>
@@ -671,8 +671,13 @@ const FramesMode = {
     },
 
     getCanvasOverviewDisplayLabel(block) {
+        const componentDefinition = this.getComponentDefinition(block);
+        if (componentDefinition && !['text', 'line', 'shape', 'columns', 'section', 'image', 'qr'].includes(block?.type)) {
+            return this.getCanvasOverviewPreviewText(block.text, componentDefinition.name || componentDefinition.className);
+        }
+
         if (block?.type === 'text') {
-            return this.getCanvasOverviewPreviewText(block.text, I18n.translateString('Text Block'));
+            return this.getCanvasOverviewPreviewText(block.text, I18n.translateString('TLabel'));
         }
 
         if (block?.type === 'line') {
@@ -689,7 +694,7 @@ const FramesMode = {
         }
 
         if (block?.type === 'section') {
-            return I18n.translateString('Section');
+            return I18n.translateString('TPanel');
         }
 
         if (block?.type === 'image') {
@@ -698,10 +703,15 @@ const FramesMode = {
                 : I18n.translateString('Image');
         }
 
-        return I18n.translateString('QR Code');
+        return I18n.translateString(componentDefinition?.name || 'TQRCode');
     },
 
     getCanvasOverviewItemSummary(block) {
+        const componentDefinition = this.getComponentDefinition(block);
+        if (componentDefinition && !['text', 'line', 'shape', 'columns', 'section', 'image', 'qr'].includes(block?.type)) {
+            return componentDefinition.unitName || componentDefinition.className || 'Component';
+        }
+
         if (block?.type === 'text') {
             return this.getCanvasOverviewPreviewText(block.text, I18n.translateString('Empty text'));
         }
@@ -712,7 +722,7 @@ const FramesMode = {
         }
 
         if (block?.type === 'section') {
-            return I18n.translate('{count} child blocks', { count: String(this.getChildBlocks(block.id).length) });
+            return I18n.translate('{count} child components', { count: String(this.getChildBlocks(block.id).length) });
         }
 
         if (block?.type === 'columns') {
@@ -754,8 +764,26 @@ const FramesMode = {
         return previewText || this.PREVIEW_QR_TEXT;
     },
 
+    getComponentClassName(blockOrType) {
+        if (typeof blockOrType === 'string') {
+            return window.FrameEditorComponentCatalog?.resolveClassName?.(blockOrType) || blockOrType;
+        }
+        return blockOrType?.className
+            || window.FrameEditorComponentCatalog?.resolveClassName?.(blockOrType?.type)
+            || blockOrType?.type
+            || '';
+    },
+
+    getComponentDefinition(blockOrType) {
+        const key = typeof blockOrType === 'string'
+            ? blockOrType
+            : (blockOrType?.className || blockOrType?.type || '');
+        return window.FrameEditorComponentCatalog?.getDefinition?.(key) || null;
+    },
+
     getBlockIcon(blockType) {
-        return this.BLOCK_LIBRARY.find(block => block.type === blockType)?.icon || 'bi-square';
+        const className = this.getComponentClassName(blockType);
+        return this.COMPONENT_LIBRARY.find(component => component.type === blockType || component.className === className)?.icon || 'bi-square';
     },
 
     renderFrameListItem(frame, selectedFrame) {
@@ -821,7 +849,7 @@ const FramesMode = {
             <div class="frame-editor-right-sidebar-shell">
                 <div class="frame-editor-right-sidebar-topbar">
                     <div class="frame-editor-right-sidebar-selection">
-                        <span class="frame-editor-right-sidebar-selection-name">${this.escapeHTML(I18n.translateString('Block Inspector'))}</span>
+                        <span class="frame-editor-right-sidebar-selection-name">${this.escapeHTML(I18n.translateString('Component Inspector'))}</span>
                         <span class="frame-editor-right-sidebar-selection-kind">${this.escapeHTML(inspectorSubtitle)}</span>
                     </div>
                 </div>
@@ -836,7 +864,7 @@ const FramesMode = {
                         aria-label="${this.escapeHTML(rightSidebarSearchLabel)}"
                     >
                 </div>
-                <div class="frame-editor-right-sidebar-tabs" role="tablist" aria-label="${this.escapeHTML(I18n.translateString('Block Inspector tabs'))}">
+                <div class="frame-editor-right-sidebar-tabs" role="tablist" aria-label="${this.escapeHTML(I18n.translateString('Component Inspector tabs'))}">
                     <button type="button" id="frameEditorRightSidebarTabProperties" class="frame-editor-right-sidebar-tab${activeRightSidebarTab === 'properties' ? ' active' : ''}" data-frame-editor-right-sidebar-tab="properties" role="tab" aria-selected="${activeRightSidebarTab === 'properties' ? 'true' : 'false'}" aria-controls="frameEditorRightSidebarPropertiesPanel" tabindex="${activeRightSidebarTab === 'properties' ? '0' : '-1'}">
                         ${this.escapeHTML(I18n.translateString('Properties'))}
                     </button>
@@ -867,7 +895,7 @@ const FramesMode = {
                 <div class="frame-editor-empty-state frame-editor-empty-state-compact">
                     <i class="bi bi-lightning-charge" aria-hidden="true"></i>
                     <div class="frame-editor-empty-title">${I18n.translateString('Nothing selected')}</div>
-                    <p>${I18n.translateString('Select a block or the canvas to inspect future events here.')}</p>
+                    <p>${I18n.translateString('Select a component or the canvas to inspect future events here.')}</p>
                 </div>
             `;
         }
@@ -894,7 +922,7 @@ const FramesMode = {
                 <div class="frame-editor-empty-state frame-editor-empty-state-compact">
                     <i class="bi bi-cursor" aria-hidden="true"></i>
                     <div class="frame-editor-empty-title">${I18n.translateString('Nothing selected')}</div>
-                    <p>${I18n.translateString('Select a block or the canvas to edit its properties here.')}</p>
+                    <p>${I18n.translateString('Select a component or the canvas to edit its properties here.')}</p>
                 </div>
             `;
         }
@@ -905,7 +933,7 @@ const FramesMode = {
             return `
                 <div class="frame-editor-sidebar-panel-section">
                     <div class="frame-editor-sidebar-summary">
-                        <span class="frame-editor-sidebar-title">${I18n.translateString('Text Block')}</span>
+                        <span class="frame-editor-sidebar-title">${I18n.translateString('TLabel')}</span>
                     </div>
                     <div class="frame-editor-sidebar-form">
                         <label class="frame-editor-field frame-editor-field-wide">
@@ -1052,7 +1080,7 @@ const FramesMode = {
         return `
             <div class="frame-editor-sidebar-panel-section">
                 <div class="frame-editor-sidebar-summary">
-                    <span class="frame-editor-sidebar-title">${I18n.translateString('QR Code Block')}</span>
+                    <span class="frame-editor-sidebar-title">${I18n.translateString('TQRCode')}</span>
                 </div>
                 <div class="frame-editor-sidebar-form">
                     <div class="form-hint">${this.escapeHTML(I18n.translateString('Uses the current QR content from the generator.'))}</div>
@@ -1109,12 +1137,15 @@ const FramesMode = {
     },
 
     renderObjectInspectorBlockContent(selectedBlock) {
-        const blockDefinition = window.FrameEditorBlockCatalog?.getDefinition?.(selectedBlock.type);
-        const blockTitle = blockDefinition?.name || this.getBlockLabel(selectedBlock);
+        const blockDefinition = this.getComponentDefinition(selectedBlock);
+        const blockTitle = blockDefinition?.name || blockDefinition?.className || this.getBlockLabel(selectedBlock);
+        const className = this.getComponentClassName(selectedBlock);
+        const unitName = selectedBlock.unitName || blockDefinition?.unitName || '';
         return `
             <div class="frame-editor-sidebar-panel-section">
                 <div class="frame-editor-sidebar-summary">
                     <span class="frame-editor-sidebar-title">${this.escapeHTML(I18n.translateString(blockTitle))}</span>
+                    <span class="frame-editor-sidebar-count">${this.escapeHTML(unitName ? `${className} · ${unitName}` : className)}</span>
                 </div>
                 <div class="frame-editor-sidebar-form frame-editor-object-inspector-form">
                     ${this.renderBlockPropertyGrid(selectedBlock)}
@@ -1139,7 +1170,8 @@ const FramesMode = {
     },
 
     getSortedBlockProperties(block) {
-        return (window.FrameEditorBlockCatalog?.getProperties?.(block?.type) || [])
+        const key = block?.className || block?.type;
+        return (window.FrameEditorComponentCatalog?.getProperties?.(key) || [])
             .filter(property => this.isBlockPropertyVisible(block, property))
             .sort((left, right) => {
                 const leftLabel = I18n.translateString(left.label || left.setting || '').toLocaleLowerCase();
@@ -1238,7 +1270,7 @@ const FramesMode = {
             return property.value(block);
         }
         if (property.setting === 'align') {
-            return window.FrameEditorBlockCatalog?.normalizeAlign?.(block.align) || 'none';
+            return window.FrameEditorComponentCatalog?.normalizeAlign?.(block.align) || 'none';
         }
         if (['marginTop', 'marginRight', 'marginBottom', 'marginLeft'].includes(property.setting)) {
             return Math.max(0, Number(block[property.setting]) || 0);
@@ -1305,11 +1337,12 @@ const FramesMode = {
     },
 
     renderShapeBlockInspector(selectedBlock) {
+        const title = this.getComponentDefinition(selectedBlock)?.name || 'TRectangle';
         const selectedShapeType = selectedBlock.shapeType || 'rectangle';
         return `
             <div class="frame-editor-sidebar-panel-section">
                 <div class="frame-editor-sidebar-summary">
-                    <span class="frame-editor-sidebar-title">${I18n.translateString('Shape Block')}</span>
+                    <span class="frame-editor-sidebar-title">${I18n.translateString(title)}</span>
                 </div>
                 <div class="frame-editor-sidebar-form">
                     <div class="frame-editor-text-property-group">
@@ -1353,6 +1386,7 @@ const FramesMode = {
     },
 
     renderImageBlockInspector(selectedBlock) {
+        const title = this.getComponentDefinition(selectedBlock)?.name || 'TImage';
         const hasImage = Boolean(selectedBlock.src);
         const fileLabel = selectedBlock.imageName || I18n.translateString('No image selected');
         const uploadLabel = hasImage ? 'Replace image' : 'Upload image';
@@ -1360,7 +1394,7 @@ const FramesMode = {
         return `
             <div class="frame-editor-sidebar-panel-section">
                 <div class="frame-editor-sidebar-summary">
-                    <span class="frame-editor-sidebar-title">${I18n.translateString('Image Block')}</span>
+                    <span class="frame-editor-sidebar-title">${I18n.translateString(title)}</span>
                 </div>
                 <div class="frame-editor-sidebar-form">
                     <div class="frame-editor-text-property-group">
@@ -1413,12 +1447,13 @@ const FramesMode = {
     },
 
     renderLineBlockInspector(selectedBlock) {
+        const title = this.getComponentDefinition(selectedBlock)?.name || 'TLine';
         const selectedLineStyle = this.getNormalizedLineBlockStyleId(selectedBlock.lineStyle || 'solid');
 
         return `
             <div class="frame-editor-sidebar-panel-section">
                 <div class="frame-editor-sidebar-summary">
-                    <span class="frame-editor-sidebar-title">${I18n.translateString('Line Block')}</span>
+                    <span class="frame-editor-sidebar-title">${I18n.translateString(title)}</span>
                 </div>
                 <div class="frame-editor-sidebar-form">
                     <div class="frame-editor-text-property-group">
@@ -1458,7 +1493,7 @@ const FramesMode = {
         return `
             <div class="frame-editor-sidebar-panel-section">
                 <div class="frame-editor-sidebar-summary">
-                    <span class="frame-editor-sidebar-title">${I18n.translateString('Section Block')}</span>
+                    <span class="frame-editor-sidebar-title">${I18n.translateString('TPanel')}</span>
                 </div>
                 <div class="frame-editor-sidebar-form">
                     ${this.renderContainerBlockInspectorGroups(selectedBlock)}
@@ -1469,10 +1504,11 @@ const FramesMode = {
     },
 
     renderColumnsBlockInspector(selectedBlock) {
+        const title = this.getComponentDefinition(selectedBlock)?.name || 'TGridPanelLayout';
         return `
             <div class="frame-editor-sidebar-panel-section">
                 <div class="frame-editor-sidebar-summary">
-                    <span class="frame-editor-sidebar-title">${I18n.translateString('Columns Block')}</span>
+                    <span class="frame-editor-sidebar-title">${I18n.translateString(title)}</span>
                 </div>
                 <div class="frame-editor-sidebar-form">
                     ${this.renderContainerBlockInspectorGroups(selectedBlock, `
@@ -2155,7 +2191,7 @@ const FramesMode = {
     },
 
     hasLayoutAlign(block) {
-        const align = window.FrameEditorBlockCatalog?.normalizeAlign?.(block?.align) || 'none';
+        const align = window.FrameEditorComponentCatalog?.normalizeAlign?.(block?.align) || 'none';
         return align !== 'none';
     },
 
@@ -2179,7 +2215,7 @@ const FramesMode = {
     },
 
     getBlockAlignPatch(block, alignValue, root = this.getRoot()) {
-        const align = window.FrameEditorBlockCatalog?.normalizeAlign?.(alignValue) || 'none';
+        const align = window.FrameEditorComponentCatalog?.normalizeAlign?.(alignValue) || 'none';
         const patch = { align };
         if (!block || align === 'none') {
             return patch;
@@ -2299,7 +2335,7 @@ const FramesMode = {
         const client = { ...frame };
 
         return childBlocks.map(childBlock => {
-            const align = window.FrameEditorBlockCatalog?.normalizeAlign?.(childBlock?.align) || 'none';
+            const align = window.FrameEditorComponentCatalog?.normalizeAlign?.(childBlock?.align) || 'none';
             if (align === 'none') {
                 return fallbackById.get(childBlock.id) || {
                     childBlock,
@@ -2337,7 +2373,7 @@ const FramesMode = {
     },
 
     canUseParentPositionControl(block, parentBlock = this.getParentBlock(block)) {
-        return Boolean(block?.parentId && parentBlock && !this.isContainerBlock(parentBlock));
+        return Boolean(block?.parentId && parentBlock && (!this.isContainerBlock(parentBlock) || this.usesFreePositionedChildren(parentBlock)));
     },
 
     normalizeBlockRotation(value) {
@@ -2599,7 +2635,8 @@ const FramesMode = {
             `top: ${block.yPct}%`,
             `width: ${width}px`,
             `z-index: ${this.getCanvasBlockZIndex(block, index)}`,
-            `transform: ${this.getCanvasBlockTransform(block.rotation)}`
+            `transform: ${this.getCanvasBlockTransform(block.rotation)}`,
+            ...this.getCanvasBlockVisualStyleEntries(block)
         ].join('; ');
 
         return `
@@ -2618,36 +2655,57 @@ const FramesMode = {
     },
 
     getBlockLabel(block) {
+        const componentDefinition = this.getComponentDefinition(block);
+        if (componentDefinition?.name) {
+            return componentDefinition.name;
+        }
+
         if (block?.type === 'text') {
-            return 'Text Block';
+            return 'TLabel';
         }
         if (block?.type === 'shape') {
-            return 'Shape Block';
+            return 'TRectangle';
         }
         if (block?.type === 'section') {
-            return 'Section Block';
+            return 'TPanel';
         }
         if (block?.type === 'columns') {
-            return 'Columns Block';
+            return 'TGridPanelLayout';
         }
         if (block?.type === 'image') {
-            return 'Image Block';
+            return 'TImage';
         }
         if (block?.type === 'line') {
-            return 'Line Block';
+            return 'TLine';
         }
-        return 'QR Code Block';
+        return 'TQRCode';
     },
 
     isContainerBlock(blockOrType) {
         const blockType = typeof blockOrType === 'string'
             ? blockOrType
             : blockOrType?.type;
-        return blockType === 'section' || blockType === 'columns';
+        const componentDefinition = this.getComponentDefinition(blockOrType);
+        return blockType === 'section' || blockType === 'columns' || Boolean(componentDefinition?.isContainer);
+    },
+
+    usesFreePositionedChildren(blockOrType) {
+        const blockType = typeof blockOrType === 'string'
+            ? blockOrType
+            : blockOrType?.type;
+        const className = this.getComponentClassName(blockOrType);
+        const componentDefinition = this.getComponentDefinition(blockOrType);
+        if (blockType === 'columns') {
+            return false;
+        }
+        if (componentDefinition?.isContainer) {
+            return true;
+        }
+        return !this.isContainerBlock(blockOrType);
     },
 
     usesManualNestedBlockPosition(parentBlock, childBlock) {
-        if (!parentBlock || this.isContainerBlock(parentBlock)) {
+        if (!parentBlock || (this.isContainerBlock(parentBlock) && !this.usesFreePositionedChildren(parentBlock))) {
             return false;
         }
 
@@ -2783,6 +2841,7 @@ const FramesMode = {
             const childLayer = this.renderCanvasBlockChildLayer(block, layout);
             const isTextInnerSelected = this.isTextInnerSelected(block);
             const surfaceStyle = [
+                ...(this.usesExplicitComponentBounds(block) ? [`width: ${layout.width}px`, `height: ${layout.height}px`, 'box-sizing: border-box'] : []),
                 `background-color: ${this.isTransparentTextBlockBackground(block) ? 'transparent' : block.backgroundColor}`,
                 `border-color: ${(Number(block.borderWidth) || 0) > 0 ? (block.borderColor || block.color || this.getTextBlockDefaultColor()) : 'transparent'}`,
                 'border-style: solid',
@@ -2895,6 +2954,10 @@ const FramesMode = {
             `;
         }
 
+        if (this.isGenericComponentBlock(block)) {
+            return this.renderGenericComponentBlockInner(block);
+        }
+
         const layout = this.getQrBlockLayout(block);
         const padding = this.getQrBlockPadding(block);
         const isQrInnerSelected = this.isQrInnerSelected(block);
@@ -2929,8 +2992,8 @@ const FramesMode = {
         const layout = this.getCanvasBlockLayout(block);
         const padding = this.getTextBlockPadding(block);
         const emptyLabel = block.type === 'columns'
-            ? I18n.translateString('Add blocks into this columns container')
-            : I18n.translateString('Add blocks into this section');
+            ? I18n.translateString('Add components into this columns container')
+            : I18n.translateString('Add components into this section');
         const childLayer = this.renderCanvasBlockChildLayer(block, layout, {
             childBlocks: this.getChildBlocks(block.id),
             showPlaceholder: true,
@@ -2960,6 +3023,235 @@ const FramesMode = {
         `;
     },
 
+    isGenericComponentBlock(block) {
+        if (!block) {
+            return false;
+        }
+        if (['qr', 'text', 'shape', 'line', 'section', 'columns', 'image'].includes(block.type)) {
+            return false;
+        }
+        return Boolean(this.getComponentDefinition(block));
+    },
+
+    getGenericComponentLayout(block) {
+        const borderWidth = Math.max(0, Number(block?.borderWidth) || 0);
+        return {
+            width: Math.max(1, Number(block?.width) || 160),
+            height: Math.max(1, Number(block?.height) || 44),
+            borderWidth
+        };
+    },
+
+    renderGenericComponentBlockInner(block) {
+        const layout = this.getGenericComponentLayout(block);
+        const padding = this.getTextBlockPadding(block);
+        const className = this.getComponentClassName(block);
+        const childLayer = this.isContainerBlock(block)
+            ? this.renderCanvasBlockChildLayer(block, layout, {
+                childBlocks: this.getChildBlocks(block.id),
+                showPlaceholder: true,
+                emptyLabel: I18n.translate('Add components into this {name} container', { name: className })
+            })
+            : this.renderCanvasBlockChildLayer(block, layout);
+        const surfaceStyle = [
+            `width: ${layout.width}px`,
+            `height: ${layout.height}px`,
+            `box-sizing: border-box`,
+            'position: relative',
+            `padding: ${padding.top}px ${padding.right}px ${padding.bottom}px ${padding.left}px`,
+            `border-width: ${layout.borderWidth}px`,
+            'border-style: solid',
+            `border-color: ${layout.borderWidth > 0 ? (block.borderColor || this.getTextBlockDefaultColor()) : 'transparent'}`,
+            `border-radius: ${Math.max(0, Number(block.borderRadius) || 0)}px`,
+            `background-color: ${this.isTransparentTextBlockBackground(block) ? 'transparent' : (block.backgroundColor || 'transparent')}`,
+            `color: ${block.color || this.getTextBlockDefaultColor()}`,
+            `font-size: ${Math.max(8, Number(block.fontSize) || 16)}px`,
+            `font-weight: ${Number(block.fontWeight) || 400}`,
+            `font-style: ${block.fontStyle || 'normal'}`,
+            `text-align: ${block.textAlign || 'center'}`,
+            `line-height: ${this.getTextBlockLineHeight(block)}`,
+            `letter-spacing: ${Number(block.letterSpacing) || 0}px`,
+            `text-decoration: ${block.textDecoration || 'none'}`,
+            `text-transform: ${block.textTransform || 'none'}`
+        ].join('; ');
+        const contentMarkup = this.renderGenericComponentContent(block, className);
+
+        return `
+            <div class="frame-editor-generic-component-surface frame-editor-generic-component-${this.escapeHTML(className)}" style="${surfaceStyle}">
+                ${contentMarkup}
+            </div>
+            ${childLayer}
+            ${this.state.selectedBlockId === block.id ? this.renderCanvasBlockHandles(block) : ''}
+        `;
+    },
+
+    renderGenericComponentContent(block, className = this.getComponentClassName(block)) {
+        const text = this.escapeHTML(this.getDisplayTextForBlock(block) || className);
+        const value = this.getNormalizedRangeValue(block);
+
+        if (['TLayout', 'TFlowLayout', 'TGridLayout', 'TGridPanelLayout', 'TScaledLayout', 'TScrollBox', 'THorzScrollBox', 'TVertScrollBox', 'TFramedScrollBox', 'TFramedVertScrollBox'].includes(className)) {
+            if (className === 'TGridLayout' || className === 'TGridPanelLayout') {
+                return `<div style="position: absolute; inset: 0; pointer-events: none; opacity: .28; background-image: linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px); background-size: 48px 48px;"></div>`;
+            }
+            if (className === 'TFlowLayout') {
+                return `<div style="position: absolute; inset: 12px; display: flex; flex-wrap: wrap; align-content: flex-start; gap: ${Math.max(0, Number(block.verticalGap) || 8)}px ${Math.max(0, Number(block.horizontalGap) || 8)}px; opacity: .35; pointer-events: none;"><span style="width: 40px; height: 18px; border-radius: 4px; background: currentColor;"></span><span style="width: 72px; height: 18px; border-radius: 4px; background: currentColor;"></span><span style="width: 52px; height: 18px; border-radius: 4px; background: currentColor;"></span></div>`;
+            }
+            return '';
+        }
+
+        if (className === 'TCalloutRectangle') {
+            const position = ['top', 'left', 'right', 'bottom'].includes(block.calloutPosition) ? block.calloutPosition : 'bottom';
+            const width = Math.max(0, Number(block.calloutWidth) || 36);
+            const length = Math.max(0, Number(block.calloutLength) || 24);
+            const offset = Number(block.calloutOffset) || 0;
+            const color = this.escapeHTML(block.backgroundColor || block.color || '#66c0f4');
+            const triangleStyle = {
+                top: `left: calc(50% + ${offset}px - ${width / 2}px); top: -${length}px; border-left: ${width / 2}px solid transparent; border-right: ${width / 2}px solid transparent; border-bottom: ${length}px solid ${color};`,
+                bottom: `left: calc(50% + ${offset}px - ${width / 2}px); bottom: -${length}px; border-left: ${width / 2}px solid transparent; border-right: ${width / 2}px solid transparent; border-top: ${length}px solid ${color};`,
+                left: `top: calc(50% + ${offset}px - ${width / 2}px); left: -${length}px; border-top: ${width / 2}px solid transparent; border-bottom: ${width / 2}px solid transparent; border-right: ${length}px solid ${color};`,
+                right: `top: calc(50% + ${offset}px - ${width / 2}px); right: -${length}px; border-top: ${width / 2}px solid transparent; border-bottom: ${width / 2}px solid transparent; border-left: ${length}px solid ${color};`
+            }[position];
+            return `<span style="position: absolute; width: 0; height: 0; ${triangleStyle}"></span>`;
+        }
+
+        if (className === 'TArc' || className === 'TPie') {
+            const startAngle = Number.isFinite(Number(block.startAngle)) ? Number(block.startAngle) : 0;
+            const endAngle = Number.isFinite(Number(block.endAngle)) ? Number(block.endAngle) : 270;
+            const sweep = Math.max(0, Math.min(360, Math.abs(endAngle - startAngle) || 0));
+            const color = this.escapeHTML(block.color || block.borderColor || '#66c0f4');
+            const mask = className === 'TArc' ? 'mask: radial-gradient(circle, transparent 52%, #000 54%); -webkit-mask: radial-gradient(circle, transparent 52%, #000 54%);' : '';
+            return `<div style="position: absolute; inset: 0; border-radius: 999px; background: conic-gradient(from ${startAngle}deg, ${color} 0deg ${sweep}deg, transparent ${sweep}deg 360deg); ${mask}"></div>`;
+        }
+
+        if (className === 'TPath') {
+            const pathData = this.escapeHTML(block.data || 'M 10 80 C 40 10, 65 10, 95 80 S 150 150, 180 80');
+            const stroke = this.escapeHTML(block.borderColor || block.color || '#66c0f4');
+            const fill = this.escapeHTML(block.backgroundColor === 'transparent' ? 'none' : (block.backgroundColor || 'none'));
+            return `<svg viewBox="0 0 200 160" width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true"><path d="${pathData}" fill="${fill}" stroke="${stroke}" stroke-width="${Math.max(1, Number(block.borderWidth) || 3)}" stroke-linecap="round" stroke-linejoin="round"></path></svg>`;
+        }
+
+        if (className === 'TPaintBox') {
+            return `<div style="position: absolute; inset: 0; display: grid; place-items: center; color: currentColor; background-image: linear-gradient(135deg, transparent 0 46%, currentColor 46% 47%, transparent 47% 100%); opacity: .55;"><i class="bi bi-brush" aria-hidden="true" style="font-size: min(32px, 50%);"></i></div>`;
+        }
+
+        if (className === 'TSelection') {
+            const gripSize = Math.max(3, Number(block.gripSize) || 6);
+            const handle = position => `<span style="position: absolute; ${position}; width: ${gripSize * 2}px; height: ${gripSize * 2}px; margin: -${gripSize}px; border-radius: 999px; background: currentColor;"></span>`;
+            return `${handle('left: 0; top: 0')}${handle('right: 0; top: 0')}${handle('left: 0; bottom: 0')}${handle('right: 0; bottom: 0')}`;
+        }
+
+        if (className === 'TSelectionPoint') {
+            return '';
+        }
+
+        if (className === 'TImageControl') {
+            return block.src
+                ? `<img src="${this.escapeHTML(block.src)}" alt="" draggable="false" style="width: 100%; height: 100%; object-fit: ${this.escapeHTML(block.objectFit || 'contain')}; display: block;">`
+                : `<div style="width: 100%; height: 100%; display: grid; place-items: center; color: currentColor;"><i class="bi bi-image" aria-hidden="true" style="font-size: min(36px, 60%);"></i></div>`;
+        }
+
+        if (className === 'TArcDial') {
+            const angle = -135 + (value * 2.7);
+            return `
+                <div style="position: relative; width: 100%; height: 100%; border-radius: 999px; border: 3px solid rgba(255,255,255,.28); box-sizing: border-box; display: grid; place-items: center;">
+                    <span style="position: absolute; width: 4px; height: 38%; top: 12%; left: calc(50% - 2px); border-radius: 999px; background: currentColor; transform-origin: 50% 100%; transform: rotate(${angle}deg);"></span>
+                    <span style="width: 24%; height: 24%; border-radius: 999px; background: currentColor;"></span>
+                </div>
+            `;
+        }
+
+        if (['TTrackBar', 'TBitmapTrackBar', 'TTrack', 'TScrollBar', 'TSmallScrollBar'].includes(className)) {
+            const isVertical = block.orientation === 'vertical';
+            const trackStyle = isVertical
+                ? 'width: 6px; height: 100%;'
+                : 'width: 100%; height: 6px;';
+            const thumbStyle = isVertical
+                ? `bottom: ${value}%; left: 50%; margin-left: -9px; margin-bottom: -9px;`
+                : `left: ${value}%; top: 50%; margin-left: -9px; margin-top: -9px;`;
+            return `
+                <div style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                    <span style="display: block; ${trackStyle} border-radius: 999px; background: rgba(255,255,255,.28);"></span>
+                    <span style="position: absolute; ${thumbStyle} width: 18px; height: 18px; border-radius: 999px; background: currentColor; box-shadow: 0 0 0 3px rgba(0,0,0,.16);"></span>
+                </div>
+            `;
+        }
+
+        if (className === 'TSizeGrip') {
+            return `
+                <div style="width: 100%; height: 100%; position: relative; opacity: .9;">
+                    <span style="position: absolute; right: 4px; bottom: 4px; width: 18px; height: 18px; background: repeating-linear-gradient(135deg, transparent 0 4px, currentColor 4px 6px, transparent 6px 9px);"></span>
+                </div>
+            `;
+        }
+
+        if (className === 'TCheckBox' || className === 'TRadioButton') {
+            const isRadio = className === 'TRadioButton';
+            return `
+                <div style="display: flex; align-items: center; gap: 10px; width: 100%; height: 100%;">
+                    <span style="width: 18px; height: 18px; border: 2px solid currentColor; border-radius: ${isRadio ? '999px' : '4px'}; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; flex: 0 0 auto;">
+                        ${block.isChecked ? `<span style="width: ${isRadio ? 8 : 10}px; height: ${isRadio ? 8 : 10}px; border-radius: ${isRadio ? '999px' : '2px'}; background: currentColor; display: block;"></span>` : ''}
+                    </span>
+                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${text}</span>
+                </div>
+            `;
+        }
+
+        if (className === 'TSwitch') {
+            const isChecked = block.isChecked !== false;
+            return `
+                <div style="width: 100%; height: 100%; border-radius: 999px; background: ${isChecked ? '#22c55e' : '#4b5563'}; padding: 3px; box-sizing: border-box;">
+                    <span style="display: block; width: calc(50% - 1px); height: 100%; border-radius: 999px; background: #fff; transform: translateX(${isChecked ? 'calc(100% + 2px)' : '0'});"></span>
+                </div>
+            `;
+        }
+
+        if (className === 'TProgressBar') {
+            return `
+                <div style="width: 100%; height: 100%; border-radius: inherit; overflow: hidden; background: rgba(255,255,255,.16);">
+                    <span style="display: block; width: ${value}%; height: 100%; background: #66c0f4; border-radius: inherit;"></span>
+                </div>
+            `;
+        }
+
+        if (className === 'TSplitter') {
+            return `<div style="width: 100%; height: 100%; border-radius: inherit; background: currentColor; opacity: .85;"></div>`;
+        }
+
+        if (className === 'TAniIndicator') {
+            return `<div style="width: 100%; height: 100%; display: grid; place-items: center;"><i class="bi bi-arrow-repeat" aria-hidden="true" style="font-size: min(32px, 80%);"></i></div>`;
+        }
+
+        if (className === 'TGroupBox') {
+            return `<span style="position: absolute; top: -11px; left: 10px; padding: 0 6px; background: ${this.escapeHTML(block.backgroundColor || '#2d2d2d')}; color: currentColor;">${text}</span>`;
+        }
+
+        return `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${text}</div>`;
+    },
+
+    getNormalizedRangeValue(block) {
+        const min = Number.isFinite(Number(block?.min)) ? Number(block.min) : 0;
+        const max = Number.isFinite(Number(block?.max)) ? Number(block.max) : 100;
+        const value = Number.isFinite(Number(block?.value)) ? Number(block.value) : min;
+        if (max <= min) {
+            return 0;
+        }
+        return this.clamp(((value - min) / (max - min)) * 100, 0, 100);
+    },
+
+    getCanvasBlockVisualStyleEntries(block) {
+        const entries = [];
+        if (block?.visible === false) {
+            entries.push('display: none');
+        }
+        if (Number.isFinite(Number(block?.opacity))) {
+            entries.push(`opacity: ${this.clamp(Number(block.opacity), 0, 1)}`);
+        }
+        if (block?.enabled === false || block?.hitTest === false) {
+            entries.push('pointer-events: none');
+        }
+        return entries;
+    },
+
     renderCanvasBlockChildLayer(block, layout = this.getCanvasBlockLayout(block), options = {}) {
         const childBlocks = Array.isArray(options.childBlocks)
             ? options.childBlocks
@@ -2972,9 +3264,9 @@ const FramesMode = {
 
         const childMarkup = block?.type === 'columns'
             ? this.renderColumnsContainerChildren(block, layout, childBlocks)
-            : (block?.type === 'section'
-                ? this.renderSectionContainerChildren(block, layout, childBlocks)
-                : this.renderFreePositionedContainerChildren(block, layout, childBlocks));
+            : (this.usesFreePositionedChildren(block)
+                ? this.renderFreePositionedContainerChildren(block, layout, childBlocks)
+                : this.renderSectionContainerChildren(block, layout, childBlocks));
 
         return `
             ${block?.type === 'columns' ? this.renderColumnsContainerGuides(block, layout) : ''}
@@ -3031,7 +3323,8 @@ const FramesMode = {
             `top: ${centerY}px`,
             `width: ${width}px`,
             `z-index: ${isActive ? 2000 : (index + 1)}`,
-            `transform: ${this.getCanvasBlockTransform(block.rotation)}`
+            `transform: ${this.getCanvasBlockTransform(block.rotation)}`,
+            ...this.getCanvasBlockVisualStyleEntries(block)
         ].join('; ');
 
         return `
@@ -3171,11 +3464,7 @@ const FramesMode = {
             };
         }
 
-        const placements = this.isContainerBlock(parentBlock)
-            ? (parentBlock?.type === 'columns'
-                ? this.getColumnsContainerChildPlacements(parentBlock, parentLayout, childBlocks)
-                : this.getSectionContainerChildPlacements(parentBlock, parentLayout, childBlocks))
-            : this.getFreePositionedContainerChildPlacements(parentBlock, parentLayout, childBlocks);
+        const placements = this.getContainerChildPlacements(parentBlock, parentLayout, childBlocks);
         const placement = placements.find(candidate => candidate.childBlock.id === childBlock?.id);
         if (!placement) {
             return {
@@ -3188,6 +3477,16 @@ const FramesMode = {
             xPct: Number((((placement.centerX - frame.left) / frame.width) * 100).toFixed(4)),
             yPct: Number((((placement.centerY - frame.top) / frame.height) * 100).toFixed(4))
         };
+    },
+
+    getContainerChildPlacements(parentBlock, parentLayout = this.getCanvasBlockLayout(parentBlock), childBlocks = this.getChildBlocks(parentBlock?.id)) {
+        if (parentBlock?.type === 'columns') {
+            return this.getColumnsContainerChildPlacements(parentBlock, parentLayout, childBlocks);
+        }
+        if (this.usesFreePositionedChildren(parentBlock)) {
+            return this.getFreePositionedContainerChildPlacements(parentBlock, parentLayout, childBlocks);
+        }
+        return this.getSectionContainerChildPlacements(parentBlock, parentLayout, childBlocks);
     },
 
     getResolvedContainerChildCenterX(alignment, left, width, childWidth) {
@@ -3216,7 +3515,8 @@ const FramesMode = {
         return JSON.stringify({
             text: this.getCurrentQrPreviewText(),
             size,
-            colorDark: block?.colorDark || this.PREVIEW_QR_OPTIONS.colorDark
+            colorDark: block?.colorDark || this.PREVIEW_QR_OPTIONS.colorDark,
+            colorLight: block?.colorLight || 'transparent'
         });
     },
 
@@ -3227,6 +3527,7 @@ const FramesMode = {
             return cachedMarkup;
         }
 
+        const colorLight = String(block?.colorLight || 'transparent').trim() || 'transparent';
         const qrMarkup = buildNativeQRCodeSVG({
             text: this.getCurrentQrPreviewText(),
             size,
@@ -3234,8 +3535,8 @@ const FramesMode = {
                 ...this.PREVIEW_QR_OPTIONS,
                 margin: 0,
                 colorDark: block.colorDark,
-                colorLight: 'transparent',
-                transparentBackground: true,
+                colorLight,
+                transparentBackground: colorLight === 'transparent',
                 correctLevel: QRCode.CorrectLevel[this.PREVIEW_QR_OPTIONS.correctLevel]
             },
             includeLogo: false
@@ -3277,7 +3578,7 @@ const FramesMode = {
 
         if (block.parentId) {
             const parentBlock = this.getParentBlock(block);
-            if (!parentBlock || this.isContainerBlock(parentBlock)) {
+            if (!parentBlock || (this.isContainerBlock(parentBlock) && !this.usesFreePositionedChildren(parentBlock))) {
                 return '';
             }
         }
@@ -3297,7 +3598,7 @@ const FramesMode = {
             `;
         }
 
-        if (block.type === 'shape' || block.type === 'image' || block.type === 'line' || block.type === 'section' || block.type === 'columns') {
+        if (this.usesVisualComponentResizeHandles(block)) {
             return `
                 ${this.renderBlockRotateHandle()}
                 ${this.renderShapeImageResizeHandles()}
@@ -3308,6 +3609,59 @@ const FramesMode = {
             ${this.renderBlockRotateHandle()}
             ${this.renderTextBlockResizeHandles()}
         `;
+    },
+
+    usesExplicitComponentBounds(block) {
+        if (!block) {
+            return false;
+        }
+        if (this.isGenericComponentBlock(block)) {
+            return true;
+        }
+        if (block.type === 'text' && this.getComponentDefinition(block)) {
+            return true;
+        }
+        return false;
+    },
+
+    usesVisualComponentResizeHandles(block) {
+        if (!block) {
+            return false;
+        }
+        if (block.type === 'shape' || block.type === 'image' || block.type === 'line' || block.type === 'section' || block.type === 'columns') {
+            return true;
+        }
+        return this.usesExplicitComponentBounds(block);
+    },
+
+    canUseVisualResize(block) {
+        return block?.type === 'qr' || this.usesVisualComponentResizeHandles(block);
+    },
+
+    getVisualResizeMinimumSize(block, borderWidth = Math.max(0, Number(block?.borderWidth) || 0), qrPadding = null) {
+        if (block?.type === 'line') {
+            return { width: 24, height: 2 };
+        }
+        if (block?.type === 'qr') {
+            return {
+                width: Math.max(80 + (borderWidth * 2) + (qrPadding?.left || 0) + (qrPadding?.right || 0), 80),
+                height: Math.max(80 + (borderWidth * 2) + (qrPadding?.top || 0) + (qrPadding?.bottom || 0), 80)
+            };
+        }
+        if (block?.type === 'section') {
+            return { width: 220, height: 160 };
+        }
+        if (block?.type === 'columns') {
+            return { width: 280, height: 180 };
+        }
+        if (this.usesExplicitComponentBounds(block)) {
+            return { width: 16, height: 16 };
+        }
+        const minBorder = block?.type === 'image' ? (borderWidth * 2) : 0;
+        return {
+            width: Math.max(48 + minBorder, 48),
+            height: Math.max(48 + minBorder, 48)
+        };
     },
 
     renderBlockRotateHandle() {
@@ -3482,6 +3836,9 @@ const FramesMode = {
 
         const layout = this.getTextBlockLayout(block);
         const padding = this.getTextBlockPadding(block);
+        surface.style.width = `${layout.width}px`;
+        surface.style.height = `${layout.height}px`;
+        surface.style.boxSizing = 'border-box';
         surface.style.backgroundColor = this.isTransparentTextBlockBackground(block)
             ? 'transparent'
             : block.backgroundColor;
@@ -3503,6 +3860,43 @@ const FramesMode = {
         content.style.textDecoration = block.textDecoration || 'none';
         content.style.textTransform = block.textTransform || 'none';
         content.classList.toggle('is-selected', this.isTextInnerSelected(block));
+        return true;
+    },
+
+    syncGenericComponentPreview(blockElement, block) {
+        if (!blockElement || !this.isGenericComponentBlock(block)) {
+            return false;
+        }
+
+        const surface = blockElement.querySelector('.frame-editor-generic-component-surface');
+        if (!surface) {
+            return false;
+        }
+
+        const layout = this.getGenericComponentLayout(block);
+        const padding = this.getTextBlockPadding(block);
+        surface.style.width = `${layout.width}px`;
+        surface.style.height = `${layout.height}px`;
+        surface.style.boxSizing = 'border-box';
+        surface.style.padding = `${padding.top}px ${padding.right}px ${padding.bottom}px ${padding.left}px`;
+        surface.style.borderWidth = `${layout.borderWidth}px`;
+        surface.style.borderStyle = 'solid';
+        surface.style.borderColor = layout.borderWidth > 0
+            ? (block.borderColor || this.getTextBlockDefaultColor())
+            : 'transparent';
+        surface.style.borderRadius = `${Math.max(0, Number(block.borderRadius) || 0)}px`;
+        surface.style.backgroundColor = this.isTransparentTextBlockBackground(block)
+            ? 'transparent'
+            : (block.backgroundColor || 'transparent');
+        surface.style.color = block.color || this.getTextBlockDefaultColor();
+        surface.style.fontSize = `${Math.max(8, Number(block.fontSize) || 16)}px`;
+        surface.style.fontWeight = String(Number(block.fontWeight) || 400);
+        surface.style.fontStyle = block.fontStyle || 'normal';
+        surface.style.textAlign = block.textAlign || 'center';
+        surface.style.lineHeight = String(this.getTextBlockLineHeight(block));
+        surface.style.letterSpacing = `${Number(block.letterSpacing) || 0}px`;
+        surface.style.textDecoration = block.textDecoration || 'none';
+        surface.style.textTransform = block.textTransform || 'none';
         return true;
     },
 
@@ -3713,10 +4107,24 @@ const FramesMode = {
         const dropCapWidth = block?.dropCap ? fontSize * 1.1 : 0;
         const contentWidth = Math.max(fontSize * 0.7, maxLineWidth + dropCapWidth);
         const contentHeight = Math.max(fontSize, lines.length * fontSize * effectiveLineHeight, block?.dropCap ? fontSize * 2.4 : 0);
+        const naturalWidth = Math.ceil(contentWidth + padding.left + padding.right + (borderWidth * 2));
+        const naturalHeight = Math.ceil(contentHeight + padding.top + padding.bottom + (borderWidth * 2));
+
+        if (this.usesExplicitComponentBounds(block)) {
+            return {
+                width: Math.max(1, Number(block?.width) || naturalWidth),
+                height: Math.max(1, Number(block?.height) || naturalHeight),
+                paddingTop: padding.top,
+                paddingRight: padding.right,
+                paddingBottom: padding.bottom,
+                paddingLeft: padding.left,
+                borderWidth
+            };
+        }
 
         return {
-            width: Math.ceil(contentWidth + padding.left + padding.right + (borderWidth * 2)),
-            height: Math.ceil(contentHeight + padding.top + padding.bottom + (borderWidth * 2)),
+            width: naturalWidth,
+            height: naturalHeight,
             paddingTop: padding.top,
             paddingRight: padding.right,
             paddingBottom: padding.bottom,
@@ -4038,6 +4446,9 @@ const FramesMode = {
         }
         if (block.type === 'image') {
             return this.getImageBlockLayout(block);
+        }
+        if (this.isGenericComponentBlock(block)) {
+            return this.getGenericComponentLayout(block);
         }
         return this.getTextBlockLayout(block);
     },
@@ -4637,16 +5048,16 @@ const FramesMode = {
         root.querySelectorAll('[data-frame-editor-add-block]').forEach(button => {
             button.addEventListener('click', () => {
                 const blockType = button.dataset.frameEditorAddBlock;
-                if (!this.isSupportedBlockType(blockType)) {
+                if (!this.isSupportedComponentType(blockType)) {
                     return;
                 }
 
-                this.addBlock(blockType, null, root);
+                this.addComponent(blockType, null, root);
             });
 
             button.addEventListener('dragstart', event => {
                 const blockType = button.dataset.frameEditorDragBlock;
-                if (!this.isSupportedBlockType(blockType) || !event.dataTransfer) {
+                if (!this.isSupportedComponentType(blockType) || !event.dataTransfer) {
                     return;
                 }
 
@@ -4711,14 +5122,14 @@ const FramesMode = {
                 const blockType = this.getDraggedBlockType(event);
                 const overviewBlockId = this.getDraggedOverviewBlockId(event) || this.overviewDragBlockId;
                 stage.classList.remove('is-drop-target');
-                if (!this.isSupportedBlockType(blockType) && !overviewBlockId) {
+                if (!this.isSupportedComponentType(blockType) && !overviewBlockId) {
                     return;
                 }
 
                 event.preventDefault();
                 const dropPosition = this.getCanvasPositionFromPointer(root, event.clientX, event.clientY);
-                if (this.isSupportedBlockType(blockType)) {
-                    this.addBlock(blockType, dropPosition, root);
+                if (this.isSupportedComponentType(blockType)) {
+                    this.addComponent(blockType, dropPosition, root);
                     return;
                 }
 
@@ -4949,7 +5360,7 @@ const FramesMode = {
                     return;
                 }
 
-                if (block?.parentId && (!parentBlock || this.isContainerBlock(parentBlock))) {
+                if (block?.parentId && (!parentBlock || (this.isContainerBlock(parentBlock) && !this.usesFreePositionedChildren(parentBlock)))) {
                     event.preventDefault();
                     event.stopPropagation();
                     this.selectBlock(blockId);
@@ -5439,7 +5850,7 @@ const FramesMode = {
         }
 
         const parentBlock = this.getParentBlock(block);
-        const canDragWithinParent = parentBlock && !this.isContainerBlock(parentBlock);
+        const canDragWithinParent = parentBlock && (!this.isContainerBlock(parentBlock) || this.usesFreePositionedChildren(parentBlock));
 
         if (block.parentId && !canDragWithinParent) {
             event.preventDefault();
@@ -5670,7 +6081,7 @@ const FramesMode = {
         const block = this.getBlockById(blockId);
         const canvasScroll = root.querySelector('[data-frame-editor-canvas-scroll]');
         const metrics = this.getCanvasLayoutMetrics(root);
-        if (!handle || !blockElement || !block || !canvasScroll || !metrics || (block.type !== 'shape' && block.type !== 'image' && block.type !== 'line' && block.type !== 'section' && block.type !== 'columns' && block.type !== 'qr')) {
+        if (!handle || !blockElement || !block || !canvasScroll || !metrics || !this.canUseVisualResize(block)) {
             return;
         }
 
@@ -5678,7 +6089,11 @@ const FramesMode = {
         event.stopPropagation();
 
         const zoom = Math.max(this.state.canvasZoom, 0.01);
-        const surfaceElement = blockElement.querySelector('.frame-editor-shape-block-surface, .frame-editor-image-block-surface, .frame-editor-line-block-surface, .frame-editor-container-block-surface, .frame-editor-qr-block-surface') || blockElement;
+        const parentBlock = this.getParentBlock(block);
+        const canResizeWithinParent = parentBlock && this.canUseParentPositionControl(block, parentBlock);
+        const parentLayout = canResizeWithinParent ? this.getCanvasBlockLayout(parentBlock) : null;
+        const parentFrame = canResizeWithinParent ? this.getContainerBlockInnerFrame(parentBlock, parentLayout) : null;
+        const surfaceElement = blockElement.querySelector('.frame-editor-text-block-surface, .frame-editor-generic-component-surface, .frame-editor-shape-block-surface, .frame-editor-image-block-surface, .frame-editor-line-block-surface, .frame-editor-container-block-surface, .frame-editor-qr-block-surface') || blockElement;
         const surfaceRect = surfaceElement.getBoundingClientRect();
         const startOuterWidth = surfaceRect.width / zoom;
         const startOuterHeight = surfaceRect.height / zoom;
@@ -5686,35 +6101,24 @@ const FramesMode = {
             ? this.getQrBlockPadding(block)
             : null;
         const borderWidth = Math.max(0, Number(block.borderWidth) || 0);
-        const startCenter = {
-            x: (block.xPct / 100) * metrics.viewportWidth,
-            y: (block.yPct / 100) * metrics.viewportHeight
-        };
+        const startCenter = canResizeWithinParent && parentFrame
+            ? {
+                x: parentFrame.left + (parentFrame.width * ((Number(block.xPct) || 50) / 100)),
+                y: parentFrame.top + (parentFrame.height * ((Number(block.yPct) || 50) / 100))
+            }
+            : {
+                x: (block.xPct / 100) * metrics.viewportWidth,
+                y: (block.yPct / 100) * metrics.viewportHeight
+            };
         const startEdges = {
             left: startCenter.x - (startOuterWidth / 2),
             right: startCenter.x + (startOuterWidth / 2),
             top: startCenter.y - (startOuterHeight / 2),
             bottom: startCenter.y + (startOuterHeight / 2)
         };
-        const minBorder = block.type === 'image' ? (borderWidth * 2) : 0;
-        const minOuterWidth = block.type === 'line'
-            ? 24
-            : block.type === 'qr'
-                ? Math.max(80 + (borderWidth * 2) + (qrPadding?.left || 0) + (qrPadding?.right || 0), 80)
-                : (block.type === 'section'
-                    ? 220
-                    : (block.type === 'columns'
-                        ? 280
-                        : Math.max(48 + minBorder, 48)));
-        const minOuterHeight = block.type === 'line'
-            ? 2
-            : block.type === 'qr'
-                ? Math.max(80 + (borderWidth * 2) + (qrPadding?.top || 0) + (qrPadding?.bottom || 0), 80)
-                : (block.type === 'section'
-                    ? 160
-                    : (block.type === 'columns'
-                        ? 180
-                        : Math.max(48 + minBorder, 48)));
+        const minimumSize = this.getVisualResizeMinimumSize(block, borderWidth, qrPadding);
+        const minOuterWidth = minimumSize.width;
+        const minOuterHeight = minimumSize.height;
         let didResize = false;
         let nextPatch = null;
         let nextPosition = {
@@ -5733,14 +6137,23 @@ const FramesMode = {
             const previewBlock = pendingPreviewBlock;
             pendingPreviewBlock = null;
             const layout = this.getCanvasBlockLayout(previewBlock);
-            blockElement.style.left = `${previewBlock.xPct}%`;
-            blockElement.style.top = `${previewBlock.yPct}%`;
+            if (canResizeWithinParent && parentFrame) {
+                blockElement.style.left = `${parentFrame.left + (parentFrame.width * ((Number(previewBlock.xPct) || 50) / 100))}px`;
+                blockElement.style.top = `${parentFrame.top + (parentFrame.height * ((Number(previewBlock.yPct) || 50) / 100))}px`;
+            } else {
+                blockElement.style.left = `${previewBlock.xPct}%`;
+                blockElement.style.top = `${previewBlock.yPct}%`;
+            }
             blockElement.style.width = `${layout.width}px`;
             blockElement.style.transform = this.getCanvasBlockTransform(previewBlock.rotation);
             if (previewBlock.type === 'qr') {
                 this.syncQrBlockPreview(blockElement, previewBlock);
-            } else {
-                this.syncShapeImageBlockPreview(blockElement, previewBlock);
+            } else if (previewBlock.type === 'text') {
+                this.syncTextBlockPreview(blockElement, previewBlock);
+            } else if (this.isGenericComponentBlock(previewBlock)) {
+                this.syncGenericComponentPreview(blockElement, previewBlock);
+            } else if (!this.syncShapeImageBlockPreview(blockElement, previewBlock)) {
+                blockElement.innerHTML = this.renderCanvasBlockInner(previewBlock);
             }
             this.syncInspectorBlockControls(root, nextPatch);
         };
@@ -5860,10 +6273,21 @@ const FramesMode = {
             const centerX = nextLeft + (resolvedOuterWidth / 2);
             const centerY = nextTop + (resolvedOuterHeight / 2);
 
-            nextPosition = {
-                xPct: Number(((centerX / metrics.viewportWidth) * 100).toFixed(4)),
-                yPct: Number(((centerY / metrics.viewportHeight) * 100).toFixed(4))
-            };
+            nextPosition = canResizeWithinParent && parentFrame
+                ? this.clampNestedBlockPosition(
+                    parentBlock,
+                    block,
+                    {
+                        xPct: Number((((centerX - parentFrame.left) / Math.max(parentFrame.width, 1)) * 100).toFixed(4)),
+                        yPct: Number((((centerY - parentFrame.top) / Math.max(parentFrame.height, 1)) * 100).toFixed(4))
+                    },
+                    parentLayout,
+                    { width: resolvedOuterWidth, height: resolvedOuterHeight }
+                )
+                : {
+                    xPct: Number(((centerX / metrics.viewportWidth) * 100).toFixed(4)),
+                    yPct: Number(((centerY / metrics.viewportHeight) * 100).toFixed(4))
+                };
 
             schedulePreview({
                 ...block,
@@ -5888,7 +6312,8 @@ const FramesMode = {
 
             this.updateBlock(block.id, {
                 ...nextPatch,
-                ...nextPosition
+                ...nextPosition,
+                ...(canResizeWithinParent ? { nestedPositionMode: 'manual' } : {})
             });
             const updatedBlock = this.getBlockById(block.id);
             this.syncCanvasBlock(root, updatedBlock);
@@ -6213,7 +6638,7 @@ const FramesMode = {
         event.preventDefault();
         event.stopPropagation();
 
-        const surfaceElement = () => blockElement.querySelector('.frame-editor-text-block-surface, .frame-editor-qr-block-surface, .frame-editor-shape-block-surface, .frame-editor-image-block-surface, .frame-editor-line-block-surface') || blockElement;
+        const surfaceElement = () => blockElement.querySelector('.frame-editor-text-block-surface, .frame-editor-generic-component-surface, .frame-editor-qr-block-surface, .frame-editor-shape-block-surface, .frame-editor-image-block-surface, .frame-editor-line-block-surface') || blockElement;
         const getCenterPoint = () => {
             const rect = surfaceElement().getBoundingClientRect();
             return {
@@ -6230,6 +6655,22 @@ const FramesMode = {
         const startAngle = getPointerAngle(event);
         let nextRotation = startRotation;
         let didRotate = false;
+        let previewFrame = 0;
+
+        const applyRotationPreview = () => {
+            previewFrame = 0;
+            blockElement.style.transform = this.getCanvasBlockTransform(nextRotation);
+            this.syncInspectorBlockControls(root, {
+                rotation: nextRotation
+            });
+        };
+
+        const scheduleRotationPreview = () => {
+            if (previewFrame) {
+                return;
+            }
+            previewFrame = window.requestAnimationFrame(applyRotationPreview);
+        };
 
         const onPointerMove = moveEvent => {
             const currentAngle = getPointerAngle(moveEvent);
@@ -6239,10 +6680,7 @@ const FramesMode = {
                 blockElement.classList.add('is-rotating');
             }
 
-            blockElement.style.transform = this.getCanvasBlockTransform(nextRotation);
-            this.syncInspectorBlockControls(root, {
-                rotation: nextRotation
-            });
+            scheduleRotationPreview();
         };
 
         const finishRotate = () => {
@@ -6250,6 +6688,10 @@ const FramesMode = {
             window.removeEventListener('pointerup', onPointerUp);
             window.removeEventListener('pointercancel', onPointerUp);
             blockElement.classList.remove('is-rotating');
+            if (previewFrame) {
+                window.cancelAnimationFrame(previewFrame);
+                applyRotationPreview();
+            }
 
             if (!didRotate) {
                 return;
@@ -6649,7 +7091,7 @@ const FramesMode = {
             return;
         }
 
-        const numericSettings = new Set(['fontSize', 'fontWeight', 'width', 'height', 'size', 'lineHeight', 'letterSpacing', 'paddingX', 'paddingY', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderWidth', 'borderRadius', 'rotation', 'qrRotation', 'childGap', 'columnCount', 'columnGap', 'xPct', 'yPct', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft']);
+        const numericSettings = new Set(['fontSize', 'fontWeight', 'width', 'height', 'size', 'lineHeight', 'letterSpacing', 'paddingX', 'paddingY', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderWidth', 'borderRadius', 'rotation', 'qrRotation', 'childGap', 'columnCount', 'columnGap', 'xPct', 'yPct', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft', 'opacity', 'min', 'max', 'value', 'tag', 'calloutLength', 'calloutWidth']);
         let nextValue;
 
         if (setting === 'backgroundColorRaw') {
@@ -6688,6 +7130,10 @@ const FramesMode = {
             );
         } else if (setting === 'size') {
             nextValue = this.clamp(nextValue, 80, this.getCanvasMeasurementMax('size', root));
+        } else if (setting === 'opacity') {
+            nextValue = this.clamp(nextValue, 0, 1);
+        } else if (setting === 'tag') {
+            nextValue = Math.max(0, Math.round(nextValue));
         } else if (setting === 'childGap') {
             nextValue = this.clamp(nextValue, 0, 2000);
         } else if (setting === 'columnCount') {
@@ -6750,7 +7196,7 @@ const FramesMode = {
     handleImageBlockUpload(root, input) {
         const block = this.getSelectedBlock();
         const file = input?.files?.[0];
-        if (!block || block.type !== 'image' || !file || !String(file.type || '').startsWith('image/')) {
+        if (!block || (block.type !== 'image' && this.getComponentClassName(block) !== 'TImageControl') || !file || !String(file.type || '').startsWith('image/')) {
             return;
         }
 
@@ -6876,7 +7322,17 @@ const FramesMode = {
             return;
         }
 
-        if (block.parentId || this.isContainerBlock(block) || this.getChildBlocks(block.id).length) {
+        if (block.parentId) {
+            const blockElement = root.querySelector(`[data-frame-editor-canvas-block="${block.id}"]`);
+            if (blockElement && this.syncNestedCanvasBlock(root, blockElement, block)) {
+                return;
+            }
+
+            this.renderIntoRoot();
+            return;
+        }
+
+        if (this.isContainerBlock(block) || this.getChildBlocks(block.id).length) {
             this.renderIntoRoot();
             return;
         }
@@ -6893,8 +7349,50 @@ const FramesMode = {
         blockElement.style.width = `${resolvedWidth}px`;
         blockElement.style.zIndex = String(this.getCanvasBlockZIndex(block));
         blockElement.style.transform = this.getCanvasBlockTransform(block.rotation);
+        blockElement.style.display = block.visible === false ? 'none' : '';
+        blockElement.style.opacity = Number.isFinite(Number(block.opacity)) ? String(this.clamp(Number(block.opacity), 0, 1)) : '';
+        blockElement.style.pointerEvents = block.enabled === false || block.hitTest === false ? 'none' : '';
         blockElement.innerHTML = this.renderCanvasBlockInner(block);
         this.applyCanvasLayout(root);
+    },
+
+    syncNestedCanvasBlock(root, blockElement, block) {
+        const parentBlock = this.getParentBlock(block);
+        if (!blockElement || !parentBlock) {
+            return false;
+        }
+
+        const parentLayout = this.getCanvasBlockLayout(parentBlock);
+        const childBlocks = this.getChildBlocks(parentBlock.id);
+        const childIndex = childBlocks.findIndex(childBlock => childBlock.id === block.id);
+        const placement = this.getContainerChildPlacements(parentBlock, parentLayout, childBlocks)
+            .find(candidate => candidate.childBlock.id === block.id);
+        if (!placement) {
+            return false;
+        }
+
+        const layout = this.getCanvasBlockLayout(block);
+        blockElement.style.left = `${placement.centerX}px`;
+        blockElement.style.top = `${placement.centerY}px`;
+        blockElement.style.width = `${layout.width}px`;
+        blockElement.style.zIndex = this.state.selectedBlockId === block.id ? '2000' : String(childIndex + 1);
+        blockElement.style.transform = this.getCanvasBlockTransform(block.rotation);
+        blockElement.style.display = block.visible === false ? 'none' : '';
+        blockElement.style.opacity = Number.isFinite(Number(block.opacity)) ? String(this.clamp(Number(block.opacity), 0, 1)) : '';
+        blockElement.style.pointerEvents = block.enabled === false || block.hitTest === false ? 'none' : '';
+
+        if (block.type === 'qr') {
+            this.syncQrBlockPreview(blockElement, block);
+        } else if (block.type === 'text') {
+            this.syncTextBlockPreview(blockElement, block);
+        } else if (this.isGenericComponentBlock(block)) {
+            this.syncGenericComponentPreview(blockElement, block);
+        } else if (!this.syncShapeImageBlockPreview(blockElement, block)) {
+            blockElement.innerHTML = this.renderCanvasBlockInner(block);
+        }
+
+        this.applyCanvasLayout(root);
+        return true;
     },
 
     clampUpdatedBlockToCanvas(root, block) {
@@ -7118,19 +7616,19 @@ const FramesMode = {
         return [
             { action: 'paste-block', label: 'Paste here', icon: 'bi-clipboard-plus', disabled: !this.hasBlockClipboard() },
             { type: 'separator' },
-            { action: 'add-qr-block', label: 'Add QR Code block', icon: 'bi-qr-code' },
-            { action: 'add-text-block', label: 'Add Text block', icon: 'bi-type-h2' },
-            { action: 'add-shape-block', label: 'Add Shape block', icon: 'bi-square' },
-            { action: 'add-line-block', label: 'Add Line block', icon: 'bi-slash-lg' },
-            { action: 'add-section-block', label: 'Add Section block', icon: 'bi-layout-text-window' },
-            { action: 'add-columns-block', label: 'Add Columns block', icon: 'bi-columns-gap' },
-            { action: 'add-image-block', label: 'Add Image block', icon: 'bi-image' },
+            { action: 'add-component:TQRCode', label: 'Add TQRCode', icon: 'bi-qr-code' },
+            { action: 'add-component:TLabel', label: 'Add TLabel', icon: 'bi-type-h2' },
+            { action: 'add-component:TRectangle', label: 'Add TRectangle', icon: 'bi-square' },
+            { action: 'add-component:TLine', label: 'Add TLine', icon: 'bi-slash-lg' },
+            { action: 'add-component:TPanel', label: 'Add TPanel', icon: 'bi-layout-text-window' },
+            { action: 'add-component:TGridPanelLayout', label: 'Add TGridPanelLayout', icon: 'bi-columns-gap' },
+            { action: 'add-component:TImage', label: 'Add TImage', icon: 'bi-image' },
             { type: 'separator' },
-            { action: 'edit-selected-block', label: 'Edit selected block', icon: 'bi-pencil-square', disabled: !this.state.selectedBlockId },
+            { action: 'edit-selected-block', label: 'Edit selected component', icon: 'bi-pencil-square', disabled: !this.state.selectedBlockId },
             { action: 'open-canvas-settings', label: 'Canvas settings', icon: 'bi-sliders' },
             { action: 'clear-selection', label: 'Clear selection', icon: 'bi-x-circle', disabled: !this.state.selectedBlockId && !this.isCanvasSelected() },
             { type: 'separator' },
-            { action: 'fit-blocks', label: 'Fit blocks', icon: 'bi-arrows-angle-expand', disabled: !this.state.canvasBlocks.length },
+            { action: 'fit-blocks', label: 'Fit components', icon: 'bi-arrows-angle-expand', disabled: !this.state.canvasBlocks.length },
             { action: 'reset-view', label: 'Reset view', icon: 'bi-arrow-counterclockwise' }
         ];
     },
@@ -7274,32 +7772,8 @@ const FramesMode = {
             this.pasteBlockFromClipboard(position, root);
             return;
         }
-        if (action === 'add-qr-block') {
-            this.addBlock('qr', position, root);
-            return;
-        }
-        if (action === 'add-text-block') {
-            this.addBlock('text', position, root);
-            return;
-        }
-        if (action === 'add-shape-block') {
-            this.addBlock('shape', position, root);
-            return;
-        }
-        if (action === 'add-line-block') {
-            this.addBlock('line', position, root);
-            return;
-        }
-        if (action === 'add-section-block') {
-            this.addBlock('section', position, root);
-            return;
-        }
-        if (action === 'add-columns-block') {
-            this.addBlock('columns', position, root);
-            return;
-        }
-        if (action === 'add-image-block') {
-            this.addBlock('image', position, root);
+        if (action.startsWith('add-component:')) {
+            this.addComponent(action.slice('add-component:'.length), position, root);
             return;
         }
         if (action === 'open-canvas-settings') {
@@ -7438,7 +7912,7 @@ const FramesMode = {
             return null;
         }
 
-        const normalizedBlock = window.FrameEditorBlockCatalog?.normalizeBlock?.(block) || block;
+        const normalizedBlock = window.FrameEditorComponentCatalog?.normalizeComponent?.(block) || block;
         return {
             ...normalizedBlock,
             marginTop: Math.max(0, Number(normalizedBlock.marginTop) || 0),
@@ -7927,25 +8401,31 @@ const FramesMode = {
         return this.getSelectedBlock() || null;
     },
 
-    addBlock(blockType, position = null, root = this.getRoot()) {
-        if (!this.isSupportedBlockType(blockType)) {
+    addComponent(blockType, position = null, root = this.getRoot()) {
+        if (!this.isSupportedComponentType(blockType)) {
             return;
         }
 
         const targetContainer = this.getSelectedContainerTarget();
-        const nextBlock = this.createBlock(
+        const nextBlock = this.createComponent(
             blockType,
-            position || this.getVisibleCanvasCenterPosition(root),
+            targetContainer && this.usesFreePositionedChildren(targetContainer)
+                ? { xPct: 50, yPct: 50 }
+                : (position || this.getVisibleCanvasCenterPosition(root)),
             targetContainer
                 ? {
                     parentId: targetContainer.id,
                     childOrder: this.getNextChildOrder(targetContainer.id),
                     columnIndex: targetContainer.type === 'columns'
                         ? this.getNextChildOrder(targetContainer.id) % this.getResolvedColumnsBlockCount(targetContainer)
-                        : 0
+                        : 0,
+                    nestedPositionMode: this.usesFreePositionedChildren(targetContainer) ? 'manual' : ''
                 }
                 : null
         );
+        if (!nextBlock) {
+            return;
+        }
         this.state = {
             ...this.state,
             selectedBlockId: nextBlock.id,
@@ -7962,7 +8442,7 @@ const FramesMode = {
         }
     },
 
-    createBlock(blockType, position = null, nestedOptions = null) {
+    createComponent(blockType, position = null, nestedOptions = null) {
         const basePosition = position || {};
         const xPct = Number.isFinite(basePosition.xPct) ? basePosition.xPct : 50;
         const defaultYPct = blockType === 'text'
@@ -7972,8 +8452,9 @@ const FramesMode = {
         const parentId = nestedOptions?.parentId || '';
         const childOrder = Number.isFinite(Number(nestedOptions?.childOrder)) ? Number(nestedOptions.childOrder) : 0;
         const columnIndex = Number.isFinite(Number(nestedOptions?.columnIndex)) ? Number(nestedOptions.columnIndex) : 0;
+        const nestedPositionMode = String(nestedOptions?.nestedPositionMode || '').trim();
 
-        const catalogBlock = window.FrameEditorBlockCatalog?.createBlock?.(blockType, {
+        const catalogBlock = window.FrameEditorComponentCatalog?.createComponent?.(blockType, {
             id: this.getNextBlockId(),
             xPct,
             yPct,
@@ -7984,191 +8465,11 @@ const FramesMode = {
             translate: text => I18n.translateString(text)
         });
         if (catalogBlock) {
-            return catalogBlock;
+            return nestedPositionMode
+                ? { ...catalogBlock, nestedPositionMode }
+                : catalogBlock;
         }
-
-        if (blockType === 'text') {
-            return {
-                id: this.getNextBlockId(),
-                type: 'text',
-                text: I18n.translateString('This is a text block'),
-                xPct,
-                yPct,
-                width: 0,
-                fontSize: 32,
-                fontSizePreset: 'm',
-                fontWeight: 400,
-                fontStyle: 'normal',
-                color: this.getTextBlockDefaultColor(),
-                backgroundColor: 'transparent',
-                paddingTop: 0,
-                paddingRight: 0,
-                paddingBottom: 0,
-                paddingLeft: 0,
-                paddingX: 0,
-                paddingY: 0,
-                paddingLinked: true,
-                borderWidth: 0,
-                borderRadius: 0,
-                borderColor: this.getTextBlockDefaultColor(),
-                rotation: 0,
-                lineHeight: 1.5,
-                letterSpacing: 0,
-                textDecoration: 'none',
-                textTransform: 'none',
-                dropCap: false,
-                textAlign: 'left',
-                textPositionX: 'left',
-                textPositionY: 'top',
-                parentId,
-                childOrder,
-                columnIndex
-            };
-        }
-
-        if (blockType === 'shape') {
-            return {
-                id: this.getNextBlockId(),
-                type: 'shape',
-                shapeType: 'rectangle',
-                xPct,
-                yPct,
-                width: 160,
-                height: 160,
-                color: this.getTextBlockDefaultColor(),
-                borderRadius: 18,
-                rotation: 0,
-                parentId,
-                childOrder,
-                columnIndex
-            };
-        }
-
-        if (blockType === 'line') {
-            return {
-                id: this.getNextBlockId(),
-                type: 'line',
-                xPct,
-                yPct,
-                width: 180,
-                height: 8,
-                color: this.getTextBlockDefaultColor(),
-                lineStyle: 'solid',
-                borderWidth: 0,
-                borderRadius: 999,
-                borderColor: this.getTextBlockDefaultColor(),
-                rotation: 0,
-                parentId,
-                childOrder,
-                columnIndex
-            };
-        }
-
-        if (blockType === 'section') {
-            return {
-                id: this.getNextBlockId(),
-                type: 'section',
-                xPct,
-                yPct,
-                width: 320,
-                height: 220,
-                backgroundColor: 'transparent',
-                paddingTop: 18,
-                paddingRight: 18,
-                paddingBottom: 18,
-                paddingLeft: 18,
-                paddingX: 18,
-                paddingY: 18,
-                paddingLinked: true,
-                borderWidth: 1,
-                borderRadius: 18,
-                borderColor: this.getTextBlockDefaultColor(),
-                rotation: 0,
-                childAlignment: 'left',
-                childGap: 12,
-                parentId,
-                childOrder,
-                columnIndex
-            };
-        }
-
-        if (blockType === 'columns') {
-            return {
-                id: this.getNextBlockId(),
-                type: 'columns',
-                xPct,
-                yPct,
-                width: 420,
-                height: 240,
-                backgroundColor: 'transparent',
-                paddingTop: 18,
-                paddingRight: 18,
-                paddingBottom: 18,
-                paddingLeft: 18,
-                paddingX: 18,
-                paddingY: 18,
-                paddingLinked: true,
-                borderWidth: 1,
-                borderRadius: 18,
-                borderColor: this.getTextBlockDefaultColor(),
-                rotation: 0,
-                childAlignment: 'left',
-                childGap: 12,
-                columnCount: 2,
-                columnGap: 24,
-                parentId,
-                childOrder,
-                columnIndex
-            };
-        }
-
-        if (blockType === 'image') {
-            return {
-                id: this.getNextBlockId(),
-                type: 'image',
-                xPct,
-                yPct,
-                src: '',
-                imageName: '',
-                width: 180,
-                height: 180,
-                objectFit: 'contain',
-                backgroundColor: 'transparent',
-                borderWidth: 0,
-                borderRadius: 0,
-                borderColor: this.getTextBlockDefaultColor(),
-                rotation: 0,
-                parentId,
-                childOrder,
-                columnIndex
-            };
-        }
-
-        return {
-            id: this.getNextBlockId(),
-            type: 'qr',
-            xPct,
-            yPct,
-            size: 180,
-            colorDark: '#111111',
-            colorLight: 'transparent',
-            backgroundColor: 'transparent',
-            paddingTop: 0,
-            paddingRight: 0,
-            paddingBottom: 0,
-            paddingLeft: 0,
-            paddingX: 0,
-            paddingY: 0,
-            paddingLinked: true,
-            borderWidth: 0,
-            borderRadius: 0,
-            borderColor: this.getTextBlockDefaultColor(),
-            rotation: 0,
-            qrRotation: 0,
-            parentId,
-            childOrder,
-            columnIndex
-        };
+        return null;
     },
 
     updateBlock(blockId, patch) {
@@ -8490,11 +8791,7 @@ const FramesMode = {
 
         const parentLayout = this.getCanvasBlockLayout(parentBlock);
         const childBlocks = this.getChildBlocks(parentBlock.id, blocks);
-        const placements = this.isContainerBlock(parentBlock)
-            ? (parentBlock.type === 'columns'
-                ? this.getColumnsContainerChildPlacements(parentBlock, parentLayout, childBlocks)
-                : this.getSectionContainerChildPlacements(parentBlock, parentLayout, childBlocks))
-            : this.getFreePositionedContainerChildPlacements(parentBlock, parentLayout, childBlocks);
+        const placements = this.getContainerChildPlacements(parentBlock, parentLayout, childBlocks);
         const placement = placements.find(candidate => candidate.childBlock.id === block.id);
         if (!placement) {
             return parentCenter;
@@ -8808,18 +9105,19 @@ const FramesMode = {
         });
     },
 
-    isSupportedBlockType(blockType) {
-        return this.BLOCK_LIBRARY.some(block => block.type === blockType);
+    isSupportedComponentType(blockType) {
+        return window.FrameEditorComponentCatalog?.isSupportedType?.(blockType)
+            || this.COMPONENT_LIBRARY.some(component => component.type === blockType || component.className === blockType);
     },
 
     getFilteredBlocks(searchTerm = this.state.searchTerm) {
         const normalizedSearchTerm = String(searchTerm || '').trim().toLowerCase();
         if (!normalizedSearchTerm) {
-            return this.BLOCK_LIBRARY;
+            return this.COMPONENT_LIBRARY;
         }
 
-        return this.BLOCK_LIBRARY.filter(block => {
-            const haystack = `${block.name} ${block.description}`.toLowerCase();
+        return this.COMPONENT_LIBRARY.filter(component => {
+            const haystack = `${component.name} ${component.description}`.toLowerCase();
             return haystack.includes(normalizedSearchTerm);
         });
     },
@@ -9112,7 +9410,7 @@ const FramesMode = {
             : null;
 
         if (!importedBlocks) {
-            throw new Error(I18n.translateString('The JSON does not include any frame blocks.'));
+            throw new Error(I18n.translateString('The JSON does not include any frame components.'));
         }
 
         let importedCustomFrameId = '';
