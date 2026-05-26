@@ -7986,11 +7986,23 @@ const FramesMode = {
             return null;
         }
 
-        const targetContainer = options.targetContainer || null;
+        // Respect an explicitly-provided `targetContainer` option (even if it's `null`).
+        // If `targetContainer` is omitted entirely, fall back to the source's original parent
+        // when available (preserves previous behaviour). This lets callers explicitly request
+        // "paste to canvas root" by passing `targetContainer: null`.
+        const hasTargetContainerOption = Object.prototype.hasOwnProperty.call(options, 'targetContainer');
+        const targetContainer = options.targetContainer !== undefined ? options.targetContainer : null;
         const fallbackParentId = sourceRoot.parentId && this.getBlockById(sourceRoot.parentId)
             ? sourceRoot.parentId
             : '';
-        const targetParentId = targetContainer?.id || options.targetParentId || fallbackParentId || '';
+        let targetParentId;
+        if (hasTargetContainerOption) {
+            // Caller explicitly specified a targetContainer (may be null to indicate canvas root).
+            targetParentId = (targetContainer && targetContainer.id) ? targetContainer.id : (options.targetParentId || '');
+        } else {
+            // No explicit targetContainer provided — preserve original parent if present.
+            targetParentId = options.targetParentId || fallbackParentId || '';
+        }
         const idMap = new Map(sourceBlocks.map(block => [block.id, this.getNextBlockId()]));
         const rootPosition = options.position && Number.isFinite(options.position.xPct) && Number.isFinite(options.position.yPct)
             ? options.position
