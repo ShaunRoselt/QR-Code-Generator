@@ -2991,9 +2991,11 @@ const FramesMode = {
     renderContainerCanvasBlock(block) {
         const layout = this.getCanvasBlockLayout(block);
         const padding = this.getTextBlockPadding(block);
+        const className = this.getComponentClassName(block);
+        const suppressedPlaceholderClasses = ['TGroupBox', 'TPanel', 'TVertScrollBox', 'TFramedVertScrollBox', 'TScaledLayout', 'THorzScrollBox', 'TLayout', 'TScrollBox', 'TFramedScrollBox', 'TGridPanelLayout', 'TFlowLayout', 'TGridLayout', 'TExpander', 'TCalloutPanel', 'TToolBar', 'TStatusBar'];
         const emptyLabel = block.type === 'columns'
             ? I18n.translateString('Add components into this columns container')
-            : I18n.translateString('Add components into this section');
+            : (suppressedPlaceholderClasses.includes(className) ? '' : I18n.translateString('Add components into this section'));
         const childLayer = this.renderCanvasBlockChildLayer(block, layout, {
             childBlocks: this.getChildBlocks(block.id),
             showPlaceholder: true,
@@ -3046,11 +3048,14 @@ const FramesMode = {
         const layout = this.getGenericComponentLayout(block);
         const padding = this.getTextBlockPadding(block);
         const className = this.getComponentClassName(block);
+        const suppressedPlaceholderClasses = ['TGroupBox', 'TPanel', 'TVertScrollBox', 'TFramedVertScrollBox', 'TScaledLayout', 'THorzScrollBox', 'TLayout', 'TScrollBox', 'TFramedScrollBox', 'TGridPanelLayout', 'TFlowLayout', 'TGridLayout', 'TExpander', 'TCalloutPanel', 'TToolBar', 'TStatusBar'];
         const childLayer = this.isContainerBlock(block)
             ? this.renderCanvasBlockChildLayer(block, layout, {
                 childBlocks: this.getChildBlocks(block.id),
                 showPlaceholder: true,
-                emptyLabel: I18n.translate('Add components into this {name} container', { name: className })
+                emptyLabel: suppressedPlaceholderClasses.includes(className)
+                    ? ''
+                    : I18n.translate('Add components into this {name} container', { name: className })
             })
             : this.renderCanvasBlockChildLayer(block, layout);
         const surfaceStyle = [
