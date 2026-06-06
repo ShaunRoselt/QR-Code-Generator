@@ -19,7 +19,7 @@ function updateNavigation(route) {
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
     });
-    
+
     // Add active class to current route
     const activeItem = document.querySelector(`.nav-item[data-route="${route}"]`);
     if (activeItem) {
@@ -356,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         sidebar.classList.toggle('collapsed', desktopSidebarCollapsedPreference);
     };
-    
+
     menuToggle.addEventListener('click', () => {
         if (isOverlaySidebar()) {
             sidebar.classList.toggle('open');
@@ -382,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         dispatchSidebarLayoutChanged();
     });
-    
+
     // Handle navigation clicks
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', (e) => {
@@ -434,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     syncBetaSidebarVisibility();
     syncSidebarMode();
-    
+
     // Initialize router
     router.handleRoute();
 });

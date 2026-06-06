@@ -33,7 +33,9 @@ const SocialMode = {
                 value: 'linkedin',
                 label: 'LinkedIn',
                 hint: 'Enter your LinkedIn username',
-                url: 'https://linkedin.com/in/'
+                url: 'https://linkedin.com/in/',
+                logoSrc: 'assets/icons/linkedin.svg',
+                logoHex: '0A66C2'
             },
             {
                 value: 'tiktok',
@@ -78,6 +80,24 @@ const SocialMode = {
                 url: 'https://t.me/'
             },
             {
+                value: 'whatsapp',
+                label: 'WhatsApp',
+                hint: 'Enter your WhatsApp number (international format, no + or spaces)',
+                url: 'https://wa.me/'
+            },
+            {
+                value: 'line',
+                label: 'LINE',
+                hint: 'Enter your LINE ID',
+                url: 'https://line.me/R/ti/p/@'
+            },
+            {
+                value: 'signal',
+                label: 'Signal',
+                hint: 'Enter your Signal username',
+                url: 'https://signal.me/#eu/'
+            },
+            {
                 value: 'bluesky',
                 label: 'Bluesky',
                 hint: 'Enter your Bluesky handle',
@@ -100,6 +120,12 @@ const SocialMode = {
                 label: 'GitHub',
                 hint: 'Enter your GitHub username',
                 url: 'https://github.com/'
+            },
+            {
+                value: 'steam',
+                label: 'Steam',
+                hint: 'Enter your Steam vanity username',
+                url: 'https://steamcommunity.com/id/'
             },
             {
                 value: 'messenger',
@@ -150,12 +176,65 @@ const SocialMode = {
                 url: 'https://substack.com/@'
             },
             {
+                value: 'quora',
+                label: 'Quora',
+                hint: 'Enter your Quora profile slug',
+                url: 'https://www.quora.com/profile/'
+            },
+            {
+                value: 'meetup',
+                label: 'Meetup',
+                hint: 'Enter your Meetup group or profile slug',
+                url: 'https://www.meetup.com/'
+            },
+            {
+                value: 'linktree',
+                label: 'Linktree',
+                hint: 'Enter your Linktree username',
+                url: 'https://linktr.ee/'
+            },
+            {
                 value: 'twitch',
                 label: 'Twitch',
                 hint: 'Enter your Twitch username',
                 url: 'https://twitch.tv/'
             }
         ];
+    },
+
+    normalizeHexColor(hex) {
+        if (typeof hex !== 'string') {
+            return '';
+        }
+
+        let normalized = hex.trim().replace(/^#/, '');
+        if (!normalized) {
+            return '';
+        }
+
+        if (/^[0-9a-fA-F]{3}$/.test(normalized)) {
+            normalized = normalized.split('').map(ch => `${ch}${ch}`).join('');
+        }
+
+        if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
+            return '';
+        }
+
+        return normalized.toUpperCase();
+    },
+
+    isLightHexColor(hex) {
+        const normalized = this.normalizeHexColor(hex);
+        if (!normalized) {
+            return true;
+        }
+
+        const red = parseInt(normalized.slice(0, 2), 16);
+        const green = parseInt(normalized.slice(2, 4), 16);
+        const blue = parseInt(normalized.slice(4, 6), 16);
+        const brightness = (red * 299 + green * 587 + blue * 114) / 1000;
+
+        return brightness >= 160;
     },
 
     getPlatformLogoMap() {
@@ -166,11 +245,18 @@ const SocialMode = {
         const presets = typeof QRCodeLogoControls?.getLogoPresets === 'function'
             ? QRCodeLogoControls.getLogoPresets()
             : [];
-        const presetMap = new Map(presets.map(preset => [preset.id, preset.dataUrl]));
+        const presetMap = new Map(presets.map(preset => [preset.id, preset]));
 
         this.platformLogoMap = this.getPlatformOptions().reduce((map, option) => {
             const presetId = option.logoPresetId || option.value;
-            map[option.value] = presetMap.get(presetId) || '';
+            const preset = presetMap.get(presetId);
+            const optionHex = this.normalizeHexColor(option.logoHex || '');
+
+            map[option.value] = {
+                dataUrl: option.logoSrc || preset?.dataUrl || '',
+                hex: optionHex || this.normalizeHexColor(preset?.hex || '')
+            };
+
             return map;
         }, {});
 
@@ -204,13 +290,25 @@ const SocialMode = {
 
         return this.getPlatformOptions()
             .map(option => {
-                const logoMarkup = logoMap[option.value]
-                    ? `<img src="${logoMap[option.value]}" alt="" class="platform-dropdown-option-logo-image">`
+                const logoMeta = logoMap[option.value] || {};
+                const logoImageClasses = ['platform-dropdown-option-logo-image'];
+                const logoWrapClasses = ['platform-dropdown-option-logo'];
+
+                if (logoMeta.hex) {
+                    logoWrapClasses.push('is-branded');
+                    if (!this.isLightHexColor(logoMeta.hex)) {
+                        logoImageClasses.push('is-invert');
+                    }
+                }
+
+                const logoStyle = logoMeta.hex ? ` style="background-color: #${logoMeta.hex}"` : '';
+                const logoMarkup = logoMeta.dataUrl
+                    ? `<img src="${logoMeta.dataUrl}" alt="" class="${logoImageClasses.join(' ')}">`
                     : '<i class="bi bi-share"></i>';
 
                 return `
-                    <button type="button" class="platform-dropdown-option" data-platform="${option.value}" role="option" aria-selected="false">
-                        <span class="platform-dropdown-option-logo">${logoMarkup}</span>
+                    <button type="button" class="platform-dropdown-option" data-platform="${option.value}" data-platform-search="${`${option.label} ${option.value}`.toLowerCase()}" role="option" aria-selected="false">
+                        <span class="${logoWrapClasses.join(' ')}"${logoStyle}>${logoMarkup}</span>
                         <span class="platform-dropdown-option-label">${option.label}</span>
                     </button>
                 `;
@@ -257,7 +355,13 @@ const SocialMode = {
                                     <i class="bi bi-chevron-down platform-dropdown-trigger-chevron"></i>
                                 </button>
                                 <div class="platform-dropdown-menu" id="platformDropdownMenu" role="listbox" hidden>
-                                    ${this.getPlatformDropdownItemsMarkup()}
+                                    <div class="platform-dropdown-search" role="none">
+                                        <input type="search" class="form-input platform-dropdown-search-input" id="platformDropdownSearch" placeholder="Search platforms" aria-label="Search social platforms">
+                                    </div>
+                                    <div class="platform-dropdown-options" id="platformDropdownOptions" role="none">
+                                        ${this.getPlatformDropdownItemsMarkup()}
+                                    </div>
+                                    <div class="form-hint platform-dropdown-empty-state" id="platformDropdownEmpty" hidden>No social platforms match your search.</div>
                                 </div>
                             </div>
                         </div>
@@ -330,6 +434,8 @@ const SocialMode = {
         const platformDropdown = document.getElementById('platformDropdown');
         const platformDropdownTrigger = document.getElementById('platformDropdownTrigger');
         const platformDropdownMenu = document.getElementById('platformDropdownMenu');
+        const platformDropdownSearch = document.getElementById('platformDropdownSearch');
+        const platformDropdownEmpty = document.getElementById('platformDropdownEmpty');
         const platformDropdownLabel = document.getElementById('platformDropdownLabel');
         const platformDropdownLogo = document.getElementById('platformDropdownLogo');
         const platformDropdownOptions = Array.from(document.querySelectorAll('.platform-dropdown-option'));
@@ -362,28 +468,78 @@ const SocialMode = {
         }
         
         const renderDropdownLogo = platform => {
-            const logoDataUrl = platformLogoMap[platform];
+            const logoMeta = platformLogoMap[platform] || {};
+            const logoImageClasses = ['platform-dropdown-trigger-logo-image'];
+            const logoWrapClasses = ['platform-dropdown-trigger-logo'];
 
-            if (!logoDataUrl) {
+            if (!logoMeta.dataUrl) {
                 platformDropdownLogo.innerHTML = '<i class="bi bi-share"></i>';
+                platformDropdownLogo.removeAttribute('style');
+                platformDropdownLogo.className = logoWrapClasses.join(' ');
                 platformDropdownLogo.classList.add('is-placeholder');
                 return;
             }
 
-            platformDropdownLogo.innerHTML = `<img src="${logoDataUrl}" alt="" class="platform-dropdown-trigger-logo-image">`;
+            if (logoMeta.hex) {
+                logoWrapClasses.push('is-branded');
+                platformDropdownLogo.style.backgroundColor = `#${logoMeta.hex}`;
+                if (!this.isLightHexColor(logoMeta.hex)) {
+                    logoImageClasses.push('is-invert');
+                }
+            } else {
+                platformDropdownLogo.style.backgroundColor = '';
+            }
+
+            platformDropdownLogo.className = logoWrapClasses.join(' ');
+            platformDropdownLogo.innerHTML = `<img src="${logoMeta.dataUrl}" alt="" class="${logoImageClasses.join(' ')}">`;
             platformDropdownLogo.classList.remove('is-placeholder');
+        };
+
+        const getVisiblePlatformOptions = () => platformDropdownOptions.filter(optionButton => !optionButton.hidden);
+
+        const applyPlatformFilter = searchTerm => {
+            const normalizedSearchTerm = (searchTerm || '').trim().toLowerCase();
+            let visibleCount = 0;
+
+            platformDropdownOptions.forEach(optionButton => {
+                const searchContent = optionButton.dataset.platformSearch || '';
+                const isVisible = !normalizedSearchTerm || searchContent.includes(normalizedSearchTerm);
+                optionButton.hidden = !isVisible;
+                optionButton.classList.toggle('is-filtered-out', !isVisible);
+                if (isVisible) {
+                    visibleCount += 1;
+                }
+            });
+
+            if (platformDropdownEmpty) {
+                platformDropdownEmpty.hidden = visibleCount !== 0;
+            }
         };
 
         const closePlatformDropdown = () => {
             platformDropdown.classList.remove('is-open');
             platformDropdownTrigger.setAttribute('aria-expanded', 'false');
             platformDropdownMenu.hidden = true;
+            typeaheadBuffer = '';
+
+            if (platformDropdownSearch) {
+                platformDropdownSearch.value = '';
+            }
+
+            applyPlatformFilter('');
         };
 
         const openPlatformDropdown = () => {
             platformDropdown.classList.add('is-open');
             platformDropdownTrigger.setAttribute('aria-expanded', 'true');
             platformDropdownMenu.hidden = false;
+
+            if (platformDropdownSearch) {
+                requestAnimationFrame(() => {
+                    platformDropdownSearch.focus();
+                    platformDropdownSearch.select();
+                });
+            }
         };
 
         const focusPlatformOption = optionButton => {
@@ -401,10 +557,12 @@ const SocialMode = {
                 return null;
             }
 
-            return platformDropdownOptions.find(optionButton => {
+            const candidateOptions = getVisiblePlatformOptions();
+
+            return candidateOptions.find(optionButton => {
                 const optionLabel = optionButton.querySelector('.platform-dropdown-option-label')?.textContent?.trim().toLowerCase() || '';
                 return optionLabel.startsWith(normalizedSearchTerm);
-            }) || platformDropdownOptions.find(optionButton => {
+            }) || candidateOptions.find(optionButton => {
                 const optionLabel = optionButton.querySelector('.platform-dropdown-option-label')?.textContent?.trim().toLowerCase() || '';
                 return optionLabel.includes(normalizedSearchTerm);
             }) || null;
@@ -477,11 +635,48 @@ const SocialMode = {
 
             event.preventDefault();
             openPlatformDropdown();
-            const selectedOption = platformDropdownOptions.find(optionButton => optionButton.dataset.platform === platformSelect.value);
-            focusPlatformOption(selectedOption || platformDropdownOptions[0]);
+
+            if (event.key === 'ArrowDown') {
+                const selectedOption = getVisiblePlatformOptions().find(optionButton => optionButton.dataset.platform === platformSelect.value);
+                focusPlatformOption(selectedOption || getVisiblePlatformOptions()[0]);
+            }
         });
 
-        platformDropdownOptions.forEach((optionButton, index) => {
+        if (platformDropdownSearch) {
+            platformDropdownSearch.addEventListener('input', () => {
+                applyPlatformFilter(platformDropdownSearch.value);
+            });
+
+            platformDropdownSearch.addEventListener('keydown', event => {
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    closePlatformDropdown();
+                    platformDropdownTrigger.focus();
+                    return;
+                }
+
+                if (event.key === 'ArrowDown') {
+                    const visibleOptions = getVisiblePlatformOptions();
+                    if (!visibleOptions.length) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    focusPlatformOption(visibleOptions[0]);
+                    return;
+                }
+
+                if (event.key === 'Enter') {
+                    const visibleOptions = getVisiblePlatformOptions();
+                    if (visibleOptions.length === 1) {
+                        event.preventDefault();
+                        visibleOptions[0].click();
+                    }
+                }
+            });
+        }
+
+        platformDropdownOptions.forEach(optionButton => {
             optionButton.addEventListener('click', () => {
                 const platform = optionButton.dataset.platform;
                 platformSelect.value = platform;
@@ -502,15 +697,29 @@ const SocialMode = {
                 }
 
                 if (event.key === 'ArrowDown') {
+                    const visibleOptions = getVisiblePlatformOptions();
+                    const visibleIndex = visibleOptions.indexOf(optionButton);
+                    if (visibleIndex === -1) {
+                        return;
+                    }
+
                     event.preventDefault();
-                    platformDropdownOptions[(index + 1) % platformDropdownOptions.length]?.focus();
+                    visibleOptions[(visibleIndex + 1) % visibleOptions.length]?.focus();
                     return;
                 }
 
                 if (event.key === 'ArrowUp') {
+                    const visibleOptions = getVisiblePlatformOptions();
+                    const visibleIndex = visibleOptions.indexOf(optionButton);
+                    if (visibleIndex === -1) {
+                        return;
+                    }
+
                     event.preventDefault();
-                    platformDropdownOptions[(index - 1 + platformDropdownOptions.length) % platformDropdownOptions.length]?.focus();
+                    visibleOptions[(visibleIndex - 1 + visibleOptions.length) % visibleOptions.length]?.focus();
+                    return;
                 }
+
             });
         });
 
@@ -526,6 +735,7 @@ const SocialMode = {
             }
         });
 
+        applyPlatformFilter('');
         syncPlatformDropdown(platformSelect.value);
         
         // Auto-generate function

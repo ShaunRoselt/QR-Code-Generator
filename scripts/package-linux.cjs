@@ -12,34 +12,34 @@ const outputDir = path.join(distDir, 'QR Code Generator-linux-x64');
 const linuxIconPath = path.join(root, 'assets', 'icons', 'app-icon-4096.png');
 
 function rmrf(target) {
-  fs.rmSync(target, { recursive: true, force: true });
+    fs.rmSync(target, { recursive: true, force: true });
 }
 
 async function main() {
-  console.log('> Building Linux unpacked (electron-builder)...');
-  rmrf(tmpDir);
-  rmrf(outputDir);
+    console.log('> Building Linux unpacked (electron-builder)...');
+    rmrf(tmpDir);
+    rmrf(outputDir);
 
-  runElectronBuilder([
-    '--linux', 'dir',
-    '--x64',
-    `--config.directories.output=${tmpDir}`,
-    `--config.linux.icon=${linuxIconPath}`
-  ], { cwd: root });
+    runElectronBuilder([
+        '--linux', 'dir',
+        '--x64',
+        `--config.directories.output=${tmpDir}`,
+        `--config.linux.icon=${linuxIconPath}`
+    ], { cwd: root });
 
-  const stagedUnpacked = path.join(tmpDir, 'linux-unpacked');
-  if (!fs.existsSync(stagedUnpacked)) {
-    throw new Error(`Expected unpacked output at "${stagedUnpacked}" but it was not produced.`);
-  }
+    const stagedUnpacked = path.join(tmpDir, 'linux-unpacked');
+    if (!fs.existsSync(stagedUnpacked)) {
+        throw new Error(`Expected unpacked output at "${stagedUnpacked}" but it was not produced.`);
+    }
 
-  fs.renameSync(stagedUnpacked, outputDir);
-  rmrf(tmpDir);
+    fs.renameSync(stagedUnpacked, outputDir);
+    rmrf(tmpDir);
 
-  console.log('\nDone.');
-  console.log(`  Linux Unpacked -> ${path.relative(root, outputDir)}`);
+    console.log('\nDone.');
+    console.log(`  Linux Unpacked -> ${path.relative(root, outputDir)}`);
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(1);
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
 });
