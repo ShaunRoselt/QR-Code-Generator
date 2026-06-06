@@ -8,10 +8,10 @@ const FramesMode = {
     lineBlockFillStyleCache: new Map(),
     blockIdCounter: 0,
     blockClipboard: null,
-    overviewDragBlockId: '',
-    overviewCollapsedBlockIds: new Set(),
+    structureDragBlockId: '',
+    structureCollapsedBlockIds: new Set(),
     frameEditorContextMenuState: null,
-    CANVAS_OVERVIEW_ROOT_ID: 'frame-editor-canvas-root',
+    STRUCTURE_ROOT_ID: 'frame-editor-canvas-root',
     PREVIEW_QR_TEXT: 'https://qrcode.apps.shaunroselt.com/',
     PREVIEW_QR_OPTIONS: Object.freeze({
         colorDark: '#000000',
@@ -160,16 +160,16 @@ const FramesMode = {
             ? I18n.translateString('Search frames')
             : I18n.translateString('Search components');
         const leftSidebarCollapsed = this.isLeftSidebarCollapsed();
-        const isCanvasOverviewMode = (this.state.leftPanelMode || 'library') === 'overview';
-        const isSidebarLibraryMode = !isCanvasOverviewMode;
+        const isStructureMode = (this.state.leftPanelMode || 'library') === 'overview';
+        const isSidebarLibraryMode = !isStructureMode;
         const sidebarToggleLabel = !leftSidebarCollapsed && isSidebarLibraryMode
             ? I18n.translateString('Collapse sidebar')
             : I18n.translateString('Expand sidebar');
-        const canvasOverviewToggleLabel = !leftSidebarCollapsed && isCanvasOverviewMode
-            ? I18n.translateString('Collapse canvas overview')
-            : I18n.translateString('Expand canvas overview');
-        const leftPanelAriaLabel = isCanvasOverviewMode
-            ? I18n.translateString('Canvas Overview')
+        const structureToggleLabel = !leftSidebarCollapsed && isStructureMode
+            ? I18n.translateString('Collapse Structure')
+            : I18n.translateString('Expand Structure');
+        const leftPanelAriaLabel = isStructureMode
+            ? I18n.translateString('Structure')
             : I18n.translateString('Frame Editor sidebar');
         const rightSidebarToggleLabel = this.state.isRightSidebarCollapsed
             ? I18n.translateString('Expand Component Inspector')
@@ -196,14 +196,14 @@ const FramesMode = {
                     </button>
                     <button
                         type="button"
-                        class="frame-editor-sidebar-toggle${!leftSidebarCollapsed && isCanvasOverviewMode ? ' active' : ''}"
+                        class="frame-editor-sidebar-toggle${!leftSidebarCollapsed && isStructureMode ? ' active' : ''}"
                         data-frame-editor-toggle-overview
-                        aria-expanded="${!leftSidebarCollapsed && isCanvasOverviewMode ? 'true' : 'false'}"
+                        aria-expanded="${!leftSidebarCollapsed && isStructureMode ? 'true' : 'false'}"
                         aria-controls="frameEditorSidebarPanel"
-                        title="${this.escapeHTML(canvasOverviewToggleLabel)}"
+                        title="${this.escapeHTML(structureToggleLabel)}"
                     >
                         <i class="bi bi-list-ul" aria-hidden="true"></i>
-                        <span class="frame-editor-button-label">${I18n.translateString('Canvas Overview')}</span>
+                        <span class="frame-editor-button-label">${I18n.translateString('Structure')}</span>
                     </button>
                     <div class="frame-editor-header-actions">
                         <button
@@ -297,10 +297,10 @@ const FramesMode = {
                             aria-label="${leftPanelAriaLabel}"
                             aria-hidden="${leftSidebarCollapsed ? 'true' : 'false'}"
                         >
-                            ${isCanvasOverviewMode
+                            ${isStructureMode
                 ? `
                                     <div class="frame-editor-sidebar-body frame-editor-sidebar-body-overview">
-                                        ${this.renderCanvasOverviewSidebar()}
+                                        ${this.renderStructureSidebar()}
                                     </div>
                                 `
                 : `
@@ -533,10 +533,10 @@ const FramesMode = {
         `;
     },
 
-    renderCanvasOverviewSidebar() {
-        const blockEntries = this.getCanvasOverviewEntries();
+    renderStructureSidebar() {
+        const blockEntries = this.getStructureEntries();
         const canvasEntryCount = blockEntries.length + 1;
-        const isCanvasCollapsed = this.isCanvasOverviewBlockCollapsed(this.CANVAS_OVERVIEW_ROOT_ID);
+        const isCanvasCollapsed = this.isStructureBlockCollapsed(this.STRUCTURE_ROOT_ID);
         const visibleBlockEntries = isCanvasCollapsed
             ? []
             : blockEntries.map(entry => ({
@@ -546,12 +546,12 @@ const FramesMode = {
 
         return `
             <div class="frame-editor-sidebar-summary">
-                <span class="frame-editor-sidebar-title">${I18n.translateString('Canvas Overview')}</span>
+                <span class="frame-editor-sidebar-title">${I18n.translateString('Structure')}</span>
                 <span class="frame-editor-sidebar-count">${I18n.translate('{count} items', { count: String(canvasEntryCount) })}</span>
             </div>
-            <div class="frame-editor-overview-list" role="listbox" aria-label="${this.escapeHTML(I18n.translateString('Canvas Overview'))}" data-frame-editor-overview-list>
-                ${this.renderCanvasOverviewCanvasItem(blockEntries.length)}
-                ${visibleBlockEntries.map(({ block, depth }, index) => this.renderCanvasOverviewItem(block, index + 1, depth)).join('')}
+            <div class="frame-editor-overview-list" role="listbox" aria-label="${this.escapeHTML(I18n.translateString('Structure'))}" data-frame-editor-overview-list>
+                ${this.renderStructureCanvasItem(blockEntries.length)}
+                ${visibleBlockEntries.map(({ block, depth }, index) => this.renderStructureItem(block, index + 1, depth)).join('')}
                 ${blockEntries.length && !isCanvasCollapsed
                 ? `
                         <div class="frame-editor-overview-root-dropzone" data-frame-editor-overview-root-drop="end" role="note">
@@ -563,7 +563,7 @@ const FramesMode = {
         `;
     },
 
-    getCanvasOverviewEntries(blocks = this.state.canvasBlocks) {
+    getStructureEntries(blocks = this.state.canvasBlocks) {
         const entries = [];
         const visit = (block, depth = 0) => {
             if (!block) {
@@ -571,7 +571,7 @@ const FramesMode = {
             }
 
             entries.push({ block, depth });
-            if (this.isCanvasOverviewBlockCollapsed(block.id)) {
+            if (this.isStructureBlockCollapsed(block.id)) {
                 return;
             }
 
@@ -582,15 +582,15 @@ const FramesMode = {
         return entries;
     },
 
-    renderCanvasOverviewCanvasItem(childCount = 0) {
+    renderStructureCanvasItem(childCount = 0) {
         const isActive = this.isCanvasSelected();
         // Render the canvas entry with no left-indent so it starts flush-left.
         return `
-            <div class="frame-editor-overview-item-shell" style="--frame-editor-overview-depth: 0; grid-template-columns: 0px minmax(0, 1fr); gap: 0.15rem;">
+            <div class="frame-editor-overview-item-shell${isActive ? ' is-active' : ''}" style="--frame-editor-overview-depth: 0; grid-template-columns: 0px minmax(0, 1fr); gap: 0.15rem;">
                 <span class="frame-editor-overview-item-toggle-spacer" aria-hidden="true"></span>
                 <button
                     type="button"
-                    class="frame-editor-overview-item${isActive ? ' active' : ''}"
+                    class="frame-editor-overview-item"
                     data-frame-editor-overview-canvas="true"
                     role="option"
                     aria-selected="${isActive ? 'true' : 'false'}"
@@ -600,25 +600,22 @@ const FramesMode = {
                         <i class="bi bi-grid-1x2"></i>
                     </span>
                     <span class="frame-editor-overview-item-title">${this.escapeHTML(I18n.translateString('Canvas'))}</span>
-                    ${isActive
-                ? `<span class="frame-editor-overview-item-status">${I18n.translateString('Selected')}</span>`
-                : '<span class="frame-editor-overview-item-layer">#1</span>'}
                 </button>
             </div>
         `;
     },
 
 
-    renderCanvasOverviewItem(block, index, depth = 0) {
+    renderStructureItem(block, index, depth = 0) {
         const isActive = this.state.selectedBlockId === block.id;
         const icon = this.getBlockIcon(block.type);
-        const label = this.getCanvasOverviewDisplayLabel(block);
+        const label = this.getStructureDisplayLabel(block);
         const hasChildren = this.getChildBlocks(block.id).length > 0;
-        const isCollapsed = hasChildren && this.isCanvasOverviewBlockCollapsed(block.id);
+        const isCollapsed = hasChildren && this.isStructureBlockCollapsed(block.id);
         const itemNumber = index + 1;
 
         return `
-            <div class="frame-editor-overview-item-shell" style="--frame-editor-overview-depth: ${this.escapeHTML(String(depth))};">
+            <div class="frame-editor-overview-item-shell${isActive ? ' is-active' : ''}" style="--frame-editor-overview-depth: ${this.escapeHTML(String(depth))};">
                 ${hasChildren
                 ? `
                         <button
@@ -634,7 +631,7 @@ const FramesMode = {
                 : '<span class="frame-editor-overview-item-toggle-spacer" aria-hidden="true"></span>'}
                 <button
                     type="button"
-                    class="frame-editor-overview-item${isActive ? ' active' : ''}"
+                    class="frame-editor-overview-item"
                     data-frame-editor-overview-block="${block.id}"
                     data-frame-editor-overview-nested="${depth > 0 ? 'true' : 'false'}"
                     draggable="true"
@@ -646,38 +643,37 @@ const FramesMode = {
                         <i class="bi ${icon}"></i>
                     </span>
                     <span class="frame-editor-overview-item-title">${this.escapeHTML(label)}</span>
-                    ${isActive ? `<span class="frame-editor-overview-item-status">${I18n.translateString('Selected')}</span>` : `<span class="frame-editor-overview-item-layer">#${this.escapeHTML(String(itemNumber))}</span>`}
                 </button>
             </div>
         `;
     },
 
-    isCanvasOverviewBlockCollapsed(blockId) {
-        return this.overviewCollapsedBlockIds.has(blockId);
+    isStructureBlockCollapsed(blockId) {
+        return this.structureCollapsedBlockIds.has(blockId);
     },
 
-    toggleCanvasOverviewBlockCollapsed(blockId) {
+    toggleStructureBlockCollapsed(blockId) {
         if (!blockId) {
             return;
         }
 
-        if (this.overviewCollapsedBlockIds.has(blockId)) {
-            this.overviewCollapsedBlockIds.delete(blockId);
+        if (this.structureCollapsedBlockIds.has(blockId)) {
+            this.structureCollapsedBlockIds.delete(blockId);
         } else {
-            this.overviewCollapsedBlockIds.add(blockId);
+            this.structureCollapsedBlockIds.add(blockId);
         }
 
         this.renderIntoRoot();
     },
 
-    getCanvasOverviewDisplayLabel(block) {
+    getStructureDisplayLabel(block) {
         const componentDefinition = this.getComponentDefinition(block);
         if (componentDefinition && !['text', 'line', 'shape', 'columns', 'section', 'image', 'qr'].includes(block?.type)) {
-            return this.getCanvasOverviewPreviewText(block.text, componentDefinition.name || componentDefinition.className);
+            return this.getStructurePreviewText(block.text, componentDefinition.name || componentDefinition.className);
         }
 
         if (block?.type === 'text') {
-            return this.getCanvasOverviewPreviewText(block.text, I18n.translateString('TLabel'));
+            return this.getStructurePreviewText(block.text, I18n.translateString('TLabel'));
         }
 
         if (block?.type === 'line') {
@@ -699,21 +695,21 @@ const FramesMode = {
 
         if (block?.type === 'image') {
             return block.imageName
-                ? this.getCanvasOverviewPreviewText(block.imageName, I18n.translateString('Image'))
+                ? this.getStructurePreviewText(block.imageName, I18n.translateString('Image'))
                 : I18n.translateString('Image');
         }
 
         return I18n.translateString(componentDefinition?.name || 'TQRCode');
     },
 
-    getCanvasOverviewItemSummary(block) {
+    getStructureItemSummary(block) {
         const componentDefinition = this.getComponentDefinition(block);
         if (componentDefinition && !['text', 'line', 'shape', 'columns', 'section', 'image', 'qr'].includes(block?.type)) {
             return componentDefinition.unitName || componentDefinition.className || 'Component';
         }
 
         if (block?.type === 'text') {
-            return this.getCanvasOverviewPreviewText(block.text, I18n.translateString('Empty text'));
+            return this.getStructurePreviewText(block.text, I18n.translateString('Empty text'));
         }
 
         if (block?.type === 'shape') {
@@ -744,7 +740,7 @@ const FramesMode = {
         return I18n.translateString('Uses current QR content');
     },
 
-    getCanvasOverviewPreviewText(value, fallback = '') {
+    getStructurePreviewText(value, fallback = '') {
         const normalized = String(value || fallback || '').replace(/\s+/g, ' ').trim();
         if (!normalized) {
             return '';
@@ -5107,8 +5103,8 @@ const FramesMode = {
 
             stage.addEventListener('dragover', event => {
                 const blockType = this.getDraggedBlockType(event);
-                const overviewBlockId = this.getDraggedOverviewBlockId(event) || this.overviewDragBlockId;
-                if (!blockType && !overviewBlockId) {
+                const structureBlockId = this.getDraggedStructureBlockId(event) || this.structureDragBlockId;
+                if (!blockType && !structureBlockId) {
                     return;
                 }
 
@@ -5125,9 +5121,9 @@ const FramesMode = {
 
             stage.addEventListener('drop', event => {
                 const blockType = this.getDraggedBlockType(event);
-                const overviewBlockId = this.getDraggedOverviewBlockId(event) || this.overviewDragBlockId;
+                const structureBlockId = this.getDraggedStructureBlockId(event) || this.structureDragBlockId;
                 stage.classList.remove('is-drop-target');
-                if (!this.isSupportedComponentType(blockType) && !overviewBlockId) {
+                if (!this.isSupportedComponentType(blockType) && !structureBlockId) {
                     return;
                 }
 
@@ -5138,9 +5134,9 @@ const FramesMode = {
                     return;
                 }
 
-                this.moveCanvasOverviewBlock(overviewBlockId, '', 'after', root, dropPosition);
-                this.clearCanvasOverviewDropIndicators(root);
-                this.overviewDragBlockId = '';
+                this.moveStructureBlock(structureBlockId, '', 'after', root, dropPosition);
+                this.clearStructureDropIndicators(root);
+                this.structureDragBlockId = '';
             });
 
             stage.addEventListener('wheel', event => {
@@ -5537,16 +5533,16 @@ const FramesMode = {
             });
         });
 
-        const overviewList = root.querySelector('[data-frame-editor-overview-list]');
-        const overviewSidebarPanel = root.querySelector('#frameEditorSidebarPanel');
-        const getOverviewInteractiveTarget = target => target instanceof Element
+        const structureList = root.querySelector('[data-frame-editor-overview-list]');
+        const structureSidebarPanel = root.querySelector('#frameEditorSidebarPanel');
+        const getStructureInteractiveTarget = target => target instanceof Element
             ? target.closest('[data-frame-editor-overview-block], [data-frame-editor-overview-toggle], [data-frame-editor-overview-canvas], [data-frame-editor-overview-root-drop]')
             : null;
         root.querySelectorAll('[data-frame-editor-overview-toggle]').forEach(button => {
             button.addEventListener('click', event => {
                 event.preventDefault();
                 event.stopPropagation();
-                this.toggleCanvasOverviewBlockCollapsed(button.dataset.frameEditorOverviewToggle);
+                this.toggleStructureBlockCollapsed(button.dataset.frameEditorOverviewToggle);
             });
         });
 
@@ -5574,54 +5570,54 @@ const FramesMode = {
                     return;
                 }
 
-                this.overviewDragBlockId = blockId;
-                overviewList?.classList.add('is-dragging');
+                this.structureDragBlockId = blockId;
+                structureList?.classList.add('is-dragging');
                 button.classList.add('is-dragging');
                 event.dataTransfer.effectAllowed = 'move';
                 event.dataTransfer.setData('text/frame-editor-overview-block', blockId);
             });
 
             button.addEventListener('dragover', event => {
-                const sourceBlockId = this.getDraggedOverviewBlockId(event) || this.overviewDragBlockId;
+                const sourceBlockId = this.getDraggedStructureBlockId(event) || this.structureDragBlockId;
                 const targetBlockId = button.dataset.frameEditorOverviewBlock;
                 if (!sourceBlockId || !targetBlockId) {
                     return;
                 }
 
-                const placement = this.getCanvasOverviewDropPlacement(button, event.clientY);
-                if (!this.canDropOverviewBlock(sourceBlockId, targetBlockId, placement)) {
-                    this.clearCanvasOverviewDropIndicators(root);
-                    overviewList?.classList.add('is-dragging');
+                const placement = this.getStructureDropPlacement(button, event.clientY);
+                if (!this.canDropStructureBlock(sourceBlockId, targetBlockId, placement)) {
+                    this.clearStructureDropIndicators(root);
+                    structureList?.classList.add('is-dragging');
                     root.querySelector?.(`[data-frame-editor-overview-block="${sourceBlockId}"]`)?.classList?.add('is-dragging');
                     return;
                 }
 
                 event.preventDefault();
                 event.dataTransfer.dropEffect = 'move';
-                this.applyCanvasOverviewDropIndicator(button, placement, root);
+                this.applyStructureDropIndicator(button, placement, root);
             });
 
             button.addEventListener('drop', event => {
-                const sourceBlockId = this.getDraggedOverviewBlockId(event) || this.overviewDragBlockId;
+                const sourceBlockId = this.getDraggedStructureBlockId(event) || this.structureDragBlockId;
                 const targetBlockId = button.dataset.frameEditorOverviewBlock;
                 if (!sourceBlockId || !targetBlockId) {
                     return;
                 }
 
-                const placement = this.getCanvasOverviewDropPlacement(button, event.clientY);
-                if (!this.canDropOverviewBlock(sourceBlockId, targetBlockId, placement)) {
+                const placement = this.getStructureDropPlacement(button, event.clientY);
+                if (!this.canDropStructureBlock(sourceBlockId, targetBlockId, placement)) {
                     return;
                 }
 
                 event.preventDefault();
-                this.moveCanvasOverviewBlock(sourceBlockId, targetBlockId, placement, root);
-                this.clearCanvasOverviewDropIndicators(root);
-                this.overviewDragBlockId = '';
+                this.moveStructureBlock(sourceBlockId, targetBlockId, placement, root);
+                this.clearStructureDropIndicators(root);
+                this.structureDragBlockId = '';
             });
 
             button.addEventListener('dragend', () => {
-                this.clearCanvasOverviewDropIndicators(root);
-                this.overviewDragBlockId = '';
+                this.clearStructureDropIndicators(root);
+                this.structureDragBlockId = '';
             });
         });
 
@@ -5631,73 +5627,73 @@ const FramesMode = {
             });
 
             button.addEventListener('dragover', event => {
-                this.handleCanvasOverviewRootDropDragOver(event, root, button);
+                this.handleStructureRootDropDragOver(event, root, button);
             });
 
             button.addEventListener('drop', event => {
-                this.handleCanvasOverviewRootDrop(event, root);
+                this.handleStructureRootDrop(event, root);
             });
         });
 
-        overviewList?.addEventListener('dragover', event => {
+        structureList?.addEventListener('dragover', event => {
             if (event.defaultPrevented) {
                 return;
             }
 
-            const interactiveTarget = getOverviewInteractiveTarget(event.target);
+            const interactiveTarget = getStructureInteractiveTarget(event.target);
             if (interactiveTarget) {
                 return;
             }
 
-            this.handleCanvasOverviewRootDropDragOver(event, root);
+            this.handleStructureRootDropDragOver(event, root);
         });
 
-        overviewList?.addEventListener('drop', event => {
+        structureList?.addEventListener('drop', event => {
             if (event.defaultPrevented) {
                 return;
             }
 
-            const interactiveTarget = getOverviewInteractiveTarget(event.target);
+            const interactiveTarget = getStructureInteractiveTarget(event.target);
             if (interactiveTarget) {
                 return;
             }
 
-            this.handleCanvasOverviewRootDrop(event, root);
+            this.handleStructureRootDrop(event, root);
         });
 
-        overviewSidebarPanel?.addEventListener('dragover', event => {
+        structureSidebarPanel?.addEventListener('dragover', event => {
             if (event.defaultPrevented) {
                 return;
             }
 
-            const interactiveTarget = getOverviewInteractiveTarget(event.target);
+            const interactiveTarget = getStructureInteractiveTarget(event.target);
             if (interactiveTarget) {
                 return;
             }
 
-            this.handleCanvasOverviewRootDropDragOver(event, root);
+            this.handleStructureRootDropDragOver(event, root);
         });
 
-        overviewSidebarPanel?.addEventListener('drop', event => {
+        structureSidebarPanel?.addEventListener('drop', event => {
             if (event.defaultPrevented) {
                 return;
             }
 
-            const interactiveTarget = getOverviewInteractiveTarget(event.target);
+            const interactiveTarget = getStructureInteractiveTarget(event.target);
             if (interactiveTarget) {
                 return;
             }
 
-            this.handleCanvasOverviewRootDrop(event, root);
+            this.handleStructureRootDrop(event, root);
         });
 
         root.querySelectorAll('[data-frame-editor-overview-root-drop]').forEach(dropZone => {
             dropZone.addEventListener('dragover', event => {
-                this.handleCanvasOverviewRootDropDragOver(event, root, dropZone);
+                this.handleStructureRootDropDragOver(event, root, dropZone);
             });
 
             dropZone.addEventListener('drop', event => {
-                this.handleCanvasOverviewRootDrop(event, root);
+                this.handleStructureRootDrop(event, root);
             });
         });
 
@@ -8226,7 +8222,7 @@ const FramesMode = {
         }
     },
 
-    moveCanvasOverviewBlock(sourceBlockId, targetBlockId = '', placement = 'after', root = this.getRoot(), rootPosition = null) {
+    moveStructureBlock(sourceBlockId, targetBlockId = '', placement = 'after', root = this.getRoot(), rootPosition = null) {
         if (!sourceBlockId) {
             return false;
         }
@@ -8663,41 +8659,41 @@ const FramesMode = {
             || '';
     },
 
-    getDraggedOverviewBlockId(event) {
+    getDraggedStructureBlockId(event) {
         return event.dataTransfer?.getData('text/frame-editor-overview-block') || '';
     },
 
-    handleCanvasOverviewRootDropDragOver(event, root = this.getRoot(), activeTarget = null) {
-        const sourceBlockId = this.getDraggedOverviewBlockId(event) || this.overviewDragBlockId;
+    handleStructureRootDropDragOver(event, root = this.getRoot(), activeTarget = null) {
+        const sourceBlockId = this.getDraggedStructureBlockId(event) || this.structureDragBlockId;
         if (!sourceBlockId) {
             return false;
         }
 
         event.preventDefault();
         event.dataTransfer.dropEffect = 'move';
-        this.clearCanvasOverviewDropIndicators(root);
+        this.clearStructureDropIndicators(root);
 
-        const overviewList = root?.querySelector?.('[data-frame-editor-overview-list]');
-        overviewList?.classList.add('is-dragging');
+        const structureList = root?.querySelector?.('[data-frame-editor-overview-list]');
+        structureList?.classList.add('is-dragging');
         root?.querySelector?.(`[data-frame-editor-overview-block="${sourceBlockId}"]`)?.classList?.add('is-dragging');
         activeTarget?.classList?.add('is-active');
         return true;
     },
 
-    handleCanvasOverviewRootDrop(event, root = this.getRoot()) {
-        const sourceBlockId = this.getDraggedOverviewBlockId(event) || this.overviewDragBlockId;
+    handleStructureRootDrop(event, root = this.getRoot()) {
+        const sourceBlockId = this.getDraggedStructureBlockId(event) || this.structureDragBlockId;
         if (!sourceBlockId) {
             return false;
         }
 
         event.preventDefault();
-        const moved = this.moveCanvasOverviewBlock(sourceBlockId, '', 'after', root);
-        this.clearCanvasOverviewDropIndicators(root);
-        this.overviewDragBlockId = '';
+        const moved = this.moveStructureBlock(sourceBlockId, '', 'after', root);
+        this.clearStructureDropIndicators(root);
+        this.structureDragBlockId = '';
         return moved;
     },
 
-    getCanvasOverviewDropPlacement(button, clientY) {
+    getStructureDropPlacement(button, clientY) {
         const targetBlock = this.getBlockById(button?.dataset?.frameEditorOverviewBlock || '');
         const rect = button?.getBoundingClientRect?.();
         if (!targetBlock || !rect || rect.height <= 0) {
@@ -8729,7 +8725,7 @@ const FramesMode = {
         return !this.getDescendantBlockIds(sourceBlockId, blocks).includes(nextParentId);
     },
 
-    canDropOverviewBlock(sourceBlockId, targetBlockId, placement, blocks = this.state.canvasBlocks) {
+    canDropStructureBlock(sourceBlockId, targetBlockId, placement, blocks = this.state.canvasBlocks) {
         if (!sourceBlockId || !targetBlockId || sourceBlockId === targetBlockId) {
             return false;
         }
@@ -8747,9 +8743,9 @@ const FramesMode = {
         return this.canMoveBlockToParent(sourceBlockId, nextParentId, blocks);
     },
 
-    clearCanvasOverviewDropIndicators(root = this.getRoot()) {
-        const overviewList = root?.querySelector?.('[data-frame-editor-overview-list]');
-        overviewList?.classList.remove('is-dragging');
+    clearStructureDropIndicators(root = this.getRoot()) {
+        const structureList = root?.querySelector?.('[data-frame-editor-overview-list]');
+        structureList?.classList.remove('is-dragging');
         root?.querySelectorAll?.('[data-frame-editor-overview-block]').forEach(button => {
             button.classList.remove('is-dragging', 'is-drop-before', 'is-drop-after', 'is-drop-inside');
         });
@@ -8758,16 +8754,16 @@ const FramesMode = {
         });
     },
 
-    applyCanvasOverviewDropIndicator(targetElement, placement, root = this.getRoot()) {
-        this.clearCanvasOverviewDropIndicators(root);
-        const overviewList = root?.querySelector?.('[data-frame-editor-overview-list]');
-        overviewList?.classList.add('is-dragging');
+    applyStructureDropIndicator(targetElement, placement, root = this.getRoot()) {
+        this.clearStructureDropIndicators(root);
+        const structureList = root?.querySelector?.('[data-frame-editor-overview-list]');
+        structureList?.classList.add('is-dragging');
         if (!targetElement) {
             return;
         }
 
-        if (this.overviewDragBlockId) {
-            root?.querySelector?.(`[data-frame-editor-overview-block="${this.overviewDragBlockId}"]`)?.classList?.add('is-dragging');
+        if (this.structureDragBlockId) {
+            root?.querySelector?.(`[data-frame-editor-overview-block="${this.structureDragBlockId}"]`)?.classList?.add('is-dragging');
         }
 
         if (placement === 'inside') {

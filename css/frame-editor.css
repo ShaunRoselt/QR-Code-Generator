@@ -342,6 +342,45 @@
     padding-left: calc(var(--frame-editor-overview-depth, 0) * 1rem);
 }
 
+.frame-editor-overview-item-shell.is-active {
+    background-color: var(--accent-primary);
+    border-radius: 6px;
+}
+
+.frame-editor-overview-item-shell.is-active .frame-editor-overview-item,
+.frame-editor-overview-item-shell.is-active .frame-editor-overview-item-toggle,
+.frame-editor-overview-item-shell.is-active .frame-editor-overview-item-toggle-spacer {
+    color: #ffffff;
+}
+
+.frame-editor-overview-item-shell.is-active .frame-editor-overview-item:hover {
+    background-color: transparent;
+}
+
+/* Hide the textual "Selected" status inside the active row */
+.frame-editor-overview-item-shell.is-active .frame-editor-overview-item-status {
+    display: none;
+}
+
+/* Ensure selecting a row does not change its vertical size.
+   Keep the shell aligned and the inner button at the same min-height/padding
+   as non-selected rows so the selection highlight does not alter height. */
+.frame-editor-overview-item-shell.is-active {
+    align-items: center;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.frame-editor-overview-item-shell.is-active .frame-editor-overview-item {
+    /* match the default button sizing to avoid the selected row growing */
+    min-height: 32px;
+    padding: 0.35rem 0.45rem;
+}
+
+.frame-editor-overview-item-shell.is-active .frame-editor-overview-item-toggle {
+    margin-top: 0;
+}
+
 .frame-editor-overview-item-toggle,
 .frame-editor-overview-item-toggle-spacer {
     display: inline-flex;
@@ -406,16 +445,6 @@
     border-color: var(--accent-primary);
     background-color: rgba(102, 192, 244, 0.12);
     box-shadow: 0 10px 24px rgba(0, 122, 204, 0.14);
-}
-
-.frame-editor-overview-item.active {
-    background-color: var(--accent-primary);
-    color: #ffffff;
-}
-
-.frame-editor-overview-item.active .frame-editor-overview-item-layer,
-.frame-editor-overview-item.active .frame-editor-overview-item-status {
-    color: inherit;
 }
 
 .frame-editor-overview-item.is-dragging {
@@ -530,26 +559,29 @@
     color: var(--text-muted);
 }
 
-.frame-editor-overview-item-status {
-    color: currentColor;
-    opacity: 0.92;
+/* Hide all numeric layer badges on Structure rows (visual-only).
+   If you prefer removing them from HTML, I can update renderStructureItem instead. */
+.frame-editor-overview-item-layer {
+    display: none;
 }
 
-.frame-editor-overview-root-dropzone {
-    display: flex;
+.frame-editor-overview-item-shell.is-active .frame-editor-overview-item-layer,
+.frame-editor-overview-item-shell.is-active .frame-editor-overview-item-status {
     align-items: center;
     justify-content: center;
-    min-height: 28px;
-    margin-top: 0.35rem;
-    padding: 0.35rem 0.5rem;
-    border: 1px dashed rgba(102, 192, 244, 0.24);
-    border-radius: 6px;
-    background-color: rgba(102, 192, 244, 0.03);
+    /* Keep the same baseline height/padding as the default state so selection
+       does not change the row's overall height. */
+    min-height: 18px;
+    margin-top: 0;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background-color: transparent;
     color: var(--text-muted);
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     text-align: center;
-    transition: all 0.2s ease;
-    opacity: 0.55;
+    transition: color 0.16s ease, background-color 0.16s ease;
+    opacity: 0.9;
 }
 
 .frame-editor-overview-list.is-dragging .frame-editor-overview-root-dropzone {
