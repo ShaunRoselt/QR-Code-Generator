@@ -2,15 +2,79 @@
   "name": "qr-code-generator",
   "version": "1.0.0",
   "description": "A professional QR Code Generator with 12 different QR code types, multiple frame styles, and high-resolution export support (up to 8K). Features include URL, text, email, phone, SMS, WhatsApp, WiFi, location, calendar events, app store links, social media profiles, and vCard generation.",
+  "desktopName": "io.github.ShaunRoselt.QRCodeGenerator.desktop",
+  "main": "electron/main.cjs",
   "releaseDate": "2026-03-17",
+  "scripts": {
+    "create:trailer": "node assets/create_trailer.cjs",
+    "package:flatpak": "npm run package:linux && sh scripts/package-flatpak.sh",
+    "package:linux:appimage": "node scripts/package-appimage.cjs",
+    "package:linux": "node scripts/package-linux.cjs",
+    "package:win": "node scripts/package-windows.cjs",
+    "start": "python3 -m http.server 4173",
+    "start:desktop": "electron .",
+    "sync:final-dist": "node scripts/final-dist.cjs"
+  },
   "author": "Shaun Roselt",
   "license": "LicenseRef-ShaunRoselt-Educational-Use-Only",
+  "private": true,
   "repository": {
     "type": "git",
     "url": "https://github.com/ShaunRoselt/QR-Code-Generator"
   },
   "homepage": "https://qrcode.apps.shaunroselt.com",
-  "dependencies": {
-    "highlight.js": "^11.11.1"
+  "build": {
+    "appId": "io.github.ShaunRoselt.QRCodeGenerator",
+    "productName": "QR Code Generator",
+    "publish": null,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!dist{,/**/*}",
+      "!.venv{,/**/*}",
+      "!.git{,/**/*}",
+      "!.github{,/**/*}",
+      "!.vscode{,/**/*}",
+      "!flatpak{,/**/*}",
+      "!.flatpak-builder{,/**/*}",
+      "!node_modules{,/**/*}",
+      "!docs{,/**/*}",
+      "!test{,/**/*}",
+      "!assets/screenshots{,/**/*}",
+      "!assets/store{,/**/*}",
+      "!assets/trailer{,/**/*}",
+      "!README.md",
+      "!Test.md",
+      "!UI-DOCUMENTATION.md",
+      "!CNAME"
+    ],
+    "asar": true,
+    "compression": "store",
+    "linux": {
+      "artifactName": "QR-Code-Generator-${version}.${ext}",
+      "category": "Graphics",
+      "icon": "assets/icons/app-icon-4096.png"
+    },
+    "appImage": {
+      "artifactName": "QR-Code-Generator-${version}.${ext}"
+    },
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "signAndEditExecutable": false,
+      "icon": "assets/icons/app-icon-dark.ico"
+    },
+    "portable": {
+      "artifactName": "QR-Code-Generator-Portable-${version}.exe"
+    }
+  },
+  "devDependencies": {
+    "@electron/packager": "^19.1.0",
+    "electron": "^41.2.0",
+    "electron-builder": "^26.8.1",
+    "resedit": "^3.0.2"
   }
 }

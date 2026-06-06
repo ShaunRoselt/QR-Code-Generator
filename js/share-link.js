@@ -13,6 +13,16 @@ const QRShareLink = {
     restoreTimeoutId: null,
     toastTimeoutId: null,
 
+    isElectronRuntime() {
+        return navigator.userAgent.includes('Electron');
+    },
+
+    getShareBaseUrl() {
+        return this.isElectronRuntime()
+            ? 'https://qrcode.apps.shaunroselt.com/index.html'
+            : window.location.href;
+    },
+
     init() {
         document.addEventListener(this.ROUTE_EVENT, () => {
             this.preparePage();
@@ -141,7 +151,7 @@ const QRShareLink = {
         payload.p = page;
         payload.a = 1;
 
-        const shareUrl = new URL(window.location.href);
+        const shareUrl = new URL(this.getShareBaseUrl());
         shareUrl.search = '';
         shareUrl.searchParams.set('page', page);
         shareUrl.searchParams.set(this.STATE_PARAM, this.encodeState(payload));

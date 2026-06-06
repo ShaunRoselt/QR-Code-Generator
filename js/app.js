@@ -1,6 +1,7 @@
 // Main App Initialization
 const MOBILE_SIDEBAR_BREAKPOINT = 768;
 const AUTO_COLLAPSE_SIDEBAR_BREAKPOINT = 1064;
+const PUBLIC_WEBSITE_URL = 'https://qrcode.apps.shaunroselt.com/index.html?page=public';
 const DEFAULT_PAGE_META = {
     title: 'QR Code Generator',
     description: 'Professional QR Code Generator - Create custom QR codes',
@@ -57,6 +58,26 @@ function applyPageMetadata(meta = DEFAULT_PAGE_META) {
 
 function applyShellMode(route) {
     document.body.classList.toggle('public-route', route === '/public' || route === '/pricing' || route === '/compare');
+}
+
+function isElectronRuntime() {
+    return navigator.userAgent.includes('Electron');
+}
+
+function applyDesktopShellLinks() {
+    if (!isElectronRuntime()) {
+        return;
+    }
+
+    const appTitleLink = document.querySelector('.app-title');
+    if (!appTitleLink) {
+        return;
+    }
+
+    appTitleLink.href = PUBLIC_WEBSITE_URL;
+    appTitleLink.removeAttribute('data-route');
+    appTitleLink.title = 'Open website';
+    appTitleLink.setAttribute('aria-label', 'Open website');
 }
 
 function isBetaEnrolled() {
@@ -269,6 +290,7 @@ router.register('/frames', () => {
 document.addEventListener('DOMContentLoaded', () => {
     AppDisplaySettings.applyFullscreenLayout();
     I18n.init();
+    applyDesktopShellLinks();
     document.addEventListener('app:route-rendered', () => {
         applyCurrentRouteMetadata();
     });

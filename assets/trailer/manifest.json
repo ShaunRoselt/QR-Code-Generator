@@ -1,0 +1,448 @@
+{
+  "createdAt": "2026-06-06T21:09:24.537Z",
+  "outputVideo": "trailer.mp4",
+  "resolution": "1920x1080",
+  "fps": 60,
+  "container": "mp4",
+  "videoCodec": "h264",
+  "audioCodec": "aac",
+  "targetVideoBitrate": "12000k",
+  "durationSeconds": 47.6,
+  "scenes": [
+    {
+      "id": "01_home_overview",
+      "page": "home",
+      "theme": "dark",
+      "language": "en",
+      "duration": 2.8,
+      "expectQr": false,
+      "waitMs": 420,
+      "still": "stills/01_home_overview.png",
+      "clip": "clips/01_home_overview.mp4"
+    },
+    {
+      "id": "02_url_qr",
+      "page": "url",
+      "theme": "dark",
+      "language": "en",
+      "duration": 3,
+      "waitMs": 480,
+      "controls": [
+        {
+          "id": "urlInput",
+          "value": "https://qrcode.apps.shaunroselt.com/"
+        },
+        {
+          "id": "errorCorrection",
+          "value": "H"
+        }
+      ],
+      "still": "stills/02_url_qr.png",
+      "clip": "clips/02_url_qr.mp4"
+    },
+    {
+      "id": "03_text_qr",
+      "page": "text",
+      "theme": "dark",
+      "language": "en",
+      "duration": 2.8,
+      "waitMs": 460,
+      "controls": [
+        {
+          "id": "textInput",
+          "value": "Table 12 menu\nScan to order and pay."
+        },
+        {
+          "id": "errorCorrection",
+          "value": "Q"
+        }
+      ],
+      "still": "stills/03_text_qr.png",
+      "clip": "clips/03_text_qr.mp4"
+    },
+    {
+      "id": "04_email_qr",
+      "page": "email",
+      "theme": "dark",
+      "language": "en",
+      "duration": 2.8,
+      "waitMs": 460,
+      "controls": [
+        {
+          "id": "emailInput",
+          "value": "hello@shaunroselt.com"
+        },
+        {
+          "id": "subjectInput",
+          "value": "QR campaign quote"
+        },
+        {
+          "id": "bodyInput",
+          "value": "Need branded QR codes for packaging and storefront displays."
+        },
+        {
+          "id": "errorCorrection",
+          "value": "Q"
+        }
+      ],
+      "still": "stills/04_email_qr.png",
+      "clip": "clips/04_email_qr.mp4"
+    },
+    {
+      "id": "05_phone_qr",
+      "page": "phone",
+      "theme": "dark",
+      "language": "en",
+      "duration": 2.4,
+      "waitMs": 420,
+      "controls": [
+        {
+          "id": "phoneInput",
+          "value": "+27123456789"
+        },
+        {
+          "id": "errorCorrection",
+          "value": "Q"
+        }
+      ],
+      "still": "stills/05_phone_qr.png",
+      "clip": "clips/05_phone_qr.mp4"
+    },
+    {
+      "id": "06_wifi_qr",
+      "page": "wifi",
+      "theme": "dark",
+      "language": "en",
+      "duration": 3,
+      "waitMs": 500,
+      "controls": [
+        {
+          "id": "ssidInput",
+          "value": "Cafe Guest WiFi"
+        },
+        {
+          "id": "passwordInput",
+          "value": "scanme2026"
+        },
+        {
+          "id": "encryptionInput",
+          "value": "WPA"
+        },
+        {
+          "id": "hiddenInput",
+          "checked": false
+        },
+        {
+          "id": "errorCorrection",
+          "value": "H"
+        }
+      ],
+      "still": "stills/06_wifi_qr.png",
+      "clip": "clips/06_wifi_qr.mp4"
+    },
+    {
+      "id": "07_location_qr",
+      "page": "location",
+      "theme": "dark",
+      "language": "en",
+      "duration": 2.8,
+      "waitMs": 460,
+      "controls": [
+        {
+          "id": "latitudeInput",
+          "value": "-33.9249"
+        },
+        {
+          "id": "longitudeInput",
+          "value": "18.4241"
+        },
+        {
+          "id": "labelInput",
+          "value": "Cape Town Studio"
+        },
+        {
+          "id": "errorCorrection",
+          "value": "Q"
+        }
+      ],
+      "still": "stills/07_location_qr.png",
+      "clip": "clips/07_location_qr.mp4"
+    },
+    {
+      "id": "08_event_qr",
+      "page": "event",
+      "theme": "dark",
+      "language": "en",
+      "duration": 3,
+      "waitMs": 520,
+      "controls": [
+        {
+          "id": "titleInput",
+          "value": "QR Product Launch"
+        },
+        {
+          "id": "locationInput",
+          "value": "Cape Town Convention Centre"
+        },
+        {
+          "id": "descriptionInput",
+          "value": "Live demos, print-ready exports, and branded QR campaigns."
+        },
+        {
+          "id": "startInput",
+          "value": "2026-08-14T18:30",
+          "event": "change"
+        },
+        {
+          "id": "endInput",
+          "value": "2026-08-14T21:00",
+          "event": "change"
+        },
+        {
+          "id": "errorCorrection",
+          "value": "Q"
+        }
+      ],
+      "still": "stills/08_event_qr.png",
+      "clip": "clips/08_event_qr.mp4"
+    },
+    {
+      "id": "09_appstore_qr",
+      "page": "appstore",
+      "theme": "dark",
+      "language": "en",
+      "duration": 2.8,
+      "waitMs": 460,
+      "controls": [
+        {
+          "id": "platformSelect",
+          "value": "googleplay"
+        },
+        {
+          "id": "appIdInput",
+          "value": "io.github.shaunroselt.qrcodegenerator"
+        },
+        {
+          "id": "errorCorrection",
+          "value": "Q"
+        }
+      ],
+      "still": "stills/09_appstore_qr.png",
+      "clip": "clips/09_appstore_qr.mp4"
+    },
+    {
+      "id": "10_social_qr",
+      "page": "social",
+      "theme": "dark",
+      "language": "en",
+      "duration": 2.8,
+      "waitMs": 500,
+      "controls": [
+        {
+          "id": "platformSelect",
+          "value": "instagram"
+        },
+        {
+          "id": "usernameInput",
+          "value": "shaunroselt"
+        },
+        {
+          "id": "errorCorrection",
+          "value": "Q"
+        }
+      ],
+      "still": "stills/10_social_qr.png",
+      "clip": "clips/10_social_qr.mp4"
+    },
+    {
+      "id": "11_vcard_qr",
+      "page": "vcard",
+      "theme": "dark",
+      "language": "en",
+      "duration": 3.2,
+      "waitMs": 520,
+      "controls": [
+        {
+          "id": "firstNameInput",
+          "value": "Shaun"
+        },
+        {
+          "id": "lastNameInput",
+          "value": "Roselt"
+        },
+        {
+          "id": "organizationInput",
+          "value": "QR Code Generator"
+        },
+        {
+          "id": "phoneInput",
+          "value": "+27123456789"
+        },
+        {
+          "id": "emailInput",
+          "value": "hello@shaunroselt.com"
+        },
+        {
+          "id": "websiteInput",
+          "value": "https://qrcode.apps.shaunroselt.com/"
+        },
+        {
+          "id": "cityInput",
+          "value": "Cape Town"
+        },
+        {
+          "id": "countryInput",
+          "value": "South Africa"
+        },
+        {
+          "id": "errorCorrection",
+          "value": "H"
+        }
+      ],
+      "still": "stills/11_vcard_qr.png",
+      "clip": "clips/11_vcard_qr.mp4"
+    },
+    {
+      "id": "12_settings_dark",
+      "page": "settings",
+      "theme": "dark",
+      "language": "en",
+      "duration": 2.4,
+      "expectQr": false,
+      "waitMs": 320,
+      "still": "stills/12_settings_dark.png",
+      "clip": "clips/12_settings_dark.mp4"
+    },
+    {
+      "id": "13_settings_light",
+      "page": "settings",
+      "theme": "light",
+      "language": "en",
+      "duration": 2.4,
+      "expectQr": false,
+      "waitMs": 320,
+      "still": "stills/13_settings_light.png",
+      "clip": "clips/13_settings_light.mp4"
+    },
+    {
+      "id": "14_url_german",
+      "page": "url",
+      "theme": "light",
+      "language": "de",
+      "duration": 2.8,
+      "waitMs": 480,
+      "controls": [
+        {
+          "id": "urlInput",
+          "value": "https://shaunroselt.com/de/kontakt"
+        },
+        {
+          "id": "errorCorrection",
+          "value": "H"
+        }
+      ],
+      "still": "stills/14_url_german.png",
+      "clip": "clips/14_url_german.mp4"
+    },
+    {
+      "id": "15_wifi_german",
+      "page": "wifi",
+      "theme": "light",
+      "language": "de",
+      "duration": 2.8,
+      "waitMs": 500,
+      "controls": [
+        {
+          "id": "ssidInput",
+          "value": "Studio Gast WLAN"
+        },
+        {
+          "id": "passwordInput",
+          "value": "scanme2026"
+        },
+        {
+          "id": "encryptionInput",
+          "value": "WPA"
+        },
+        {
+          "id": "hiddenInput",
+          "checked": false
+        },
+        {
+          "id": "errorCorrection",
+          "value": "Q"
+        }
+      ],
+      "still": "stills/15_wifi_german.png",
+      "clip": "clips/15_wifi_german.mp4"
+    },
+    {
+      "id": "16_url_arabic",
+      "page": "url",
+      "theme": "dark",
+      "language": "ar",
+      "duration": 2.8,
+      "waitMs": 500,
+      "controls": [
+        {
+          "id": "urlInput",
+          "value": "https://shaunroselt.com/ar/visit"
+        },
+        {
+          "id": "errorCorrection",
+          "value": "H"
+        }
+      ],
+      "still": "stills/16_url_arabic.png",
+      "clip": "clips/16_url_arabic.mp4"
+    },
+    {
+      "id": "17_vcard_arabic",
+      "page": "vcard",
+      "theme": "dark",
+      "language": "ar",
+      "duration": 3,
+      "waitMs": 520,
+      "controls": [
+        {
+          "id": "firstNameInput",
+          "value": "Shaun"
+        },
+        {
+          "id": "lastNameInput",
+          "value": "Roselt"
+        },
+        {
+          "id": "organizationInput",
+          "value": "QR Code Generator"
+        },
+        {
+          "id": "phoneInput",
+          "value": "+27123456789"
+        },
+        {
+          "id": "emailInput",
+          "value": "hello@shaunroselt.com"
+        },
+        {
+          "id": "websiteInput",
+          "value": "https://qrcode.apps.shaunroselt.com/"
+        },
+        {
+          "id": "cityInput",
+          "value": "Cape Town"
+        },
+        {
+          "id": "countryInput",
+          "value": "South Africa"
+        },
+        {
+          "id": "errorCorrection",
+          "value": "H"
+        }
+      ],
+      "still": "stills/17_vcard_arabic.png",
+      "clip": "clips/17_vcard_arabic.mp4"
+    }
+  ]
+}

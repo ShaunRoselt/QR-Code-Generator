@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.ShaunRoselt.QRCodeGenerator</id>
+  <name>QR Code Generator</name>
+  <summary>Create polished QR codes with local generation and high-resolution export</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>LicenseRef-ShaunRoselt-Educational-Use-Only</project_license>
+  <update_contact>Me@ShaunRoselt.com</update_contact>
+  <developer id="io.github.shaunroselt">
+    <name>Shaun Roselt</name>
+  </developer>
+  <launchable type="desktop-id">io.github.ShaunRoselt.QRCodeGenerator.desktop</launchable>
+  <description>
+    <p>
+      QR Code Generator is an installable desktop app for creating polished QR codes for websites,
+      WiFi, contacts, events, social profiles, app stores, and more without sending data to a server.
+    </p>
+    <p>
+      It provides live previews, multiple frame styles, dark and light themes, and exports up to 8K
+      in PNG or SVG so the same design can work for screens, print, signage, and packaging.
+    </p>
+    <ul>
+      <li>Create QR codes for 12 content types including URL, WiFi, event, social, and vCard.</li>
+      <li>Export PNG and SVG at resolutions from 1080p through 8K.</li>
+      <li>Customize the result with frames, themes, and real-time preview updates.</li>
+    </ul>
+  </description>
+  <categories>
+    <category>Graphics</category>
+  </categories>
+  <url type="homepage">https://qrcode.apps.shaunroselt.com</url>
+  <url type="bugtracker">https://github.com/ShaunRoselt/QR-Code-Generator/issues</url>
+  <url type="vcs-browser">https://github.com/ShaunRoselt/QR-Code-Generator</url>
+  <screenshots>
+    <screenshot type="default">
+      <caption>QR editing workspace with live preview and export controls.</caption>
+      <image>https://raw.githubusercontent.com/ShaunRoselt/QR-Code-Generator/main/assets/screenshots/Screenshot_20260520_215808.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>QR content configuration with the preview updating in real time.</caption>
+      <image>https://raw.githubusercontent.com/ShaunRoselt/QR-Code-Generator/main/assets/screenshots/Screenshot_20260520_215939.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Frame customization and visual QR presentation options.</caption>
+      <image>https://raw.githubusercontent.com/ShaunRoselt/QR-Code-Generator/main/assets/screenshots/Screenshot_20260520_220202.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Additional export and design controls for polished QR output.</caption>
+      <image>https://raw.githubusercontent.com/ShaunRoselt/QR-Code-Generator/main/assets/screenshots/Screenshot_20260520_220307.png</image>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1" />
+  <releases>
+    <release version="1.0.0" date="2026-03-17">
+      <description>
+        <p>Initial release with 12 QR content types, frame styles, dark and light themes, and high-resolution PNG and SVG export.</p>
+      </description>
+    </release>
+  </releases>
+</component>

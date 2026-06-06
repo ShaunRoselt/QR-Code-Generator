@@ -6,11 +6,9 @@ const http = require('node:http');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 
-const ROOT = path.resolve(__dirname);
-// Use the assets/trailer directory in this repository for stills/clips/manifest
-const OUTPUT_DIR = path.join(ROOT, 'trailer');
-const STILLS_DIR = path.join(OUTPUT_DIR, 'stills');
-const CLIPS_DIR = path.join(OUTPUT_DIR, 'clips');
+const ASSETS_ROOT = path.resolve(__dirname);
+const REPO_ROOT = path.resolve(ASSETS_ROOT, '..');
+const OUTPUT_DIR = path.join(ASSETS_ROOT, 'trailer');
 const MANIFEST_PATH = path.join(OUTPUT_DIR, 'manifest.json');
 const FINAL_VIDEO_PATH = path.join(OUTPUT_DIR, 'trailer.mp4');
 const APP_ENTRY = 'index.html';
@@ -21,56 +19,238 @@ const VIDEO_BITRATE = '12000k';
 const VIDEO_MAXRATE = '12000k';
 const VIDEO_BUFSIZE = '24000k';
 const AUDIO_BITRATE = '192k';
+const MAX_TRAILER_DURATION_SECONDS = 120;
 const INTERNAL_ELECTRON_FLAGS = new Set(['--no-sandbox', '--disable-setuid-sandbox']);
-const ELECTRON_BIN = typeof require('electron') === 'string'
-  ? require('electron')
-  : path.join(
-    ROOT,
+
+function resolveElectronBinary() {
+  try {
+    const electronModule = require('electron');
+    if (typeof electronModule === 'string' && electronModule) {
+      return electronModule;
+    }
+  } catch {
+    // Fall back to the workspace-local binary path when the package is not resolvable.
+  }
+
+  return path.join(
+    REPO_ROOT,
     'node_modules',
     '.bin',
     process.platform === 'win32' ? 'electron.cmd' : 'electron'
   );
+}
+
+const ELECTRON_BIN = resolveElectronBinary();
 
 const SCENES = [
-  { id: '01_standard_entry', page: 'standard', theme: 'dark', language: 'en', duration: 2.4 },
-  { id: '02_standard_result', page: 'standard', theme: 'dark', language: 'en', duration: 2.4 },
-  { id: '03_scientific_trig', page: 'scientific', theme: 'dark', language: 'en', duration: 2.5 },
-  { id: '04_scientific_factorial', page: 'scientific', theme: 'dark', language: 'en', duration: 2.5 },
-  { id: '05_graphing_plot', page: 'graphing', theme: 'dark', language: 'en', duration: 2.8 },
-  { id: '06_graphing_analysis', page: 'graphing', theme: 'dark', language: 'en', duration: 2.8 },
-  { id: '07_programmer_decimal', page: 'programmer', theme: 'dark', language: 'en', duration: 2.3 },
-  { id: '08_programmer_hex', page: 'programmer', theme: 'dark', language: 'en', duration: 2.3 },
-  { id: '09_programmer_bits', page: 'programmer', theme: 'dark', language: 'en', duration: 2.5 },
-  { id: '10_date_difference', page: 'date', theme: 'dark', language: 'en', duration: 2.6 },
-  { id: '11_date_shift', page: 'date', theme: 'dark', language: 'en', duration: 2.6 },
-  { id: '12_currency', page: 'currency', theme: 'dark', language: 'en', duration: 2.0 },
-  { id: '13_volume', page: 'volume', theme: 'dark', language: 'en', duration: 2.0 },
-  { id: '14_length', page: 'length', theme: 'dark', language: 'en', duration: 2.0 },
-  { id: '15_weight', page: 'weight', theme: 'dark', language: 'en', duration: 2.0 },
-  { id: '16_temperature', page: 'temperature', theme: 'dark', language: 'en', duration: 2.0 },
-  { id: '17_energy', page: 'energy', theme: 'dark', language: 'en', duration: 2.0 },
-  { id: '18_area', page: 'area', theme: 'dark', language: 'en', duration: 2.0 },
-  { id: '19_speed', page: 'speed', theme: 'dark', language: 'en', duration: 2.0 },
-  { id: '20_time', page: 'time', theme: 'dark', language: 'en', duration: 2.0 },
-  { id: '21_power', page: 'power', theme: 'dark', language: 'en', duration: 2.0 },
-  { id: '22_data', page: 'data', theme: 'dark', language: 'en', duration: 2.0 },
-  { id: '23_pressure', page: 'pressure', theme: 'dark', language: 'en', duration: 2.0 },
-  { id: '24_angle', page: 'angle', theme: 'dark', language: 'en', duration: 2.0 },
-  { id: '25_theme_gallery', page: 'settings', theme: 'dark', language: 'en', duration: 2.8 },
-  { id: '26_theme_terminal', page: 'standard', theme: 'terminal', language: 'en', duration: 2.2 },
-  { id: '27_theme_unicorn', page: 'standard', theme: 'unicorn', language: 'en', duration: 2.2 },
-  { id: '28_theme_south_africa', page: 'standard', theme: 'south-africa', language: 'en', duration: 2.2 },
-  { id: '29_language_gallery', page: 'settings', theme: 'dark', language: 'en', duration: 2.8 },
-  { id: '30_language_german', page: 'standard', theme: 'dark', language: 'de', duration: 2.2 },
-  { id: '31_language_japanese', page: 'standard', theme: 'dark', language: 'ja', duration: 2.2 },
-  { id: '32_language_arabic', page: 'standard', theme: 'dark', language: 'ar', duration: 2.2 }
+  { id: '01_home_overview', page: 'home', theme: 'dark', language: 'en', duration: 2.8, expectQr: false, waitMs: 420 },
+  {
+    id: '02_url_qr',
+    page: 'url',
+    theme: 'dark',
+    language: 'en',
+    duration: 3.0,
+    waitMs: 480,
+    controls: [
+      { id: 'urlInput', value: 'https://qrcode.apps.shaunroselt.com/' },
+      { id: 'errorCorrection', value: 'H' }
+    ]
+  },
+  {
+    id: '03_text_qr',
+    page: 'text',
+    theme: 'dark',
+    language: 'en',
+    duration: 2.8,
+    waitMs: 460,
+    controls: [
+      { id: 'textInput', value: 'Table 12 menu\nScan to order and pay.' },
+      { id: 'errorCorrection', value: 'Q' }
+    ]
+  },
+  {
+    id: '04_email_qr',
+    page: 'email',
+    theme: 'dark',
+    language: 'en',
+    duration: 2.8,
+    waitMs: 460,
+    controls: [
+      { id: 'emailInput', value: 'hello@shaunroselt.com' },
+      { id: 'subjectInput', value: 'QR campaign quote' },
+      { id: 'bodyInput', value: 'Need branded QR codes for packaging and storefront displays.' },
+      { id: 'errorCorrection', value: 'Q' }
+    ]
+  },
+  {
+    id: '05_phone_qr',
+    page: 'phone',
+    theme: 'dark',
+    language: 'en',
+    duration: 2.4,
+    waitMs: 420,
+    controls: [
+      { id: 'phoneInput', value: '+27123456789' },
+      { id: 'errorCorrection', value: 'Q' }
+    ]
+  },
+  {
+    id: '06_wifi_qr',
+    page: 'wifi',
+    theme: 'dark',
+    language: 'en',
+    duration: 3.0,
+    waitMs: 500,
+    controls: [
+      { id: 'ssidInput', value: 'Cafe Guest WiFi' },
+      { id: 'passwordInput', value: 'scanme2026' },
+      { id: 'encryptionInput', value: 'WPA' },
+      { id: 'hiddenInput', checked: false },
+      { id: 'errorCorrection', value: 'H' }
+    ]
+  },
+  {
+    id: '07_location_qr',
+    page: 'location',
+    theme: 'dark',
+    language: 'en',
+    duration: 2.8,
+    waitMs: 460,
+    controls: [
+      { id: 'latitudeInput', value: '-33.9249' },
+      { id: 'longitudeInput', value: '18.4241' },
+      { id: 'labelInput', value: 'Cape Town Studio' },
+      { id: 'errorCorrection', value: 'Q' }
+    ]
+  },
+  {
+    id: '08_event_qr',
+    page: 'event',
+    theme: 'dark',
+    language: 'en',
+    duration: 3.0,
+    waitMs: 520,
+    controls: [
+      { id: 'titleInput', value: 'QR Product Launch' },
+      { id: 'locationInput', value: 'Cape Town Convention Centre' },
+      { id: 'descriptionInput', value: 'Live demos, print-ready exports, and branded QR campaigns.' },
+      { id: 'startInput', value: '2026-08-14T18:30', event: 'change' },
+      { id: 'endInput', value: '2026-08-14T21:00', event: 'change' },
+      { id: 'errorCorrection', value: 'Q' }
+    ]
+  },
+  {
+    id: '09_appstore_qr',
+    page: 'appstore',
+    theme: 'dark',
+    language: 'en',
+    duration: 2.8,
+    waitMs: 460,
+    controls: [
+      { id: 'platformSelect', value: 'googleplay' },
+      { id: 'appIdInput', value: 'io.github.shaunroselt.qrcodegenerator' },
+      { id: 'errorCorrection', value: 'Q' }
+    ]
+  },
+  {
+    id: '10_social_qr',
+    page: 'social',
+    theme: 'dark',
+    language: 'en',
+    duration: 2.8,
+    waitMs: 500,
+    controls: [
+      { id: 'platformSelect', value: 'instagram' },
+      { id: 'usernameInput', value: 'shaunroselt' },
+      { id: 'errorCorrection', value: 'Q' }
+    ]
+  },
+  {
+    id: '11_vcard_qr',
+    page: 'vcard',
+    theme: 'dark',
+    language: 'en',
+    duration: 3.2,
+    waitMs: 520,
+    controls: [
+      { id: 'firstNameInput', value: 'Shaun' },
+      { id: 'lastNameInput', value: 'Roselt' },
+      { id: 'organizationInput', value: 'QR Code Generator' },
+      { id: 'phoneInput', value: '+27123456789' },
+      { id: 'emailInput', value: 'hello@shaunroselt.com' },
+      { id: 'websiteInput', value: 'https://qrcode.apps.shaunroselt.com/' },
+      { id: 'cityInput', value: 'Cape Town' },
+      { id: 'countryInput', value: 'South Africa' },
+      { id: 'errorCorrection', value: 'H' }
+    ]
+  },
+  { id: '12_settings_dark', page: 'settings', theme: 'dark', language: 'en', duration: 2.4, expectQr: false, waitMs: 320 },
+  { id: '13_settings_light', page: 'settings', theme: 'light', language: 'en', duration: 2.4, expectQr: false, waitMs: 320 },
+  {
+    id: '14_url_german',
+    page: 'url',
+    theme: 'light',
+    language: 'de',
+    duration: 2.8,
+    waitMs: 480,
+    controls: [
+      { id: 'urlInput', value: 'https://shaunroselt.com/de/kontakt' },
+      { id: 'errorCorrection', value: 'H' }
+    ]
+  },
+  {
+    id: '15_wifi_german',
+    page: 'wifi',
+    theme: 'light',
+    language: 'de',
+    duration: 2.8,
+    waitMs: 500,
+    controls: [
+      { id: 'ssidInput', value: 'Studio Gast WLAN' },
+      { id: 'passwordInput', value: 'scanme2026' },
+      { id: 'encryptionInput', value: 'WPA' },
+      { id: 'hiddenInput', checked: false },
+      { id: 'errorCorrection', value: 'Q' }
+    ]
+  },
+  {
+    id: '16_url_arabic',
+    page: 'url',
+    theme: 'dark',
+    language: 'ar',
+    duration: 2.8,
+    waitMs: 500,
+    controls: [
+      { id: 'urlInput', value: 'https://shaunroselt.com/ar/visit' },
+      { id: 'errorCorrection', value: 'H' }
+    ]
+  },
+  {
+    id: '17_vcard_arabic',
+    page: 'vcard',
+    theme: 'dark',
+    language: 'ar',
+    duration: 3.0,
+    waitMs: 520,
+    controls: [
+      { id: 'firstNameInput', value: 'Shaun' },
+      { id: 'lastNameInput', value: 'Roselt' },
+      { id: 'organizationInput', value: 'QR Code Generator' },
+      { id: 'phoneInput', value: '+27123456789' },
+      { id: 'emailInput', value: 'hello@shaunroselt.com' },
+      { id: 'websiteInput', value: 'https://qrcode.apps.shaunroselt.com/' },
+      { id: 'cityInput', value: 'Cape Town' },
+      { id: 'countryInput', value: 'South Africa' },
+      { id: 'errorCorrection', value: 'H' }
+    ]
+  }
 ];
 
-// Ensure each scene explicitly declares the still/clip filenames (relative to OUTPUT_DIR)
-for (const s of SCENES) {
-  if (!s.still) s.still = `stills/${s.id}.png`;
-  if (!s.clip) s.clip = `clips/${s.id}.mp4`;
+for (const scene of SCENES) {
+  if (!scene.still) scene.still = `stills/${scene.id}.png`;
+  if (!scene.clip) scene.clip = `clips/${scene.id}.mp4`;
 }
+
 const SCENE_IDS = SCENES.map((scene) => scene.id);
 
 function parseCsvArgument(rawValue, fallbackValues, validValues) {
@@ -136,18 +316,30 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log('Create a Steam-ready trailer for Roselt Calculator.');
+  console.log('Create a trailer for QR Code Generator.');
   console.log('');
-  console.log('Usage: npm run create:steam:trailer -- [options]');
+  console.log('Usage: npm run create:trailer -- [options]');
   console.log('');
   console.log('Options:');
   console.log(`  --output-dir=${OUTPUT_DIR}  Override the output directory.`);
   console.log(`  --scenes=${SCENE_IDS.join(',')}  Limit the rendered scenes.`);
+  console.log('  --base-url=http://127.0.0.1:4173  Reuse an existing server instead of starting one.');
   console.log('  --help, -h                 Show this help.');
 }
 
+function validateTrailerDuration(scenes) {
+  const totalDurationSeconds = scenes.reduce((sum, scene) => sum + scene.duration, 0);
+  if (totalDurationSeconds > MAX_TRAILER_DURATION_SECONDS) {
+    throw new Error(
+      `Selected scenes total ${totalDurationSeconds.toFixed(2)}s, which exceeds the ${MAX_TRAILER_DURATION_SECONDS}s limit.`
+    );
+  }
+}
+
 function resolveScenes(options) {
-  return SCENES.filter((scene) => options.scenes.includes(scene.id));
+  const scenes = SCENES.filter((scene) => options.scenes.includes(scene.id));
+  validateTrailerDuration(scenes);
+  return scenes;
 }
 
 function isElectronMainProcess() {
@@ -161,7 +353,7 @@ function ensureElectronInstalled() {
 }
 
 async function ensureFfmpegInstalled() {
-  await runCommand('ffmpeg', ['-version'], { cwd: ROOT, stdio: 'ignore' });
+  await runCommand('ffmpeg', ['-version'], { cwd: REPO_ROOT, stdio: 'ignore' });
 }
 
 async function ensureCleanOutput(outputDir) {
@@ -196,7 +388,7 @@ function createStaticServer(rootDirectory) {
       const requestUrl = new URL(request.url || '/', 'http://127.0.0.1');
       const decodedPath = decodeURIComponent(requestUrl.pathname);
       const relativePath = decodedPath === '/'
-        ? 'index.html'
+        ? APP_ENTRY
         : decodedPath.replace(/^\/+/, '');
       const resolvedPath = path.resolve(rootDirectory, relativePath);
 
@@ -215,7 +407,7 @@ function createStaticServer(rootDirectory) {
 
       let filePath = resolvedPath;
       if (stats?.isDirectory()) {
-        filePath = path.join(resolvedPath, 'index.html');
+        filePath = path.join(resolvedPath, APP_ENTRY);
       }
 
       const fileBuffer = await fsp.readFile(filePath);
@@ -234,7 +426,7 @@ function createStaticServer(rootDirectory) {
 }
 
 async function startStaticServer() {
-  const server = createStaticServer(ROOT);
+  const server = createStaticServer(REPO_ROOT);
   await new Promise((resolve, reject) => {
     server.once('error', reject);
     server.listen(0, '127.0.0.1', resolve);
@@ -276,234 +468,128 @@ function buildHelperSource() {
   return `
 if (!globalThis.__trailerHelpers) {
   globalThis.__trailerHelpers = (() => {
-    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    let moduleCache = null;
+    const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+    const getRouter = () => (typeof router !== 'undefined' ? router : globalThis.router);
+    const getThemeManager = () => (typeof themeManager !== 'undefined' ? themeManager : globalThis.themeManager);
+    const getI18n = () => (typeof I18n !== 'undefined' ? I18n : globalThis.I18n);
 
-    async function getModules() {
-      if (moduleCache) {
-        return moduleCache;
+    async function waitFor(getValue, timeoutMs = 8000) {
+      const deadline = Date.now() + timeoutMs;
+      while (Date.now() < deadline) {
+        const value = getValue();
+        if (value) {
+          return value;
+        }
+        await wait(16);
       }
 
-      const [
-        stateModule,
-        logicModule,
-        configModule,
-        viewModule
-      ] = await Promise.all([
-        import('./scripts/state.js'),
-        import('./scripts/logic.js'),
-        import('./scripts/config.js'),
-        import('./scripts/Views/MainPage.js')
-      ]);
-
-      moduleCache = {
-        stateModule,
-        logicModule,
-        configModule,
-        viewModule
-      };
-      return moduleCache;
+      throw new Error('Timed out waiting for trailer scene state.');
     }
 
-    function openSettingsExpanders() {
-      document.querySelectorAll('.settings-expander').forEach((element) => {
-        if (element instanceof HTMLDetailsElement) {
-          element.open = true;
-        }
+    function dispatchControlEvents(control, preferredEvent) {
+      const eventNames = [];
+
+      if (preferredEvent) {
+        eventNames.push(preferredEvent);
+      }
+
+      if (control.tagName === 'SELECT' || control.type === 'checkbox' || control.type === 'radio' || control.type === 'datetime-local') {
+        eventNames.push('change');
+      } else {
+        eventNames.push('input');
+      }
+
+      eventNames.push('change');
+
+      Array.from(new Set(eventNames)).forEach((eventName) => {
+        control.dispatchEvent(new Event(eventName, { bubbles: true }));
       });
     }
 
-    function setConverterScene(state, logicModule, configModule, mode, fromValue, fromIndex = 0, toIndex = 1) {
-      const category = configModule.CONVERTER_MODE_TO_CATEGORY[mode];
-      state.converter.category = category;
-      logicModule.resetConverterUnits();
-      const units = logicModule.getUnitsForCategory(category);
-      const resolvedFromIndex = Math.min(Math.max(fromIndex, 0), Math.max(0, units.length - 1));
-      const resolvedToIndex = Math.min(Math.max(toIndex, 0), Math.max(0, units.length - 1));
-      state.converter.fromUnit = units[resolvedFromIndex]?.name ?? units[0]?.name ?? '';
-      state.converter.toUnit = units[resolvedToIndex]?.name ?? units[Math.min(1, units.length - 1)]?.name ?? state.converter.fromUnit;
-      state.converter.fromValue = String(fromValue);
-      state.converter.lastEdited = 'from';
-      logicModule.syncConverterValues('from');
+    async function waitForRoute(page) {
+      const targetRoute = '/' + page;
+      return waitFor(() => {
+        const routerRef = getRouter();
+        if (!routerRef || typeof routerRef.getCurrentRoute !== 'function') {
+          return null;
+        }
+
+        if (routerRef.getCurrentRoute() !== targetRoute) {
+          return null;
+        }
+
+        const mainContent = document.getElementById('mainContent');
+        return mainContent && mainContent.firstElementChild ? mainContent.firstElementChild : null;
+      }, 10000);
     }
 
-    async function prepareScene(sceneId) {
-      const {
-        stateModule,
-        logicModule,
-        configModule,
-        viewModule
-      } = await getModules();
-      const {
-        state,
-        createStandardState,
-        createScientificState,
-        createProgrammerState
-      } = stateModule;
-      const {
-        handleAction,
-        computeDateResults,
-        setGraphExpression,
-        commitGraphExpression,
-        updateGraph,
-        openGraphExpressionAnalysis
-      } = logicModule;
-      const { render } = viewModule;
+    async function setControlValue(controlConfig) {
+      const control = await waitFor(() => document.getElementById(controlConfig.id), 5000);
 
-      state.navOpen = false;
-      state.historyOpen = false;
-      state.historyTab = 'history';
-      state.settings.openMenu = null;
-
-      switch (sceneId) {
-        case '01_standard_entry':
-          state.standard = createStandardState();
-          handleAction('digit', '1');
-          handleAction('digit', '2');
-          handleAction('digit', '5');
-          handleAction('operator', '*');
-          handleAction('digit', '1');
-          handleAction('digit', '6');
-          break;
-        case '02_standard_result':
-        case '26_theme_terminal':
-        case '27_theme_unicorn':
-        case '28_theme_south_africa':
-        case '30_language_german':
-        case '31_language_japanese':
-        case '32_language_arabic':
-          state.standard = createStandardState();
-          handleAction('digit', '1');
-          handleAction('digit', '2');
-          handleAction('digit', '5');
-          handleAction('operator', '*');
-          handleAction('digit', '1');
-          handleAction('digit', '6');
-          handleAction('equals');
-          break;
-        case '03_scientific_trig':
-          state.scientific = createScientificState();
-          handleAction('digit', '4');
-          handleAction('digit', '5');
-          state.scientific.openMenu = 'trig';
-          break;
-        case '04_scientific_factorial':
-          state.scientific = createScientificState();
-          handleAction('digit', '5');
-          handleAction('scientific-unary', 'factorial');
-          break;
-        case '05_graphing_plot':
-          setGraphExpression(0, 'x^2-4');
-          commitGraphExpression(0);
-          break;
-        case '06_graphing_analysis':
-          setGraphExpression(0, 'x^2-4');
-          commitGraphExpression(0);
-          openGraphExpressionAnalysis(0);
-          break;
-        case '07_programmer_decimal':
-          state.programmer = createProgrammerState();
-          handleAction('digit', '2');
-          handleAction('digit', '5');
-          handleAction('digit', '5');
-          break;
-        case '08_programmer_hex':
-          state.programmer = createProgrammerState();
-          handleAction('digit', '2');
-          handleAction('digit', '5');
-          handleAction('digit', '5');
-          handleAction('set-base', 'HEX');
-          break;
-        case '09_programmer_bits':
-          state.programmer = createProgrammerState();
-          handleAction('digit', '2');
-          handleAction('digit', '5');
-          handleAction('digit', '5');
-          handleAction('set-base', 'HEX');
-          handleAction('set-programmer-view', 'bitflip');
-          break;
-        case '10_date_difference':
-          state.date.mode = 'difference';
-          state.date.from = '2024-01-01';
-          state.date.to = '2025-05-15';
-          computeDateResults();
-          break;
-        case '11_date_shift':
-          state.date.mode = 'shift';
-          state.date.baseDate = '2026-05-15';
-          state.date.operation = 'add';
-          state.date.years = 0;
-          state.date.months = 6;
-          state.date.days = 18;
-          computeDateResults();
-          break;
-        case '12_currency':
-          setConverterScene(state, logicModule, configModule, 'currency', '250', 0, 1);
-          break;
-        case '13_volume':
-          setConverterScene(state, logicModule, configModule, 'volume', '3.5', 5, 9);
-          break;
-        case '14_length':
-          setConverterScene(state, logicModule, configModule, 'length', '120', 6, 10);
-          break;
-        case '15_weight':
-          setConverterScene(state, logicModule, configModule, 'weight', '75', 9, 14);
-          break;
-        case '16_temperature':
-          setConverterScene(state, logicModule, configModule, 'temperature', '23', 0, 1);
-          break;
-        case '17_energy':
-          setConverterScene(state, logicModule, configModule, 'energy', '512', 3, 8);
-          break;
-        case '18_area':
-          setConverterScene(state, logicModule, configModule, 'area', '1500', 5, 10);
-          break;
-        case '19_speed':
-          setConverterScene(state, logicModule, configModule, 'speed', '88', 3, 9);
-          break;
-        case '20_time':
-          setConverterScene(state, logicModule, configModule, 'time', '48', 5, 7);
-          break;
-        case '21_power':
-          setConverterScene(state, logicModule, configModule, 'power', '750', 1, 4);
-          break;
-        case '22_data':
-          setConverterScene(state, logicModule, configModule, 'data', '2048', 4, 7);
-          break;
-        case '23_pressure':
-          setConverterScene(state, logicModule, configModule, 'pressure', '101.3', 0, 1);
-          break;
-        case '24_angle':
-          setConverterScene(state, logicModule, configModule, 'angle', '180', 0, 3);
-          break;
-        case '25_theme_gallery':
-          state.settings.openMenu = 'theme';
-          break;
-        case '29_language_gallery':
-          state.settings.openMenu = 'language';
-          break;
-        default:
-          break;
+      if (Object.prototype.hasOwnProperty.call(controlConfig, 'checked')) {
+        control.checked = Boolean(controlConfig.checked);
+      } else {
+        control.value = controlConfig.value == null ? '' : String(controlConfig.value);
       }
 
-      render();
+      dispatchControlEvents(control, controlConfig.event || '');
+      await wait(controlConfig.delayMs || 24);
+    }
 
-      if (sceneId === '05_graphing_plot' || sceneId === '06_graphing_analysis') {
-        updateGraph();
+    async function waitForPreview(expectQr) {
+      if (!expectQr) {
+        await waitFor(() => document.querySelector('#mainContent .content-title'), 5000);
+        return;
       }
 
-      if (sceneId === '25_theme_gallery' || sceneId === '29_language_gallery') {
-        openSettingsExpanders();
-        await wait(80);
-        if (sceneId === '29_language_gallery') {
-          const scroller = document.querySelector('.settings-select-menu-options');
-          if (scroller instanceof HTMLElement) {
-            scroller.scrollTop = Math.max(0, Math.round(scroller.scrollHeight * 0.28));
-          }
+      await waitFor(() => {
+        const qrContainer = document.getElementById('qrcode');
+        const downloadOptions = document.getElementById('downloadOptions');
+        const previewNode = qrContainer ? qrContainer.firstElementChild : null;
+
+        if (!previewNode || !downloadOptions || downloadOptions.classList.contains('d-none')) {
+          return null;
+        }
+
+        return previewNode;
+      }, 10000);
+    }
+
+    async function prepareScene(scene) {
+      const targetRoute = '/' + scene.page;
+      const routerRef = getRouter();
+      const themeRef = getThemeManager();
+      const i18nRef = getI18n();
+
+      if (routerRef && typeof routerRef.getCurrentRoute === 'function' && routerRef.getCurrentRoute() !== targetRoute) {
+        routerRef.navigate(targetRoute);
+      }
+
+      await waitForRoute(scene.page);
+      window.scrollTo(0, 0);
+
+      if (scene.theme && themeRef && typeof themeRef.setTheme === 'function') {
+        themeRef.setTheme(scene.theme);
+        await wait(60);
+      }
+
+      if (scene.language && i18nRef && typeof i18nRef.setLanguage === 'function') {
+        const currentLanguage = typeof i18nRef.getLanguage === 'function'
+          ? i18nRef.getLanguage()
+          : null;
+
+        if (currentLanguage !== scene.language) {
+          i18nRef.setLanguage(scene.language, { rerender: true });
+          await waitForRoute(scene.page);
         }
       }
 
-      await wait(sceneId.startsWith('05_') || sceneId.startsWith('06_') ? 500 : 220);
+      for (const controlConfig of scene.controls || []) {
+        await setControlValue(controlConfig);
+      }
+
+      await waitForPreview(scene.expectQr !== false);
+      await wait(scene.waitMs || 320);
     }
 
     return {
@@ -514,10 +600,18 @@ if (!globalThis.__trailerHelpers) {
 `;
 }
 
+function buildSceneUrl(baseUrl, scene) {
+  const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const url = new URL(APP_ENTRY, normalizedBaseUrl);
+  url.searchParams.set('page', scene.page);
+  return url.toString();
+}
+
 async function captureScene(BrowserWindow, options, scene) {
   const targetPath = path.join(options.outputDir, 'stills', `${scene.id}.png`);
-  const url = `${options.baseUrl}/${APP_ENTRY}?page=${encodeURIComponent(scene.page)}&theme=${encodeURIComponent(scene.theme)}&language=${encodeURIComponent(scene.language)}`;
+  const url = buildSceneUrl(options.baseUrl, scene);
   console.log(`[capture] ${scene.id}: loading ${url}`);
+
   const win = new BrowserWindow({
     width: VIDEO_WIDTH,
     height: VIDEO_HEIGHT,
@@ -534,11 +628,9 @@ async function captureScene(BrowserWindow, options, scene) {
 
   try {
     await win.loadURL(url);
-    console.log(`[capture] ${scene.id}: loaded`);
     await win.webContents.executeJavaScript(`${buildHelperSource()}\nvoid 0;`);
-    console.log(`[capture] ${scene.id}: helper ready`);
-    await win.webContents.executeJavaScript(`globalThis.__trailerHelpers.prepareScene(${JSON.stringify(scene.id)}).then(() => undefined)`);
-    console.log(`[capture] ${scene.id}: scene prepared`);
+    await win.webContents.executeJavaScript(`globalThis.__trailerHelpers.prepareScene(${JSON.stringify(scene)}).then(() => undefined)`);
+
     debuggerSession.attach('1.3');
     await debuggerSession.sendCommand('Page.enable');
     await debuggerSession.sendCommand('Emulation.setDeviceMetricsOverride', {
@@ -549,11 +641,13 @@ async function captureScene(BrowserWindow, options, scene) {
       screenWidth: VIDEO_WIDTH,
       screenHeight: VIDEO_HEIGHT
     });
+
     const { data } = await debuggerSession.sendCommand('Page.captureScreenshot', {
       format: 'png',
       fromSurface: true,
       captureBeyondViewport: false
     });
+
     await fsp.writeFile(targetPath, Buffer.from(data, 'base64'));
     console.log(`[capture] ${scene.id}: wrote ${path.relative(options.outputDir, targetPath).replaceAll(path.sep, '/')}`);
   } finally {
@@ -568,6 +662,7 @@ async function runElectronCapture() {
   const { app, BrowserWindow } = require('electron');
   const options = parseArgs(process.argv.slice(2));
   const scenes = resolveScenes(options);
+
   if (!options.baseUrl) {
     throw new Error('Missing --base-url value for Electron capture.');
   }
@@ -597,7 +692,7 @@ async function spawnElectronCapture(options) {
       `--scenes=${options.scenes.join(',')}`
     ],
     {
-      cwd: ROOT,
+      cwd: REPO_ROOT,
       env: getLaunchEnv(),
       stdio: 'inherit'
     }
@@ -657,7 +752,7 @@ async function renderSceneClip(outputDir, scene) {
       clipPath
     ],
     {
-      cwd: ROOT,
+      cwd: REPO_ROOT,
       stdio: 'inherit'
     }
   );
@@ -688,7 +783,7 @@ async function renderTrailer(outputDir, scenes) {
       path.join(outputDir, path.basename(FINAL_VIDEO_PATH))
     ],
     {
-      cwd: ROOT,
+      cwd: REPO_ROOT,
       stdio: 'inherit'
     }
   );
@@ -725,25 +820,27 @@ async function runCli() {
   }
 
   await ensureFfmpegInstalled();
+  ensureElectronInstalled();
+  await ensureCleanOutput(options.outputDir);
 
-  // Prefer using existing stills in the output directory. Do not run Electron capture here.
-  const stillsDir = path.join(options.outputDir, 'stills');
-  let stillFiles = [];
+  let serverInfo = null;
+  const captureOptions = { ...options };
+
   try {
-    stillFiles = (await fsp.readdir(stillsDir)).filter((f) => /\.(png|jpg|jpeg)$/i.test(f));
-  } catch (e) {
-    stillFiles = [];
+    if (!captureOptions.baseUrl) {
+      serverInfo = await startStaticServer();
+      captureOptions.baseUrl = serverInfo.baseUrl;
+    }
+
+    await spawnElectronCapture(captureOptions);
+    await renderTrailer(captureOptions.outputDir, scenes);
+    await writeManifest(captureOptions.outputDir, scenes);
+    console.log(`Trailer written to ${path.join(captureOptions.outputDir, path.basename(FINAL_VIDEO_PATH))}`);
+  } finally {
+    if (serverInfo) {
+      await stopStaticServer(serverInfo.server);
+    }
   }
-
-  if (stillFiles.length === 0) {
-    throw new Error(`No still images found in ${stillsDir}. Place scene PNGs named <sceneId>.png there and re-run.`);
-  }
-
-  // Ensure clips dir exists (do not remove existing stills)
-  await fsp.mkdir(path.join(options.outputDir, 'clips'), { recursive: true });
-
-  await renderTrailer(options.outputDir, scenes);
-  await writeManifest(options.outputDir, scenes);
 }
 
 function runCommand(command, args, options = {}) {

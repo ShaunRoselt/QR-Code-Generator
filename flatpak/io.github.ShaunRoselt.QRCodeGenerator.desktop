@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=QR Code Generator
+Comment=Create polished QR codes with local generation and high-resolution export
+Exec=io.github.ShaunRoselt.QRCodeGenerator
+Icon=io.github.ShaunRoselt.QRCodeGenerator
+Categories=Graphics;
+Keywords=qr;barcode;generator;export;svg;png;
+StartupWMClass=QR Code Generator
+Terminal=false

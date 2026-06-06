@@ -1,21 +1,41 @@
-node_modules/
-coverage/
-.cache/
+.DS_Store
+Thumbs.db
 
-*.log
+.vscode/
+.idea/
+
+dist/
+.flatpak-builder/
+flatpak/build/
+flatpak/repo/
+coverage/
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-.DS_Store
-Thumbs.db
+__pycache__/
+*.pyc
+.tmp*/
+.copilot*/
 
-.env
-.env.*
+test/
 
-assets/trailer/
-assets/trailer/**/*.mp4
+# Ignore generated screenshot images
+/assets/screenshots/**/*.png
+/assets/screenshots/**/*.jpg
+/assets/screenshots/**/*.jpeg
+/assets/screenshots/**/*.webp
 
-# Ignore top-level trailer folder
-trailer/
+# Ignore generated trailer videos
+/assets/trailer/**/*.mp4
+/trailer/**/*.mp4
+
+node_modules/
+Saves/
+.build-tools/
+.venv/
+
+# Ignore final distribution builds
+/Final dist/
