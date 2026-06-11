@@ -289,6 +289,31 @@ router.register('/frames', () => {
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
     AppDisplaySettings.applyFullscreenLayout();
+    // Allow overriding language via URL params: ?language=de or ?lang=de
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const urlLang = params.get('language') || params.get('lang');
+        if (urlLang) {
+            const normalized = urlLang.toLowerCase();
+            let chosen = normalized;
+
+            if (!I18n.languages[normalized]) {
+                const short = normalized.split(/[-_]/)[0];
+                if (I18n.languages[short]) {
+                    chosen = short;
+                } else {
+                    chosen = null;
+                }
+            }
+
+            if (chosen) {
+                I18n.setLanguage(chosen);
+            }
+        }
+    } catch (e) {
+        // Ignore URL parsing errors
+    }
+
     I18n.init();
     applyDesktopShellLinks();
     document.addEventListener('app:route-rendered', () => {

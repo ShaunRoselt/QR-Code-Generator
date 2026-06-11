@@ -2,14 +2,14 @@
 
 const ComparePage = {
     meta: {
-        title: 'QR Code Generator Compare | Neutral Feature Table',
-        description: 'Compare QR Code Generator with QR Code Generator by Bitly, QRCode Monkey, Canva, Adobe Express, and Flowcode in a neutral, source-backed table.',
+        title: 'QR Code Generator Compare | Fast Local QR Creation',
+        description: 'Compare QR Code Generator with popular QR tools and see where the browser-first, no-signup workflow fits best.',
         keywords: 'QR code generator comparison, QR code software compare, QRCode Monkey vs Flowcode vs Canva, QR code generator features table',
-        ogTitle: 'QR Code Generator Compare | Neutral Feature Table',
-        ogDescription: 'A source-backed comparison table for popular QR code generators, focused on public offers, customization, exports, analytics, and signup requirements.',
+        ogTitle: 'QR Code Generator Compare | Fast Local QR Creation',
+        ogDescription: 'See how QR Code Generator compares with popular QR tools across public offers, customization, exports, analytics, and signup requirements.',
         ogUrl: 'https://qrcode.apps.shaunroselt.com/index.html?page=compare',
-        twitterTitle: 'QR Code Generator Compare | Neutral Feature Table',
-        twitterDescription: 'See a neutral feature table comparing popular QR code generators using public product pages.'
+        twitterTitle: 'QR Code Generator Compare | Fast Local QR Creation',
+        twitterDescription: 'Compare popular QR code generators and see where this browser-first app stands out.'
     },
 
     providers: [
@@ -392,34 +392,44 @@ const ComparePage = {
 
     render() {
         return `
-            <div class="public-page compare-page">
-                <div class="public-shell">
+            <div class="public-page public-website compare-page">
                     <header class="marketing-topbar">
-                        <a class="brand-mark" href="?page=public" data-route="/public" aria-label="QR Code Generator home">
-                            <span class="brand-icon"><img class="brand-logo" src="assets/favicon.svg" alt="" width="48" height="48"></span>
-                            <span class="brand-copy">
-                                <strong>QR Code Generator</strong>
-                                <span>Neutral comparison view</span>
-                            </span>
-                        </a>
+                        <div class="public-shell nav-shell">
+                            <a class="brand-mark" href="?page=public" data-route="/public" aria-label="QR Code Generator home">
+                                <span class="brand-icon"><img class="brand-logo" src="assets/favicon.svg" alt="" width="40" height="40"></span>
+                                <span class="brand-copy">
+                                    <strong>QR Code Generator</strong>
+                                    <span>Product comparison</span>
+                                </span>
+                            </a>
 
-                        <div class="topbar-actions">
-                            <a class="btn btn-secondary" href="?page=public" data-route="/public">Overview</a>
-                            <a class="btn btn-secondary" href="?page=pricing" data-route="/pricing">Pricing</a>
-                            <button class="theme-switch" id="compareThemeToggle" type="button" aria-label="Toggle theme">
-                                <i class="bi bi-moon-stars-fill theme-switch-icon" aria-hidden="true"></i>
-                                <span class="theme-switch-label">Dark</span>
-                            </button>
-                            <a class="btn btn-primary" href="?page=home" data-route="/home">Open app</a>
+                            <nav class="topbar-links" aria-label="Website navigation">
+                                <a href="?page=public" data-route="/public">Overview</a>
+                                <a href="?page=release-notes" data-route="/release-notes">Release notes</a>
+                                <a href="?page=pricing" data-route="/pricing">Pricing</a>
+                                <a href="?page=compare" data-route="/compare">Compare</a>
+                            </nav>
+
+                            <div class="topbar-actions">
+                                <button class="theme-switch" id="themeToggle" type="button" aria-label="Toggle theme">
+                                    <i class="bi bi-moon-stars-fill theme-switch-icon" aria-hidden="true"></i>
+                                    <span class="theme-switch-label">Dark</span>
+                                </button>
+                                <a class="btn btn-primary" href="?page=home" data-route="/home">
+                                    <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+                                    <span>Open app</span>
+                                </a>
+                            </div>
                         </div>
                     </header>
 
                     <main>
                         <section class="compare-hero">
-                            <div class="compare-hero-copy">
+                            <div class="public-shell compare-hero-shell">
+                                <div class="compare-hero-copy">
                                 <p class="eyebrow">Compare</p>
-                                <h1>One table, six QR generators, only public claims.</h1>
-                                <p class="compare-intro">This page compares this app with QR Code Generator by Bitly and four other widely used QR tools: QRCode Monkey, Canva, Adobe Express, and Flowcode. The goal is neutral product context, not a winner badge.</p>
+                                <h1>See when a fast local QR generator is the best fit.</h1>
+                                <p class="compare-intro">This page compares this app with QR Code Generator by Bitly and four other widely used QR tools: QRCode Monkey, Canva, Adobe Express, and Flowcode. It highlights the practical tradeoffs: speed, privacy, exports, customization, analytics, and signup friction.</p>
 
                                 <div class="compare-actions">
                                     <a class="btn btn-primary" href="#compareTable">View table</a>
@@ -427,101 +437,121 @@ const ComparePage = {
                                 </div>
 
                                 <ul class="compare-points" aria-label="Comparison guardrails">
-                                    <li><i class="bi bi-check2-circle"></i><span>Only public product-page claims are included.</span></li>
+                                    <li><i class="bi bi-check2-circle"></i><span>This app favors local creation, fast export, and no signup.</span></li>
                                     <li><i class="bi bi-check2-circle"></i><span>Rows focus on offer, export, customization, analytics, and friction.</span></li>
+                                    <li><i class="bi bi-check2-circle"></i><span>Competitor notes use visible public product-page claims.</span></li>
                                     <li><i class="bi bi-check2-circle"></i><span>No private pricing tiers or hidden workflows are assumed.</span></li>
-                                    <li><i class="bi bi-check2-circle"></i><span>Reviewed against public pages in May 2026.</span></li>
                                 </ul>
                             </div>
 
-                            <aside class="compare-method-card">
+                                <aside class="compare-method-card">
                                 <div>
-                                    <p class="eyebrow">Method</p>
-                                    <h2>Compare what a user can actually see before signup.</h2>
-                                    <p>This is intentionally narrower than a full buyer’s guide. It uses visible landing-page and FAQ language to compare practical things a user can understand before spending time or money.</p>
+                                    <p class="eyebrow">Positioning</p>
+                                    <h2>Built for people who need the QR asset, not another account.</h2>
+                                    <p>This app is strongest when you need to create, style, and export a QR code quickly. Hosted platforms make sense when your project needs analytics, editable links, CRM workflows, or campaign management.</p>
                                 </div>
 
                                 <ul class="compare-method-list">
-                                    <li><i class="bi bi-dot"></i><span>Offer type: free tool, static-only, or account-led platform.</span></li>
-                                    <li><i class="bi bi-dot"></i><span>Feature signals: exports, customization, analytics, editing, and QR content types.</span></li>
-                                    <li><i class="bi bi-dot"></i><span>Friction signals: whether the public flow suggests signup or gated downloads.</span></li>
+                                    <li><i class="bi bi-dot"></i><span>Choose this app for private, browser-based static QR creation.</span></li>
+                                    <li><i class="bi bi-dot"></i><span>Choose hosted platforms for dynamic destinations and campaign analytics.</span></li>
+                                    <li><i class="bi bi-dot"></i><span>Choose design suites when QR codes are one element inside a larger layout.</span></li>
                                 </ul>
                             </aside>
-                        </section>
-
-                        <section class="compare-section">
-                            <div class="compare-section-heading">
-                                <div>
-                                    <p class="eyebrow">Feature matrix</p>
-                                    <h2>Source-backed table view.</h2>
-                                    <p>Use this as a quick orientation layer. It does not score quality, it just maps what the public pages say each tool does.</p>
-                                </div>
-                            </div>
-
-                            <div id="compareTable">
-                                ${this.renderComparisonTable()}
                             </div>
                         </section>
 
                         <section class="compare-section">
-                            <div class="compare-section-heading">
-                                <div>
-                                    <p class="eyebrow">Takeaways</p>
-                                    <h2>What separates the tools at a glance.</h2>
+                            <div class="public-shell">
+                                <div class="compare-section-heading">
+                                    <div>
+                                        <p class="eyebrow">Feature matrix</p>
+                                        <h2>Source-backed table view.</h2>
+                                        <p>Use this as a quick orientation layer. It maps visible public claims so you can choose the tool that fits the job.</p>
+                                    </div>
+                                </div>
+
+                                <div id="compareTable">
+                                    ${this.renderComparisonTable()}
                                 </div>
                             </div>
+                        </section>
 
-                            <div class="compare-summary-grid">
+                        <section class="compare-section">
+                            <div class="public-shell">
+                                <div class="compare-section-heading">
+                                    <div>
+                                        <p class="eyebrow">Takeaways</p>
+                                        <h2>What separates the tools at a glance.</h2>
+                                    </div>
+                                </div>
+
+                                <div class="compare-summary-grid">
                                 <article class="compare-summary-card">
-                                    <h3>Browser-first and low-friction</h3>
-                                    <p>This app, Adobe Express, and QRCode Monkey are the clearest low-friction entry points if you mainly want to generate something quickly from a visible tool surface.</p>
+                                    <h3>Fastest path to a finished QR asset</h3>
+                                    <p>This app is built around immediate local generation, clear QR types, and clean PNG or SVG export without a signup wall.</p>
                                 </article>
                                 <article class="compare-summary-card">
                                     <h3>Hosted platform workflows</h3>
-                                    <p>QRCG by Bitly and Flowcode are more explicit about ongoing campaign management, analytics, and team or API use cases than the design-first tools.</p>
+                                    <p>QRCG by Bitly and Flowcode are more explicit about ongoing campaign management, analytics, and team or API use cases.</p>
                                 </article>
                                 <article class="compare-summary-card">
                                     <h3>Design-suite overlap</h3>
-                                    <p>Canva and Adobe Express sit closer to creative tooling, so the QR feature is part of a larger editing and document-export workflow.</p>
+                                    <p>Canva and Adobe Express sit closer to creative tooling, so their QR features are part of larger editing and document-export workflows.</p>
                                 </article>
                             </div>
-                        </section>
-
-                        <section class="compare-section">
-                            <div class="compare-section-heading">
-                                <div>
-                                    <p class="eyebrow">Sources</p>
-                                    <h2>Short notes on each comparison source.</h2>
-                                    <p>These summaries are derived from the public pages reviewed for the table.</p>
-                                </div>
-                            </div>
-
-                            <div class="compare-sources-grid">
-                                ${this.sourceCards.map(card => this.renderSourceCard(card)).join('')}
                             </div>
                         </section>
 
                         <section class="compare-section">
-                            <div class="compare-closing">
-                                <div>
-                                    <p class="eyebrow">Use the tool</p>
-                                    <h2>Need a simple local generator instead of a managed platform?</h2>
-                                    <p>If your priority is immediate creation, local processing, and clean PNG or SVG export without a sign-up flow, open this app directly and start generating.</p>
+                            <div class="public-shell">
+                                <div class="compare-section-heading">
+                                    <div>
+                                        <p class="eyebrow">Sources</p>
+                                        <h2>Short notes on each comparison source.</h2>
+                                        <p>These summaries are derived from the public pages reviewed for the table.</p>
+                                    </div>
                                 </div>
-                                <div class="compare-closing-actions">
-                                    <a class="btn btn-primary" href="?page=home" data-route="/home">Open the generator</a>
-                                    <a class="btn btn-secondary" href="?page=pricing" data-route="/pricing">View pricing page</a>
+
+                                <div class="compare-sources-grid">
+                                    ${this.sourceCards.map(card => this.renderSourceCard(card)).join('')}
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="compare-section">
+                            <div class="public-shell">
+                                <div class="compare-closing">
+                                    <div>
+                                        <p class="eyebrow">Use the tool</p>
+                                        <h2>Need a simple local generator instead of a managed platform?</h2>
+                                        <p>If your priority is immediate creation, local processing, and clean PNG or SVG export without a signup flow, open this app directly and start generating.</p>
+                                    </div>
+                                    <div class="compare-closing-actions">
+                                        <a class="btn btn-primary" href="?page=home" data-route="/home">Open the generator</a>
+                                        <a class="btn btn-secondary" href="?page=pricing" data-route="/pricing">View pricing page</a>
+                                    </div>
                                 </div>
                             </div>
                         </section>
                     </main>
-                </div>
+
+                    <footer class="marketing-footer">
+                        <div class="public-shell footer-shell">
+                            <p>QR Code Generator is a client-side web app for high-resolution QR code creation.</p>
+                            <div class="footer-links">
+                                <a href="?page=pricing" data-route="/pricing">Pricing</a>
+                                <a href="?page=compare" data-route="/compare">Compare</a>
+                                <a href="?page=release-notes" data-route="/release-notes">Release notes</a>
+                                <a href="https://github.com/ShaunRoselt/QR-Code-Generator">GitHub</a>
+                            </div>
+                        </div>
+                    </footer>
             </div>
         `;
     },
 
     init() {
-        const themeToggle = document.getElementById('compareThemeToggle');
+        const themeToggle = document.getElementById('themeToggle');
         const themeIcon = themeToggle?.querySelector('.theme-switch-icon');
         const themeLabel = themeToggle?.querySelector('.theme-switch-label');
 

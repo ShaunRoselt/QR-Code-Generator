@@ -3,238 +3,278 @@
 const PublicPage = {
     heroQrUrl: 'https://qrcode.apps.shaunroselt.com/',
     meta: {
-        title: 'QR Code Generator | The Best Free QR Code Generator',
-        description: 'The best free QR Code Generator for creating high-resolution QR codes in your browser. Generate QR codes for websites, WiFi, contact cards, events, social links, and more.',
+        title: 'QR Code Generator | Professional Browser QR Code Maker',
+        description: 'Create polished, print-ready QR codes in your browser for links, WiFi, contact cards, events, social profiles, and more. No signup required.',
         keywords: 'free QR code generator, QR code creator, QR code maker, browser QR code generator, WiFi QR code, vCard QR code',
-        ogTitle: 'QR Code Generator | The Best Free QR Code Generator',
-        ogDescription: 'Create high-resolution QR codes in your browser with no signup, no backend, and no tracking.',
+        ogTitle: 'QR Code Generator | Professional Browser QR Code Maker',
+        ogDescription: 'Generate polished QR codes locally in your browser, then export PNG or SVG files for screen and print.',
         ogUrl: 'https://qrcode.apps.shaunroselt.com/index.html?page=public',
-        twitterTitle: 'QR Code Generator | The Best Free QR Code Generator',
-        twitterDescription: 'Create QR codes for websites, WiFi, events, contact cards, and more. Free to use in your browser.'
+        twitterTitle: 'QR Code Generator | Professional Browser QR Code Maker',
+        twitterDescription: 'Create QR codes for websites, WiFi, events, contact cards, social links, and more.'
+    },
+
+    qrTypes: [
+        { route: '/url', icon: 'bi-link-45deg', label: 'Website' },
+        { route: '/wifi', icon: 'bi-wifi', label: 'WiFi' },
+        { route: '/vcard', icon: 'bi-person-vcard', label: 'vCard' },
+        { route: '/event', icon: 'bi-calendar-event', label: 'Event' },
+        { route: '/social', icon: 'bi-share', label: 'Social' },
+        { route: '/location', icon: 'bi-geo-alt', label: 'Location' },
+        { route: '/email', icon: 'bi-envelope', label: 'Email' },
+        { route: '/sms', icon: 'bi-chat-dots', label: 'SMS' },
+        { route: '/appstore', icon: 'bi-shop', label: 'App Store' },
+        { route: '/text', icon: 'bi-fonts', label: 'Text' },
+        { route: '/phone', icon: 'bi-telephone', label: 'Phone' },
+        { route: '/whatsapp', icon: 'bi-whatsapp', label: 'WhatsApp' }
+    ],
+
+    renderQrTypeLinks() {
+        return this.qrTypes.map(type => `
+            <a class="qr-type-link" href="?page=${type.route.slice(1)}" data-route="${type.route}">
+                <i class="bi ${type.icon}" aria-hidden="true"></i>
+                <span>${type.label}</span>
+            </a>
+        `).join('');
     },
 
     render() {
+        const resolvedTheme = (typeof themeManager !== 'undefined' && typeof themeManager.getResolvedTheme === 'function')
+            ? themeManager.getResolvedTheme()
+            : (document.documentElement.getAttribute('data-theme') || 'dark');
+        const iframeSrc = `index.html?page=home${resolvedTheme ? '&theme=' + encodeURIComponent(resolvedTheme) : ''}`;
+        const editorIframeSrc = `index.html?page=url${resolvedTheme ? '&theme=' + encodeURIComponent(resolvedTheme) : ''}`;
         return `
-            <div class="public-page">
-                <div class="public-shell">
-                    <header class="marketing-topbar">
+            <div class="public-page public-website">
+                <header class="marketing-topbar">
+                    <div class="public-shell nav-shell">
                         <a class="brand-mark" href="?page=public" data-route="/public" aria-label="QR Code Generator home">
-                            <span class="brand-icon"><img class="brand-logo" src="assets/favicon.svg" alt="" width="48" height="48"></span>
+                            <span class="brand-icon"><img class="brand-logo" src="assets/favicon.svg" alt="" width="40" height="40"></span>
                             <span class="brand-copy">
                                 <strong>QR Code Generator</strong>
-                                <span>Free browser-based QR creation</span>
+                                <span>Local, print-ready codes</span>
                             </span>
                         </a>
 
+                        <nav class="topbar-links" aria-label="Website navigation">
+                            <a href="#features">Features</a>
+                            <a href="#types">QR types</a>
+                            <a href="?page=pricing" data-route="/pricing">Pricing</a>
+                            <a href="?page=compare" data-route="/compare">Compare</a>
+                        </nav>
+
                         <div class="topbar-actions">
-                            <a class="btn btn-secondary" href="?page=pricing" data-route="/pricing">Pricing</a>
-                            <a class="btn btn-secondary" href="?page=compare" data-route="/compare">Compare</a>
                             <button class="theme-switch" id="themeToggle" type="button" aria-label="Toggle theme">
                                 <i class="bi bi-moon-stars-fill theme-switch-icon" aria-hidden="true"></i>
                                 <span class="theme-switch-label">Dark</span>
                             </button>
-                            <a class="btn btn-secondary" href="?page=home" data-route="/home">Open app</a>
+                            <a class="btn btn-primary" href="?page=home" data-route="/home">
+                                <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+                                <span>Open app</span>
+                            </a>
                         </div>
-                    </header>
+                    </div>
+                </header>
 
-                    <main>
-                        <section class="hero-section">
+                <main>
+                    <section class="site-hero">
+                        <div class="public-shell hero-shell">
                             <div class="hero-copy">
-                                <p class="eyebrow">Best free QR Code Generator</p>
-                                <h1>Create polished QR codes in seconds, right in your browser.</h1>
-                                <p class="hero-text">Generate high-resolution QR codes for websites, WiFi, contact cards, events, social profiles, and more. No backend. No tracking. No waiting around for uploads.</p>
+                                <p class="section-kicker">Professional QR code generator</p>
+                                <h1>Create polished QR codes without handing over your data.</h1>
+                                <p class="site-lead">Build QR codes for websites, WiFi, contact cards, events, locations, and social profiles. Everything runs in your browser, with clean PNG and SVG exports ready for screen, print, and client work.</p>
 
                                 <div class="hero-actions">
-                                    <a class="btn btn-primary" href="?page=home" data-route="/home">Use it free now</a>
-                                    <a class="btn btn-secondary" href="?page=url" data-route="/url">Create a website QR code</a>
+                                    <a class="btn btn-primary" href="?page=home" data-route="/home">
+                                        <i class="bi bi-qr-code" aria-hidden="true"></i>
+                                        <span>Start generating</span>
+                                    </a>
+                                    <a class="btn btn-secondary" href="?page=url" data-route="/url">
+                                        <i class="bi bi-link-45deg" aria-hidden="true"></i>
+                                        <span>Create URL code</span>
+                                    </a>
                                 </div>
 
-                                <ul class="hero-points" aria-label="Product highlights">
-                                    <li><i class="bi bi-check2-circle"></i>12 QR code types</li>
-                                    <li><i class="bi bi-check2-circle"></i>PNG and SVG export</li>
-                                    <li><i class="bi bi-check2-circle"></i>Up to 8K output</li>
-                                    <li><i class="bi bi-check2-circle"></i>Dark and light themes</li>
+                                <dl class="trust-strip" aria-label="Product highlights">
+                                    <div>
+                                        <dt>12</dt>
+                                        <dd>QR types</dd>
+                                    </div>
+                                    <div>
+                                        <dt>8K</dt>
+                                        <dd>Max PNG export</dd>
+                                    </div>
+                                    <div>
+                                        <dt>0</dt>
+                                        <dd>Signup steps</dd>
+                                    </div>
+                                </dl>
+                            </div>
+
+                            <div class="hero-product" aria-label="QR Code Generator preview">
+                                <div class="product-window">
+                                    <div class="window-bar">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                    <iframe class="product-iframe" src="${iframeSrc}" title="QR Code Generator home preview" loading="eager" sandbox="allow-scripts allow-same-origin" data-preview-zoom="0.74" aria-hidden="true" tabindex="-1"></iframe>
+                                    <div class="product-overlay" aria-hidden="true"></div>
+                                </div>
+
+                                <aside class="live-qr-panel">
+                                    <div class="live-qr-copy">
+                                        <span>Live QR preview</span>
+                                        <strong>Scan the product site</strong>
+                                    </div>
+                                    <a class="preview-qr-link" href="${this.heroQrUrl}" target="_blank" rel="noopener noreferrer" aria-label="Open qrcode.apps.shaunroselt.com">
+                                        <div class="preview-grid preview-grid-live" id="publicHeroQr"></div>
+                                    </a>
+                                </aside>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="proof-band" aria-label="Common use cases">
+                        <div class="public-shell proof-grid">
+                            <article>
+                                <i class="bi bi-printer" aria-hidden="true"></i>
+                                <strong>Print-ready output</strong>
+                                <span>Flyers, labels, posters, menus, packaging, and signage.</span>
+                            </article>
+                            <article>
+                                <i class="bi bi-person-lines-fill" aria-hidden="true"></i>
+                                <strong>Business-ready sharing</strong>
+                                <span>vCards, phone numbers, email, WhatsApp, profiles, and events.</span>
+                            </article>
+                            <article>
+                                <i class="bi bi-shield-check" aria-hidden="true"></i>
+                                <strong>Private by default</strong>
+                                <span>Payloads stay local while you create, style, and export.</span>
+                            </article>
+                        </div>
+                    </section>
+
+                    <section class="site-section" id="features">
+                        <div class="public-shell split-section">
+                            <div class="section-heading">
+                                <p class="section-kicker">Built for real output</p>
+                                <h2>A focused QR design tool for everyday production.</h2>
+                                <p>Fast form entry, live previews, high-resolution downloads, and sensible defaults keep the workflow focused from first draft to finished asset.</p>
+                            </div>
+
+                            <div class="feature-list">
+                                <article>
+                                    <span class="feature-icon"><i class="bi bi-lightning-charge" aria-hidden="true"></i></span>
+                                    <div>
+                                        <h3>Instant preview</h3>
+                                        <p>Update the payload and see the QR code respond immediately before exporting.</p>
+                                    </div>
+                                </article>
+                                <article>
+                                    <span class="feature-icon"><i class="bi bi-filetype-svg" aria-hidden="true"></i></span>
+                                    <div>
+                                        <h3>PNG and SVG export</h3>
+                                        <p>Use raster downloads for quick sharing or SVG files when you need sharp print artwork.</p>
+                                    </div>
+                                </article>
+                                <article>
+                                    <span class="feature-icon"><i class="bi bi-palette" aria-hidden="true"></i></span>
+                                    <div>
+                                        <h3>Brand-friendly styling</h3>
+                                        <p>Adjust colors, logos, and frames while keeping the QR code readable and polished.</p>
+                                    </div>
+                                </article>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="editor-showcase">
+                        <div class="public-shell showcase-shell">
+                            <div class="showcase-image product-window" aria-label="URL QR code editor preview">
+                                <div class="window-bar">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                                <iframe class="product-iframe" src="${editorIframeSrc}" title="QR Code Generator URL editor preview" loading="lazy" sandbox="allow-scripts allow-same-origin" data-preview-zoom="0.68" aria-hidden="true" tabindex="-1"></iframe>
+                                <div class="product-overlay" aria-hidden="true"></div>
+                            </div>
+                            <div class="showcase-copy">
+                                <p class="section-kicker">From URL to download</p>
+                                <h2>Open the app, choose a type, export the file.</h2>
+                                <p>The interface is made for the decisions that matter: what the QR code contains, how it should look, and which file format you need.</p>
+                                <ul class="check-list">
+                                    <li><i class="bi bi-check2" aria-hidden="true"></i><span>Common QR payloads are separated into clear tools.</span></li>
+                                    <li><i class="bi bi-check2" aria-hidden="true"></i><span>Large exports work for posters, signs, and print layouts.</span></li>
+                                    <li><i class="bi bi-check2" aria-hidden="true"></i><span>No account gate blocks basic generation or download.</span></li>
                                 </ul>
                             </div>
+                        </div>
+                    </section>
 
-                            <div class="hero-visual" aria-hidden="true">
-                                <div class="preview-card preview-card-primary">
-                                    <div class="preview-header">
-                                        <span class="preview-pill">Live preview</span>
-                                        <span class="preview-meta">Free today</span>
-                                    </div>
-                                    <div class="preview-qr">
-                                        <a class="preview-qr-link" href="${this.heroQrUrl}" target="_blank" rel="noopener noreferrer" aria-label="Open qrcode.apps.shaunroselt.com">
-                                            <div class="preview-grid preview-grid-live" id="publicHeroQr"></div>
-                                        </a>
-                                        <div class="preview-frame">Scan me</div>
-                                    </div>
-                                    <div class="preview-footer">
-                                        <div>
-                                            <strong>Designed for real use</strong>
-                                            <span>Business cards, posters, packaging, tables, flyers</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="preview-card preview-card-floating">
-                                    <div class="mini-stat">
-                                        <strong>Private by design</strong>
-                                        <span>Everything happens locally in your browser.</span>
-                                    </div>
-                                    <div class="mini-stat">
-                                        <strong>Ready for export</strong>
-                                        <span>Download PNG or SVG at 1080p, 1440p, 4K, or 8K.</span>
-                                    </div>
-                                </div>
+                    <section class="site-section" id="types">
+                        <div class="public-shell">
+                            <div class="section-heading compact-heading">
+                                <p class="section-kicker">QR code types</p>
+                                <h2>Pick the format that matches the job.</h2>
+                                <p>Jump straight into the generator you need.</p>
                             </div>
-                        </section>
 
-                        <section class="metrics-section" aria-label="Key product metrics">
-                            <article class="metric-card">
-                                <strong>12</strong>
-                                <span>Supported QR code types</span>
+                            <div class="qr-type-grid">
+                                ${this.renderQrTypeLinks()}
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="site-section workflow-band">
+                        <div class="public-shell workflow-grid">
+                            <article>
+                                <span>01</span>
+                                <h3>Choose a tool</h3>
+                                <p>Start with URL, WiFi, vCard, event, social, and more.</p>
                             </article>
-                            <article class="metric-card">
-                                <strong>8K</strong>
-                                <span>Maximum export resolution</span>
+                            <article>
+                                <span>02</span>
+                                <h3>Review the preview</h3>
+                                <p>Check the live QR code and adjust styling before download.</p>
                             </article>
-                            <article class="metric-card">
-                                <strong>2</strong>
-                                <span>Download formats: PNG and SVG</span>
+                            <article>
+                                <span>03</span>
+                                <h3>Export for use</h3>
+                                <p>Download a PNG or SVG and place it wherever people scan.</p>
                             </article>
-                            <article class="metric-card">
-                                <strong>0</strong>
-                                <span>Servers, tracking scripts, or sign-up walls</span>
-                            </article>
-                        </section>
+                        </div>
+                    </section>
 
-                        <section class="section-block">
-                            <div class="section-heading">
-                                <p class="eyebrow">Why people use it</p>
-                                <h2>Built for fast creation, clean exports, and zero friction.</h2>
-                                <p>Whether you need a single QR code for a flyer or a polished export for client work, the app stays quick and focused.</p>
-                            </div>
-
-                            <div class="feature-grid">
-                                <article class="feature-card">
-                                    <i class="bi bi-lightning-charge"></i>
-                                    <h3>Create instantly</h3>
-                                    <p>Update content and see the result in real time while you refine the payload and presentation.</p>
-                                </article>
-                                <article class="feature-card">
-                                    <i class="bi bi-badge-hd"></i>
-                                    <h3>Export for production</h3>
-                                    <p>Download crisp PNG or SVG files at sizes ranging from 1080p to 8K for screen or print use.</p>
-                                </article>
-                                <article class="feature-card">
-                                    <i class="bi bi-shield-lock"></i>
-                                    <h3>Keep data local</h3>
-                                    <p>QR payloads are generated client-side in the browser, with no remote processing required.</p>
-                                </article>
-                            </div>
-                        </section>
-
-                        <section class="section-block section-contrast">
-                            <div class="section-heading">
-                                <p class="eyebrow">Supported use cases</p>
-                                <h2>One app for the QR codes people actually need.</h2>
-                                <p>Open the generator and switch between common formats without jumping between tools.</p>
-                            </div>
-
-                            <div class="type-grid">
-                                <a class="type-chip" href="?page=url" data-route="/url"><i class="bi bi-link-45deg"></i><span>URL / Website</span></a>
-                                <a class="type-chip" href="?page=text" data-route="/text"><i class="bi bi-fonts"></i><span>Plain Text</span></a>
-                                <a class="type-chip" href="?page=email" data-route="/email"><i class="bi bi-envelope"></i><span>Email</span></a>
-                                <a class="type-chip" href="?page=phone" data-route="/phone"><i class="bi bi-telephone"></i><span>Phone</span></a>
-                                <a class="type-chip" href="?page=sms" data-route="/sms"><i class="bi bi-chat-dots"></i><span>SMS</span></a>
-                                <a class="type-chip" href="?page=whatsapp" data-route="/whatsapp"><i class="bi bi-whatsapp"></i><span>WhatsApp</span></a>
-                                <a class="type-chip" href="?page=wifi" data-route="/wifi"><i class="bi bi-wifi"></i><span>WiFi</span></a>
-                                <a class="type-chip" href="?page=location" data-route="/location"><i class="bi bi-geo-alt"></i><span>Location</span></a>
-                                <a class="type-chip" href="?page=event" data-route="/event"><i class="bi bi-calendar-event"></i><span>Calendar Event</span></a>
-                                <a class="type-chip" href="?page=appstore" data-route="/appstore"><i class="bi bi-shop"></i><span>App Store</span></a>
-                                <a class="type-chip" href="?page=social" data-route="/social"><i class="bi bi-share"></i><span>Social Media</span></a>
-                                <a class="type-chip" href="?page=vcard" data-route="/vcard"><i class="bi bi-person-vcard"></i><span>vCard</span></a>
-                            </div>
-                        </section>
-
-                        <section class="section-block workflow-section">
-                            <div class="section-heading">
-                                <p class="eyebrow">How it works</p>
-                                <h2>Open, generate, export.</h2>
-                                <p>The workflow stays simple so you can go from idea to downloadable QR code without setup overhead.</p>
-                            </div>
-
-                            <div class="workflow-grid">
-                                <article class="workflow-step">
-                                    <span>01</span>
-                                    <h3>Choose a QR code type</h3>
-                                    <p>Pick the format that matches your use case, from websites and WiFi to vCards and event invites.</p>
-                                </article>
-                                <article class="workflow-step">
-                                    <span>02</span>
-                                    <h3>Fill in the details</h3>
-                                    <p>Enter your content and see the QR code update immediately while you review the result.</p>
-                                </article>
-                                <article class="workflow-step">
-                                    <span>03</span>
-                                    <h3>Export at the size you need</h3>
-                                    <p>Download a PNG or SVG in resolutions that work for mobile, desktop, print, and signage.</p>
-                                </article>
-                            </div>
-                        </section>
-
-                        <section class="section-block faq-section">
-                            <div class="section-heading">
-                                <p class="eyebrow">Trust and clarity</p>
-                                <h2>Simple answers to the things people usually want to know.</h2>
-                            </div>
-
-                            <div class="faq-grid">
-                                <article class="faq-card">
-                                    <h3>Is it really free?</h3>
-                                    <p>Yes. Right now the app is free to use, and this page reflects the current product offering.</p>
-                                </article>
-                                <article class="faq-card">
-                                    <h3>Does it upload my data?</h3>
-                                    <p>No. QR code generation happens locally in the browser, so payload data is not sent to a backend.</p>
-                                </article>
-                                <article class="faq-card">
-                                    <h3>What can I create?</h3>
-                                    <p>Website links, text, email, phone, SMS, WhatsApp, WiFi, location, event, app store, social media, and vCard QR codes.</p>
-                                </article>
-                                <article class="faq-card">
-                                    <h3>Can I use it for print?</h3>
-                                    <p>Yes. Export options include PNG and SVG, with sizes available up to 8K for higher-resolution output.</p>
-                                </article>
-                            </div>
-                        </section>
-
-                        <section class="closing-cta">
+                    <section class="final-cta">
+                        <div class="public-shell final-shell">
                             <div>
-                                <p class="eyebrow">Start now</p>
-                                <h2>Open the app and generate your first QR code for free.</h2>
-                                <p>Use the full generator in your browser and export the result when you are ready.</p>
+                                <p class="section-kicker">Ready when you are</p>
+                                <h2>Create your next QR code now.</h2>
+                                <p>Use the full generator in your browser and export a clean asset when it is ready.</p>
                             </div>
                             <div class="closing-actions">
-                                <a class="btn btn-primary" href="?page=home" data-route="/home">Use it free now</a>
-                                <a class="btn btn-secondary" href="?page=vcard" data-route="/vcard">Try a vCard QR code</a>
+                                <a class="btn btn-primary" href="?page=home" data-route="/home">
+                                    <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+                                    <span>Open app</span>
+                                </a>
+                                <!-- vCard CTA removed per design request -->
                             </div>
-                        </section>
-                    </main>
+                        </div>
+                    </section>
+                </main>
 
-                    <footer class="marketing-footer">
+                <footer class="marketing-footer">
+                    <div class="public-shell footer-shell">
                         <p>QR Code Generator is a client-side web app for high-resolution QR code creation.</p>
                         <div class="footer-links">
                             <a href="?page=pricing" data-route="/pricing">Pricing</a>
                             <a href="?page=compare" data-route="/compare">Compare</a>
-                            <a href="?page=home" data-route="/home">Open app</a>
                             <a href="?page=release-notes" data-route="/release-notes">Release notes</a>
                             <a href="https://github.com/ShaunRoselt/QR-Code-Generator">GitHub</a>
                         </div>
-                        <p class="footer-meta">Free to use today. Built for fast, local, browser-based QR generation.</p>
-                    </footer>
-                </div>
+                    </div>
+                </footer>
             </div>
         `;
     },
@@ -249,8 +289,8 @@ const PublicPage = {
             heroQrContainer.innerHTML = '';
             new QRCode(heroQrContainer, {
                 text: this.heroQrUrl,
-                width: 260,
-                height: 260,
+                width: 220,
+                height: 220,
                 colorDark: '#111111',
                 colorLight: '#ffffff',
                 correctLevel: QRCode.CorrectLevel.H
@@ -289,6 +329,62 @@ const PublicPage = {
         themeToggle?.addEventListener('click', () => {
             themeManager.toggleTheme();
         });
+
+        // Keep the embedded preview in sync when the public page theme changes.
+        const updateIframeTheme = (resolvedTheme) => {
+            document.querySelectorAll('.product-iframe').forEach(iframe => {
+                try {
+                    const url = new URL(iframe.getAttribute('src'), window.location.href);
+                    const themeToSet = resolvedTheme
+                        || ((typeof themeManager !== 'undefined' && typeof themeManager.getResolvedTheme === 'function')
+                            ? themeManager.getResolvedTheme()
+                            : (document.documentElement.getAttribute('data-theme') || 'dark'));
+                    url.searchParams.set('theme', themeToSet);
+                    // replace src only if different to avoid unnecessary reloads
+                    if (iframe.getAttribute('src') !== url.toString()) {
+                        iframe.setAttribute('src', url.toString());
+                    }
+                } catch (e) {
+                    const src = iframe.getAttribute('src') || 'index.html?page=home';
+                    const base = src.split('?')[0];
+                    const page = iframe.getAttribute('src')?.includes('page=url') ? 'url' : 'home';
+                    iframe.setAttribute('src', `${base}?page=${page}&theme=${encodeURIComponent(resolvedTheme || (typeof themeManager !== 'undefined' ? themeManager.getResolvedTheme() : 'dark'))}`);
+                }
+            });
+        };
+
+        const applyPreviewZoom = (iframe) => {
+            const previewZoom = Number.parseFloat(iframe?.dataset.previewZoom || '1');
+            if (!iframe || !Number.isFinite(previewZoom) || previewZoom === 1) {
+                return;
+            }
+
+            try {
+                const iframeDocument = iframe.contentDocument || iframe.contentWindow?.document;
+                if (!iframeDocument?.documentElement || !iframeDocument.body) {
+                    return;
+                }
+
+                iframeDocument.documentElement.style.zoom = String(previewZoom);
+                iframeDocument.documentElement.style.transformOrigin = 'top left';
+                iframeDocument.body.style.minWidth = `${Math.round(100 / previewZoom)}%`;
+                iframeDocument.body.style.minHeight = `${Math.round(100 / previewZoom)}%`;
+            } catch (error) {
+                // The preview is same-origin in normal use. If a browser blocks access, keep the iframe unscaled.
+            }
+        };
+
+        document.addEventListener('app:theme-changed', (ev) => {
+            const resolved = ev?.detail?.resolvedTheme || (typeof themeManager !== 'undefined' ? themeManager.getResolvedTheme() : null);
+            updateIframeTheme(resolved);
+        });
+
+        document.querySelectorAll('.product-iframe').forEach(iframe => {
+            iframe.addEventListener('load', () => applyPreviewZoom(iframe));
+        });
+        // Ensure initial sync in case theme changed after render.
+        updateIframeTheme();
+        document.querySelectorAll('.product-iframe').forEach(applyPreviewZoom);
 
         document.querySelectorAll('.public-page [data-route]').forEach(link => {
             link.addEventListener('click', event => {

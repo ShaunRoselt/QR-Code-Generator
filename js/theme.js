@@ -4,10 +4,27 @@
 class ThemeManager {
     constructor() {
         this.storageKey = 'qr-theme';
+        this.availableThemes = ['dark', 'light', 'system'];
         this.mediaQuery = typeof window.matchMedia === 'function'
             ? window.matchMedia('(prefers-color-scheme: dark)')
             : null;
         this.currentTheme = this.getStoredTheme();
+        
+        // Allow overriding theme via URL param: ?theme=<themeKey>
+        // Only accept exact theme keys defined in `availableThemes` (case-insensitive)
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const urlTheme = params.get('theme');
+            if (urlTheme) {
+                const normalized = urlTheme.toLowerCase();
+                const match = this.availableThemes.find(t => t.toLowerCase() === normalized);
+                if (match) {
+                    this.currentTheme = match;
+                }
+            }
+        } catch (e) {
+            // Ignore any URL parsing errors
+        }
         this.handleSystemThemeChange = this.handleSystemThemeChange.bind(this);
         this.bindSystemThemeListener();
         this.applyTheme();
@@ -16,9 +33,7 @@ class ThemeManager {
     getStoredTheme() {
         try {
             const storedTheme = localStorage.getItem(this.storageKey);
-            return storedTheme === 'dark' || storedTheme === 'light' || storedTheme === 'system'
-                ? storedTheme
-                : 'dark';
+            return this.availableThemes.includes(storedTheme) ? storedTheme : 'dark';
         } catch (error) {
             return 'dark';
         }
@@ -53,7 +68,9 @@ class ThemeManager {
             return this.mediaQuery?.matches ? 'dark' : 'light';
         }
 
-        return theme === 'light' ? 'light' : 'dark';
+        // For non-system themes, return the theme key itself so
+        // the data-theme attribute can be used for arbitrary themes.
+        return theme;
     }
 
     emitThemeChange() {
@@ -84,7 +101,7 @@ class ThemeManager {
     }
     
     setTheme(theme) {
-        if (theme === 'dark' || theme === 'light' || theme === 'system') {
+        if (this.availableThemes.includes(theme)) {
             this.currentTheme = theme;
             this.applyTheme();
         }

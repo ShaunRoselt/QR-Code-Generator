@@ -420,7 +420,7 @@ const SocialMode = {
             </div>
         `;
     },
-    
+
     init() {
         const DISPLAY_SIZE = 300;
         const defaultUsernameHint = 'Enter your username without @ symbol';
@@ -448,10 +448,10 @@ const SocialMode = {
         if (platformSelect && !platformSelect.value) {
             platformSelect.value = 'other';
         }
-        
+
         let currentQRCanvas = null;
         let selectedFrame = 'none';
-        
+
         // Frame card selector handler (delegated to support dynamically added cards)
         const frameSelector = document.getElementById('frameSelector');
         if (frameSelector) {
@@ -466,7 +466,7 @@ const SocialMode = {
                 autoGenerate();
             });
         }
-        
+
         const renderDropdownLogo = platform => {
             const logoMeta = platformLogoMap[platform] || {};
             const logoImageClasses = ['platform-dropdown-trigger-logo-image'];
@@ -607,7 +607,7 @@ const SocialMode = {
                 optionButton.setAttribute('aria-selected', String(isActive));
             });
         };
-        
+
         // Update hint when platform changes
         platformSelect.addEventListener('change', () => {
             const platform = platformSelect.value;
@@ -737,32 +737,32 @@ const SocialMode = {
 
         applyPlatformFilter('');
         syncPlatformDropdown(platformSelect.value);
-        
+
         // Auto-generate function
         const autoGenerate = () => {
             const platform = platformSelect.value;
             let username = usernameInput.value.trim();
             const platformConfig = platformConfigs[platform];
-            
+
             if (!platformConfig || !username) {
                 document.getElementById('qrcode').innerHTML = '';
                 document.getElementById('qrPlaceholder').style.display = 'block';
                 document.getElementById('downloadOptions').classList.add('d-none');
                 return;
             }
-            
+
             // Remove @ if user included it
             username = username.replace(/^@/, '');
-            
+
             const url = this.buildPlatformUrl(platform, username, platformConfig);
-            
+
             const errorCorrectionLevel = errorCorrection.value;
             const frameType = selectedFrame;
-            
+
             // Generate QR code
             const qrContainer = document.getElementById('qrcode');
             qrContainer.innerHTML = '';
-            
+
             const qrCode = new QRCode(qrContainer, {
                 text: url,
                 width: DISPLAY_SIZE,
@@ -771,19 +771,19 @@ const SocialMode = {
                 colorLight: '#ffffff',
                 correctLevel: QRCode.CorrectLevel[errorCorrectionLevel]
             });
-            
+
             QRCodePreviewRenderer.finalize(qrContainer, frameType, DISPLAY_SIZE, qrCode, previewNode => {
                 currentQRCanvas = previewNode;
             });
-            
+
             document.getElementById('qrPlaceholder').style.display = 'none';
             document.getElementById('downloadOptions').classList.remove('d-none');
         };
-        
+
         // Auto-generate on input
         usernameInput.addEventListener('input', autoGenerate);
         errorCorrection.addEventListener('change', autoGenerate);
-        
+
         // Download handlers
         document.getElementById('downloadPng').addEventListener('click', () => {
             const exportSize = QRCodeExportControls.getExportSize();
@@ -801,7 +801,7 @@ const SocialMode = {
             }
 
             const url = this.buildPlatformUrl(platform, username, platformConfig);
-            
+
             // Generate high-res QR code for export
             const tempContainer = document.createElement('div');
             const qrCode = new QRCode(tempContainer, {
@@ -812,7 +812,7 @@ const SocialMode = {
                 colorLight: '#ffffff',
                 correctLevel: QRCode.CorrectLevel[errorCorrection.value]
             });
-            
+
             setTimeout(() => {
                 const canvas = tempContainer.querySelector('canvas');
                 if (canvas) {
@@ -827,7 +827,7 @@ const SocialMode = {
                 }
             }, 100);
         });
-        
+
         document.getElementById('downloadSvg').addEventListener('click', () => {
             const exportSize = QRCodeExportControls.getExportSize();
             if (!exportSize) {
@@ -844,7 +844,7 @@ const SocialMode = {
             }
 
             const url = this.buildPlatformUrl(platform, username, platformConfig);
-            
+
             exportQRCodeAsSVG({
                 text: url,
                 size: exportSize,

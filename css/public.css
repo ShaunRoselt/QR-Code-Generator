@@ -1368,3 +1368,992 @@ body.public-route .main-content {
         padding: 0.55rem 0.6rem;
     }
 }
+
+/* ===== Public Website Refresh ===== */
+.public-page.public-website {
+    --site-bg: #101417;
+    --site-surface: #161d21;
+    --site-surface-2: #1e272c;
+    --site-text: #edf2ef;
+    --site-muted: #aab6b1;
+    --site-soft: #dbe7e0;
+    --site-line: rgba(219, 231, 224, 0.16);
+    --site-blue: #5bb2e6;
+    --site-blue-ink: #09283c;
+    --site-green: #6cc68b;
+    --site-coral: #ef9a76;
+    --site-yellow: #f2cf6b;
+    --site-shadow: rgba(0, 0, 0, 0.32);
+    background: var(--site-bg);
+    color: var(--site-text);
+    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+}
+
+:root[data-theme="light"] .public-page.public-website {
+    --site-bg: #f7f5ef;
+    --site-surface: #ffffff;
+    --site-surface-2: #ebe8dc;
+    --site-text: #1d252c;
+    --site-muted: #5f696d;
+    --site-soft: #2f3b41;
+    --site-line: rgba(29, 37, 44, 0.14);
+    --site-blue: #1769aa;
+    --site-blue-ink: #ffffff;
+    --site-green: #1f7a5c;
+    --site-coral: #b85d3c;
+    --site-yellow: #9b6b14;
+    --site-shadow: rgba(38, 42, 40, 0.16);
+}
+
+.public-page.public-website a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.public-page.public-website .public-shell {
+    width: min(1180px, calc(100% - 40px));
+    margin: 0 auto;
+    padding: 0;
+}
+
+.public-page.public-website .marketing-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: block;
+    padding: 0;
+    border-bottom: 1px solid var(--site-line);
+    background: color-mix(in srgb, var(--site-bg) 90%, transparent);
+    backdrop-filter: blur(18px);
+}
+
+.public-page.public-website .nav-shell {
+    min-height: 76px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.public-page.public-website .brand-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.public-page.public-website .brand-icon {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: var(--site-surface);
+    border: 1px solid var(--site-line);
+}
+
+.public-page.public-website .brand-logo {
+    width: 28px;
+    height: 28px;
+    display: block;
+}
+
+.public-page.public-website .brand-copy {
+    display: grid;
+    gap: 0.15rem;
+}
+
+.public-page.public-website .brand-copy strong {
+    color: var(--site-text);
+    font-size: 0.98rem;
+    line-height: 1.1;
+}
+
+.public-page.public-website .brand-copy span {
+    color: var(--site-muted);
+    font-size: 0.82rem;
+}
+
+.public-page.public-website .topbar-links,
+.public-page.public-website .topbar-actions,
+.public-page.public-website .hero-actions,
+.public-page.public-website .closing-actions,
+.public-page.public-website .footer-links {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.public-page.public-website .topbar-links {
+    justify-content: center;
+    color: var(--site-muted);
+    font-size: 0.92rem;
+}
+
+.public-page.public-website .topbar-links a {
+    padding: 0.45rem 0.35rem;
+}
+
+.public-page.public-website .topbar-links a:hover,
+.public-page.public-website .footer-links a:hover {
+    color: var(--site-text);
+}
+
+.public-page.public-website .btn,
+.public-page.public-website .theme-switch {
+    min-height: 42px;
+    border-radius: 8px;
+    border: 1px solid var(--site-line);
+    padding: 0.68rem 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font: inherit;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.public-page.public-website .btn:hover,
+.public-page.public-website .theme-switch:hover,
+.public-page.public-website .qr-type-link:hover {
+    transform: translateY(-1px);
+}
+
+.public-page.public-website .btn-primary {
+    background: var(--site-blue);
+    border-color: var(--site-blue);
+    color: var(--site-blue-ink);
+    box-shadow: 0 12px 24px color-mix(in srgb, var(--site-blue) 26%, transparent);
+}
+
+.public-page.public-website .btn-secondary,
+.public-page.public-website .theme-switch {
+    background: var(--site-surface);
+    color: var(--site-text);
+}
+
+.public-page.public-website .btn-secondary:hover,
+.public-page.public-website .theme-switch:hover {
+    border-color: color-mix(in srgb, var(--site-line) 55%, var(--site-blue));
+}
+
+.public-page.public-website .site-hero {
+    border-bottom: 1px solid var(--site-line);
+}
+
+.public-page.public-website .hero-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 0.82fr) minmax(420px, 1.18fr);
+    gap: 3rem;
+    align-items: center;
+    min-height: 680px;
+    padding: 4rem 0 4.5rem;
+}
+
+.public-page.public-website .section-kicker {
+    margin: 0 0 0.9rem;
+    color: var(--site-coral);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.public-page.public-website h1,
+.public-page.public-website h2,
+.public-page.public-website h3 {
+    margin: 0;
+    color: var(--site-text);
+    font-family: 'Space Grotesk', 'Instrument Sans', sans-serif;
+    letter-spacing: 0;
+}
+
+.public-page.public-website h1 {
+    max-width: 12ch;
+    font-size: 4.15rem;
+    line-height: 0.98;
+}
+
+.public-page.public-website h2 {
+    font-size: 2.4rem;
+    line-height: 1.04;
+}
+
+.public-page.public-website h3 {
+    font-size: 1.05rem;
+    line-height: 1.2;
+}
+
+.public-page.public-website .site-lead,
+.public-page.public-website .section-heading p,
+.public-page.public-website .feature-list p,
+.public-page.public-website .showcase-copy p,
+.public-page.public-website .workflow-grid p,
+.public-page.public-website .final-shell p,
+.public-page.public-website .marketing-footer p {
+    color: var(--site-muted);
+    font-size: 1rem;
+    line-height: 1.65;
+}
+
+.public-page.public-website .site-lead {
+    max-width: 58ch;
+    margin: 1.25rem 0 0;
+}
+
+.public-page.public-website .hero-actions {
+    margin-top: 1.75rem;
+}
+
+.public-page.public-website .trust-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    margin: 2rem 0 0;
+    border: 1px solid var(--site-line);
+    border-radius: 8px;
+    background: var(--site-surface);
+    overflow: hidden;
+}
+
+.public-page.public-website .trust-strip div {
+    padding: 1rem;
+    border-right: 1px solid var(--site-line);
+}
+
+.public-page.public-website .trust-strip div:last-child {
+    border-right: 0;
+}
+
+.public-page.public-website .trust-strip dt {
+    color: var(--site-text);
+    font-family: 'Space Grotesk', 'Instrument Sans', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.public-page.public-website .trust-strip dd {
+    margin: 0.35rem 0 0;
+    color: var(--site-muted);
+    font-size: 0.82rem;
+}
+
+.public-page.public-website .hero-product {
+    position: relative;
+    min-width: 0;
+    padding: 1.25rem 0 2.5rem 2rem;
+}
+
+.public-page.public-website .product-window {
+    position: relative;
+    border: 1px solid var(--site-line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--site-surface);
+    box-shadow: 0 28px 70px var(--site-shadow);
+}
+
+.public-page.public-website .window-bar {
+    height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0 0.9rem;
+    background: var(--site-surface-2);
+    border-bottom: 1px solid var(--site-line);
+}
+
+.public-page.public-website .window-bar span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--site-coral);
+}
+
+.public-page.public-website .window-bar span:nth-child(2) {
+    background: var(--site-yellow);
+}
+
+.public-page.public-website .window-bar span:nth-child(3) {
+    background: var(--site-green);
+}
+
+.public-page.public-website .product-window img,
+.public-page.public-website .showcase-image img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* Live iframe preview for product window - non-interactive */
+.public-page.public-website .product-window iframe {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+}
+
+.public-page.public-website .product-window .product-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 38px; /* sits below the window-bar */
+    bottom: 0;
+    z-index: 2;
+    background: transparent;
+}
+
+.public-page.public-website .live-qr-panel {
+    position: absolute;
+    right: 1rem;
+    bottom: 0;
+    width: min(280px, 44%);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--site-line);
+    background: color-mix(in srgb, var(--site-surface) 94%, transparent);
+    box-shadow: 0 20px 50px var(--site-shadow);
+}
+
+.public-page.public-website .live-qr-copy {
+    display: grid;
+    gap: 0.2rem;
+    margin-bottom: 0.75rem;
+}
+
+.public-page.public-website .live-qr-copy span {
+    color: var(--site-green);
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.public-page.public-website .live-qr-copy strong {
+    color: var(--site-text);
+}
+
+.public-page.public-website .preview-qr-link {
+    display: block;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 0.7rem;
+}
+
+.public-page.public-website .preview-grid-live,
+.public-page.public-website .preview-grid-live canvas,
+.public-page.public-website .preview-grid-live img {
+    display: block;
+    width: 100% !important;
+    height: auto !important;
+    max-width: 220px;
+    margin: 0 auto;
+    background: #ffffff;
+}
+
+.public-page.public-website .preview-grid-live::before,
+.public-page.public-website .preview-grid-live::after {
+    display: none;
+}
+
+.public-page.public-website .proof-band,
+.public-page.public-website .editor-showcase,
+.public-page.public-website .workflow-band,
+.public-page.public-website .final-cta {
+    border-bottom: 1px solid var(--site-line);
+}
+
+.public-page.public-website .proof-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1px;
+    padding: 0;
+    background: var(--site-line);
+    border-left: 1px solid var(--site-line);
+    border-right: 1px solid var(--site-line);
+}
+
+.public-page.public-website .proof-grid article {
+    display: grid;
+    gap: 0.45rem;
+    padding: 1.4rem;
+    background: var(--site-bg);
+}
+
+.public-page.public-website .proof-grid i,
+.public-page.public-website .feature-icon,
+.public-page.public-website .qr-type-link i,
+.public-page.public-website .check-list i {
+    color: var(--site-blue);
+}
+
+.public-page.public-website .proof-grid strong {
+    color: var(--site-text);
+}
+
+.public-page.public-website .proof-grid span {
+    color: var(--site-muted);
+    line-height: 1.45;
+}
+
+.public-page.public-website .site-section {
+    padding: 5rem 0;
+}
+
+.public-page.public-website .split-section,
+.public-page.public-website .showcase-shell,
+.public-page.public-website .final-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 3rem;
+    align-items: center;
+}
+
+.public-page.public-website .section-heading {
+    max-width: 560px;
+}
+
+.public-page.public-website .section-heading p {
+    margin: 1rem 0 0;
+}
+
+.public-page.public-website .feature-list {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.public-page.public-website .feature-list article {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--site-line);
+    border-radius: 8px;
+    background: var(--site-surface);
+}
+
+.public-page.public-website .feature-icon {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--site-blue) 12%, transparent);
+}
+
+.public-page.public-website .feature-list p {
+    margin: 0.35rem 0 0;
+}
+
+.public-page.public-website .editor-showcase {
+    padding: 5rem 0;
+    background: var(--site-surface);
+}
+
+.public-page.public-website .showcase-shell {
+    grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.82fr);
+}
+
+.public-page.public-website .showcase-image {
+    overflow: hidden;
+    border: 1px solid var(--site-line);
+    border-radius: 8px;
+    background: var(--site-surface-2);
+    box-shadow: 0 22px 54px var(--site-shadow);
+}
+
+.public-page.public-website .showcase-copy p {
+    margin: 1rem 0 0;
+}
+
+.public-page.public-website .check-list {
+    display: grid;
+    gap: 0.75rem;
+    margin: 1.35rem 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--site-muted);
+}
+
+.public-page.public-website .check-list li {
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+    line-height: 1.45;
+}
+
+.public-page.public-website .compact-heading {
+    margin-bottom: 1.5rem;
+}
+
+.public-page.public-website .qr-type-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.public-page.public-website .qr-type-link {
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 1px solid var(--site-line);
+    border-radius: 8px;
+    background: var(--site-surface);
+    color: var(--site-text);
+    transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.public-page.public-website .qr-type-link:hover {
+    border-color: color-mix(in srgb, var(--site-line) 45%, var(--site-blue));
+    background: color-mix(in srgb, var(--site-surface) 88%, var(--site-blue));
+}
+
+.public-page.public-website .workflow-band {
+    padding: 0;
+    background: var(--site-surface);
+}
+
+.public-page.public-website .workflow-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--site-line);
+    border-left: 1px solid var(--site-line);
+    border-right: 1px solid var(--site-line);
+}
+
+.public-page.public-website .workflow-grid article {
+    padding: 1.5rem;
+    background: var(--site-surface);
+}
+
+.public-page.public-website .workflow-grid span {
+    display: inline-block;
+    margin-bottom: 1.5rem;
+    color: var(--site-coral);
+    font-weight: 800;
+}
+
+.public-page.public-website .workflow-grid p {
+    margin: 0.55rem 0 0;
+}
+
+.public-page.public-website .final-cta {
+    padding: 4.5rem 0;
+}
+
+.public-page.public-website .final-shell {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.public-page.public-website .final-shell p {
+    margin: 1rem 0 0;
+    max-width: 58ch;
+}
+
+.public-page.public-website .marketing-footer {
+    padding: 0;
+    background: var(--site-bg);
+}
+
+.public-page.public-website .footer-shell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.35rem 0 2rem;
+}
+
+.public-page.public-website .marketing-footer p {
+    margin: 0;
+    font-size: 0.92rem;
+}
+
+.public-page.public-website .footer-links {
+    color: var(--site-muted);
+    font-size: 0.92rem;
+}
+
+@media (max-width: 1040px) {
+    .public-page.public-website .nav-shell {
+        grid-template-columns: 1fr auto;
+    }
+
+    .public-page.public-website .topbar-links {
+        display: none;
+    }
+
+    .public-page.public-website .hero-shell,
+    .public-page.public-website .split-section,
+    .public-page.public-website .showcase-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .public-page.public-website .hero-shell {
+        min-height: auto;
+        padding-top: 3rem;
+    }
+
+    .public-page.public-website h1 {
+        max-width: 14ch;
+        font-size: 3.45rem;
+    }
+
+    .public-page.public-website .hero-product {
+        padding-left: 0;
+    }
+
+    .public-page.public-website .qr-type-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .public-page.public-website .public-shell {
+        width: min(100% - 28px, 1180px);
+    }
+
+    .public-page.public-website .nav-shell {
+        min-height: 68px;
+    }
+
+    .public-page.public-website .brand-copy span,
+    .public-page.public-website .theme-switch-label {
+        display: none;
+    }
+
+    .public-page.public-website .topbar-actions {
+        gap: 0.5rem;
+    }
+
+    .public-page.public-website .btn,
+    .public-page.public-website .theme-switch {
+        min-height: 40px;
+        padding: 0.62rem 0.75rem;
+    }
+
+    .public-page.public-website .hero-shell {
+        gap: 2rem;
+        padding: 2.4rem 0 3rem;
+    }
+
+    .public-page.public-website h1 {
+        font-size: 2.6rem;
+    }
+
+    .public-page.public-website h2 {
+        font-size: 2rem;
+    }
+
+    .public-page.public-website .trust-strip,
+    .public-page.public-website .proof-grid,
+    .public-page.public-website .workflow-grid,
+    .public-page.public-website .final-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .public-page.public-website .trust-strip div {
+        border-right: 0;
+        border-bottom: 1px solid var(--site-line);
+    }
+
+    .public-page.public-website .trust-strip div:last-child {
+        border-bottom: 0;
+    }
+
+    .public-page.public-website .live-qr-panel {
+        position: static;
+        width: 100%;
+        margin-top: 0.85rem;
+    }
+
+    .public-page.public-website .proof-grid,
+    .public-page.public-website .workflow-grid {
+        border: 1px solid var(--site-line);
+    }
+
+    .public-page.public-website .site-section,
+    .public-page.public-website .editor-showcase,
+    .public-page.public-website .final-cta {
+        padding: 3.25rem 0;
+    }
+
+    .public-page.public-website .feature-list article {
+        grid-template-columns: 1fr;
+    }
+
+    .public-page.public-website .qr-type-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .public-page.public-website .footer-shell {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 460px) {
+    .public-page.public-website h1 {
+        font-size: 2.25rem;
+    }
+
+    .public-page.public-website h2 {
+        font-size: 1.75rem;
+    }
+
+    .public-page.public-website .hero-actions,
+    .public-page.public-website .closing-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .public-page.public-website .hero-actions .btn,
+    .public-page.public-website .closing-actions .btn {
+        width: 100%;
+    }
+
+    .public-page.public-website .qr-type-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== Public Marketing Page Polish ===== */
+.public-page.public-website .product-window iframe {
+    background: var(--bg-primary);
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+}
+
+.public-page.public-website .product-window::after {
+    content: "";
+    position: absolute;
+    inset: 38px 0 0;
+    pointer-events: none;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--site-line) 60%, transparent);
+}
+
+.public-page.public-website.pricing-page .pricing-hero,
+.public-page.public-website.compare-page .compare-hero {
+    display: block;
+    padding: 0;
+    border-bottom: 1px solid var(--site-line);
+}
+
+.public-page.public-website.pricing-page .pricing-hero-shell,
+.public-page.public-website.compare-page .compare-hero-shell {
+    display: grid;
+    min-height: 600px;
+    grid-template-columns: minmax(0, 0.9fr) minmax(360px, 1.1fr);
+    gap: 3rem;
+    align-items: center;
+    padding: 4rem 0 4.5rem;
+}
+
+.public-page.public-website.pricing-page .pricing-highlight-card,
+.public-page.public-website.pricing-page .pricing-card,
+.public-page.public-website.pricing-page .pricing-faq-card,
+.public-page.public-website.pricing-page .pricing-comparison,
+.public-page.public-website.pricing-page .pricing-closing,
+.public-page.public-website.compare-page .compare-method-card,
+.public-page.public-website.compare-page .compare-table-shell,
+.public-page.public-website.compare-page .compare-source-card,
+.public-page.public-website.compare-page .compare-summary-card,
+.public-page.public-website.compare-page .compare-closing {
+    border-color: var(--site-line);
+    border-radius: 8px;
+    background: var(--site-surface);
+    box-shadow: 0 22px 54px var(--site-shadow);
+}
+
+.public-page.public-website.pricing-page .pricing-hero-copy,
+.public-page.public-website.compare-page .compare-hero-copy {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.public-page.public-website.pricing-page .pricing-highlight-card,
+.public-page.public-website.pricing-page .pricing-card.enterprise,
+.public-page.public-website.compare-page .compare-method-card {
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--site-surface) 94%, var(--site-blue)), var(--site-surface));
+}
+
+.public-page.public-website.pricing-page .pricing-hero-copy h1,
+.public-page.public-website.compare-page .compare-hero-copy h1 {
+    max-width: 13ch;
+    color: var(--site-text);
+    font-size: 4rem;
+    letter-spacing: 0;
+}
+
+.public-page.public-website.pricing-page .pricing-section-heading h2,
+.public-page.public-website.pricing-page .pricing-card h3,
+.public-page.public-website.pricing-page .pricing-closing h2,
+.public-page.public-website.compare-page .compare-section-heading h2,
+.public-page.public-website.compare-page .compare-source-card h3,
+.public-page.public-website.compare-page .compare-summary-card h3,
+.public-page.public-website.compare-page .compare-closing h2 {
+    color: var(--site-text);
+    letter-spacing: 0;
+}
+
+.public-page.public-website.pricing-page .pricing-intro,
+.public-page.public-website.pricing-page .pricing-section-heading p,
+.public-page.public-website.pricing-page .pricing-card-copy,
+.public-page.public-website.pricing-page .pricing-card li,
+.public-page.public-website.pricing-page .pricing-faq-card p,
+.public-page.public-website.pricing-page .pricing-badge-note,
+.public-page.public-website.pricing-page .pricing-comparison td,
+.public-page.public-website.pricing-page .pricing-comparison th,
+.public-page.public-website.pricing-page .pricing-highlight-card p,
+.public-page.public-website.pricing-page .pricing-highlight-stat span,
+.public-page.public-website.pricing-page .pricing-closing p,
+.public-page.public-website.compare-page .compare-intro,
+.public-page.public-website.compare-page .compare-method-card p,
+.public-page.public-website.compare-page .compare-section-heading p,
+.public-page.public-website.compare-page .compare-source-card p,
+.public-page.public-website.compare-page .compare-summary-card p,
+.public-page.public-website.compare-page .compare-table-shell td,
+.public-page.public-website.compare-page .compare-table-shell th,
+.public-page.public-website.compare-page .compare-closing p {
+    color: var(--site-muted);
+}
+
+.public-page.public-website.pricing-page .eyebrow,
+.public-page.public-website.compare-page .eyebrow,
+.public-page.public-website.pricing-page .pricing-hero-points i,
+.public-page.public-website.pricing-page .pricing-card li i,
+.public-page.public-website.compare-page .compare-points i,
+.public-page.public-website.compare-page .compare-method-list i,
+.public-page.public-website.compare-page .compare-source-card li i {
+    color: var(--site-coral);
+}
+
+.public-page.public-website.pricing-page .pricing-section,
+.public-page.public-website.compare-page .compare-section {
+    padding: 4rem 0 0;
+}
+
+.public-page.public-website.pricing-page .pricing-section + .pricing-section,
+.public-page.public-website.compare-page .compare-section + .compare-section {
+    margin-top: 0;
+}
+
+.public-page.public-website.pricing-page .pricing-plan-grid,
+.public-page.public-website.pricing-page .pricing-faq-grid,
+.public-page.public-website.compare-page .compare-summary-grid,
+.public-page.public-website.compare-page .compare-sources-grid {
+    gap: 1rem;
+}
+
+.public-page.public-website.pricing-page .pricing-highlight-stat,
+.public-page.public-website.pricing-page .pricing-badge-note {
+    border-color: var(--site-line);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--site-surface-2) 80%, transparent);
+}
+
+.public-page.public-website.pricing-page .pricing-pill {
+    background: color-mix(in srgb, var(--site-blue) 16%, transparent);
+    color: var(--site-blue);
+}
+
+.public-page.public-website.pricing-page .pricing-subpill {
+    background: var(--site-surface-2);
+    color: var(--site-muted);
+}
+
+.public-page.public-website.pricing-page .pricing-card.featured {
+    border-color: color-mix(in srgb, var(--site-blue) 60%, var(--site-line));
+    box-shadow: 0 24px 60px color-mix(in srgb, var(--site-blue) 18%, transparent);
+}
+
+.public-page.public-website.pricing-page .pricing-price strong,
+.public-page.public-website.pricing-page .pricing-highlight-stat strong,
+.public-page.public-website.compare-page .compare-table strong,
+.public-page.public-website.compare-page .compare-table tbody th {
+    color: var(--site-text);
+}
+
+.public-page.public-website.pricing-page .pricing-price span,
+.public-page.public-website.compare-page .compare-cell-note {
+    color: var(--site-muted);
+}
+
+.public-page.public-website.pricing-page .pricing-comparison th,
+.public-page.public-website.pricing-page .pricing-comparison td,
+.public-page.public-website.compare-page .compare-table th,
+.public-page.public-website.compare-page .compare-table td {
+    border-bottom-color: var(--site-line);
+}
+
+.public-page.public-website.compare-page .compare-table thead th,
+.public-page.public-website.compare-page .compare-table tbody th {
+    background: var(--site-surface-2);
+}
+
+.public-page.public-website.compare-page .compare-source-link {
+    color: var(--site-blue);
+    font-weight: 700;
+}
+
+.public-page.public-website.pricing-page .marketing-footer,
+.public-page.public-website.compare-page .marketing-footer {
+    margin-top: 4rem;
+    border-top: 1px solid var(--site-line);
+}
+
+@media (max-width: 1040px) {
+    .public-page.public-website.pricing-page .pricing-hero-shell,
+    .public-page.public-website.compare-page .compare-hero-shell {
+        min-height: auto;
+        grid-template-columns: 1fr;
+    }
+
+    .public-page.public-website.pricing-page .pricing-hero-copy h1,
+    .public-page.public-website.compare-page .compare-hero-copy h1 {
+        max-width: 14ch;
+        font-size: 3.45rem;
+    }
+}
+
+@media (max-width: 760px) {
+    .public-page.public-website.pricing-page .pricing-hero-shell,
+    .public-page.public-website.compare-page .compare-hero-shell {
+        gap: 2rem;
+        padding: 2.4rem 0 3rem;
+    }
+
+    .public-page.public-website.pricing-page .pricing-highlight-card,
+    .public-page.public-website.pricing-page .pricing-card,
+    .public-page.public-website.pricing-page .pricing-faq-card,
+    .public-page.public-website.pricing-page .pricing-closing,
+    .public-page.public-website.compare-page .compare-method-card,
+    .public-page.public-website.compare-page .compare-source-card,
+    .public-page.public-website.compare-page .compare-summary-card,
+    .public-page.public-website.compare-page .compare-closing {
+        padding: 1.2rem;
+    }
+
+    .public-page.public-website.pricing-page .pricing-hero-copy h1,
+    .public-page.public-website.compare-page .compare-hero-copy h1 {
+        font-size: 2.6rem;
+    }
+
+    .public-page.public-website.pricing-page .pricing-section,
+    .public-page.public-website.compare-page .compare-section {
+        padding-top: 3.25rem;
+    }
+
+}
